@@ -5,7 +5,8 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'dev-dist', 'node_modules', 'supabase/functions', 'public'] },
+  { ignores: ['dist', 'dev-dist', 'node_modules', 'supabase/functions/invite-member',
+      'supabase/functions/generate-export', 'public'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

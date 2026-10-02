@@ -15,7 +15,8 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["vite/client", "node"],
-    "paths": { "@/*": ["./src/*"] }
+    "allowImportingTsExtensions": true,
+    "paths": { "@/*": ["./src/*"], "@shared/*": ["./supabase/functions/_shared/*"] }
   },
   "include": ["src", "tests", "vite.config.ts", "scripts"],
   "exclude": ["node_modules", "supabase/functions"]

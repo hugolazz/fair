@@ -36,7 +36,22 @@ export type TargetMeeting = {
   reminderMin: number | null
   ownerId: string
   status: string
+  /** Intérêt constaté, de 1 à 5. */
+  interest: number | null
+  nextStep: string
 }
+
+/** Statuts d'une rencontre, dans l'ordre proposé au commercial. */
+export const MEETING_STATUSES = [
+  'to_see',
+  'in_progress',
+  'done',
+  'follow_up',
+  'not_interested',
+  'missed',
+  'skipped',
+] as const
+export type MeetingStatus = (typeof MEETING_STATUSES)[number]
 
 /** Une entreprise ciblée sur un salon (event_companies + entreprise + assignés + tags). */
 export type Target = {
@@ -101,6 +116,8 @@ export const targetRowSchema = z.object({
         reminder_minutes: z.number().nullable(),
         owner_id: z.string(),
         status: z.string(),
+        interest: z.number().nullable().default(null),
+        next_step: z.string().nullable().default(null),
         deleted_at: z.string().nullable(),
       }),
     )
@@ -136,6 +153,8 @@ export function rowToTarget(row: TargetRow, tagIds: string[]): Target {
         reminderMin: m.reminder_minutes,
         ownerId: m.owner_id,
         status: m.status,
+        interest: m.interest,
+        nextStep: m.next_step ?? '',
       }))
       .sort((a, b) => a.plannedAt.localeCompare(b.plannedAt)),
     searchKey: buildSearchKey([c.name, row.stand_label, c.industry, c.city, c.country, c.domain]),

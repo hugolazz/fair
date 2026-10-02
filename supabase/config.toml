@@ -62,3 +62,6 @@ policy = "per_worker"
 
 [functions.invite-member]
 verify_jwt = true
+
+[functions.generate-export]
+verify_jwt = true

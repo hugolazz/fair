@@ -4,6 +4,16 @@
     "title": "Compte",
     "signedInAs": "Connecté en tant que {{email}}"
   },
+  "logo": {
+    "title": "Logo de l'équipe",
+    "hint": "Affiché en en-tête des PDF d'export. PNG ou JPEG, 2 Mo maximum.",
+    "alt": "Logo de l'équipe",
+    "none": "Aucun logo",
+    "upload": "Choisir un logo",
+    "replace": "Remplacer le logo",
+    "remove": "Retirer le logo",
+    "error": "Impossible d'enregistrer ce logo (PNG ou JPEG, 2 Mo maximum)."
+  },
   "team": {
     "title": "Équipe",
     "name": "Nom de l'équipe",

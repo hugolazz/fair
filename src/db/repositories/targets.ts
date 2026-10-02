@@ -10,6 +10,7 @@ import {
   targetRowSchema,
   type Goal,
   type HistoryEntry,
+  type MeetingStatus,
   type Priority,
   type Tag,
   type Target,
@@ -32,7 +33,7 @@ const TARGET_SELECT =
   'id, event_id, company_id, stand_label, priority, objective, prep_comment, ' +
   'companies(id, name, domain, website, industry, country, city, contacts(count)), ' +
   'event_company_assignees(user_id, deleted_at), ' +
-  'meetings(id, planned_at, planned_duration_min, reminder_minutes, owner_id, status, deleted_at)'
+  'meetings(id, planned_at, planned_duration_min, reminder_minutes, owner_id, status, interest, next_step, deleted_at)'
 
 export async function fetchTags(): Promise<Tag[]> {
   const { data, error } = await supabase
@@ -290,6 +291,63 @@ export async function saveMeeting(m: MeetingInput): Promise<string> {
   )
   if (error) throw error
   return id
+}
+
+// --- Compte-rendu de rencontre -------------------------------------------------------------------------------------------
+
+export type MeetingReportPatch = {
+  status?: MeetingStatus
+  interest?: number | null
+  nextStep?: string
+}
+
+/** Statut, intérêt (1 à 5) et prochaine étape d'une rencontre. */
+export async function updateMeetingReport(id: string, patch: MeetingReportPatch): Promise<void> {
+  const columns: Record<string, unknown> = {}
+  if (patch.status !== undefined) columns.status = patch.status
+  if (patch.interest !== undefined) columns.interest = patch.interest
+  if (patch.nextStep !== undefined)
+    columns.next_step = patch.nextStep.trim() === '' ? null : patch.nextStep
+  const { error } = await supabase.from('meetings').update(columns).eq('id', id)
+  if (error) throw error
+}
+
+export type MeetingNote = { id: string; body: string; authorId: string; capturedAt: string }
+
+export async function fetchMeetingNotes(meetingId: string): Promise<MeetingNote[]> {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('id, body, author_id, captured_at')
+    .eq('meeting_id', meetingId)
+    .is('deleted_at', null)
+    .order('captured_at')
+  if (error) throw error
+  return (data ?? []).map((n) => ({
+    id: n.id as string,
+    body: n.body as string,
+    authorId: n.author_id as string,
+    capturedAt: n.captured_at as string,
+  }))
+}
+
+export async function addMeetingNote(
+  teamId: string,
+  meetingId: string,
+  authorId: string,
+  body: string,
+): Promise<MeetingNote> {
+  const note = {
+    id: newId(),
+    team_id: teamId,
+    meeting_id: meetingId,
+    author_id: authorId,
+    body: body.trim(),
+    source: 'typed',
+    captured_at: new Date().toISOString(),
+  }
+  const { error } = await supabase.from('notes').insert(note)
+  if (error) throw error
+  return { id: note.id, body: note.body, authorId, capturedAt: note.captured_at }
 }
 
 export async function deleteMeeting(id: string): Promise<void> {

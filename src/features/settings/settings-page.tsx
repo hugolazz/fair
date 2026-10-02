@@ -15,6 +15,7 @@ import {
 } from '@/db/repositories/teams'
 import { useReadySession } from '@/features/auth-team/session'
 import { useAsync } from '@/lib/use-async'
+import { TeamLogo } from './team-logo'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -110,6 +111,8 @@ export default function SettingsPage() {
             {renameMsg}
           </p>
         ) : null}
+
+        <TeamLogo teamId={teamId} canEdit={isAdmin} />
 
         <h3 className="mt-2 font-medium">{t('team.members')}</h3>
         {members.loading && !members.data ? <Loading /> : null}

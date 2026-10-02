@@ -33,8 +33,9 @@ pnpm supabase functions serve invite-member
 
 ## Production (Supabase hébergé)
 
-- Appliquer les migrations : `pnpm supabase db push` (ou, sans CLI, coller dans le SQL Editor les fichiers de `supabase/migrations/` dans l'ordre, **y compris `20261002000005_field.sql`** (qui crée le bucket privé `attachments`, utilisé pour l'image du plan) et **`20261002000007_floorplans.sql`** : plan du salon, pins, clé de stand). `20261002000006_sync_conflicts.sql` ne sert plus à rien (reste d'un ancien mode hors-ligne) mais est inoffensive. Détails : [docs/plan.md](docs/plan.md).
+- Appliquer les migrations : `pnpm supabase db push` (ou, sans CLI, coller dans le SQL Editor les fichiers de `supabase/migrations/` dans l'ordre, **y compris `20261002000005_field.sql`** (qui crée le bucket privé `attachments`, utilisé pour l'image du plan) et **`20261002000007_floorplans.sql`** : plan du salon, pins, clé de stand). **`20261002000009_exports.sql`** (logo d'équipe et bucket privé `exports` pour les exports générés côté serveur). `20261002000006_sync_conflicts.sql` ne sert plus à rien (reste d'un ancien mode hors-ligne) mais est inoffensive. Détails : [docs/plan.md](docs/plan.md).
 - Déployer la fonction : `pnpm supabase functions deploy invite-member` et définir le secret `SITE_URL` (URL publique de fair).
+- Déployer la génération d'exports côté serveur : `pnpm supabase functions deploy generate-export` (facultatif : sans elle, les exports se génèrent dans le navigateur). Voir [docs/exports.md](docs/exports.md).
 - Les modèles d'e-mails de `supabase/templates/` sont signés « fair » ; en hébergé, les reporter dans _Authentication → Email Templates_ (ou `supabase config push`).
 - Pour que l'expéditeur affiche « fair », configurer un SMTP personnalisé (nom d'expéditeur `fair`).
 - Ajouter l'URL de fair aux _Redirect URLs_ de l'authentification.

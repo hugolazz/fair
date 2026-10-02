@@ -11,6 +11,8 @@ const EventLayout = lazy(() => import('@/features/events/event-layout'))
 const EventDetailPage = lazy(() => import('@/features/events/event-detail-page'))
 const PreparePage = lazy(() => import('@/features/prepare/prepare-page'))
 const PlanPage = lazy(() => import('@/features/plan/plan-page'))
+const BilanPage = lazy(() => import('@/features/exports/bilan-page'))
+const ExportsPage = lazy(() => import('@/features/exports/exports-page'))
 const MyListPage = lazy(() => import('@/features/prepare/my-list-page'))
 const ImportPage = lazy(() => import('@/features/import/import-page'))
 const CompaniesPage = lazy(() => import('@/features/companies/companies-page'))
@@ -43,6 +45,8 @@ const router = createBrowserRouter([
               { path: 'participants', element: <PreparePage /> },
               { path: 'my-list', element: <MyListPage /> },
               { path: 'plan', element: <PlanPage /> },
+              { path: 'bilan', element: <BilanPage /> },
+              { path: 'exports', element: <ExportsPage /> },
             ],
           },
           { path: '/companies', element: <CompaniesPage /> },

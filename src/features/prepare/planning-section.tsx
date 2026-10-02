@@ -6,6 +6,7 @@ import { InputField, SelectField } from '@/components/ui/field'
 import type { Target, TargetMeeting, TeamMember } from '@/db/schemas/prepare'
 import { buildIcs } from './lib/ics'
 import { formatSlot, fromLocalInputs, toLocalInputs } from './lib/format'
+import { MeetingReport } from './meeting-report'
 import type { TargetsApi } from './use-targets'
 
 const DURATIONS = [10, 15, 20, 30, 45, 60]
@@ -158,6 +159,7 @@ export function PlanningSection({
                 {t('planning.remove')}
               </Button>
             </div>
+            <MeetingReport target={target} meeting={m} api={api} nameOf={nameOf} />
           </li>
         ))}
       </ul>

@@ -76,6 +76,8 @@ describe('myList', () => {
       reminderMin: null,
       ownerId: 'moi',
       status: 'to_see',
+      interest: null,
+      nextStep: '',
     },
   ]
   it('ne garde que mes cibles, triées par priorité, rendez-vous puis nom', () => {

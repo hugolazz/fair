@@ -44,6 +44,43 @@ export async function renameTeam(teamId: string, name: string): Promise<void> {
   if (error) throw error
 }
 
+// --- Logo de l'équipe (en-tête des PDF) ---------------------------------------------------------------------------
+
+export const LOGO_MAX_BYTES = 2 * 1024 * 1024
+export const LOGO_TYPES = ['image/png', 'image/jpeg'] as const
+
+/** Adresse temporaire du logo (aperçu), `null` si l'équipe n'en a pas. */
+export async function fetchTeamLogoUrl(teamId: string): Promise<string | null> {
+  const { data, error } = await supabase.from('teams').select('logo_path').eq('id', teamId).single()
+  if (error) throw error
+  const path = (data as { logo_path: string | null } | null)?.logo_path
+  if (!path) return null
+  const signed = await supabase.storage.from('attachments').createSignedUrl(path, 3600)
+  return signed.data?.signedUrl ?? null
+}
+
+/** Enregistre le logo (PNG ou JPEG, 2 Mo maximum) : fichier dans le stockage privé, chemin dans l'équipe. */
+export async function uploadTeamLogo(teamId: string, file: File): Promise<void> {
+  if (!(LOGO_TYPES as readonly string[]).includes(file.type) || file.size > LOGO_MAX_BYTES) {
+    throw new Error('invalid logo')
+  }
+  const path = `${teamId}/logo.${file.type === 'image/png' ? 'png' : 'jpg'}`
+  const up = await supabase.storage
+    .from('attachments')
+    .upload(path, file, { contentType: file.type, upsert: true })
+  if (up.error) throw up.error
+  const { error } = await supabase.from('teams').update({ logo_path: path }).eq('id', teamId)
+  if (error) throw error
+}
+
+export async function removeTeamLogo(teamId: string): Promise<void> {
+  const { data } = await supabase.from('teams').select('logo_path').eq('id', teamId).single()
+  const path = (data as { logo_path: string | null } | null)?.logo_path
+  const { error } = await supabase.from('teams').update({ logo_path: null }).eq('id', teamId)
+  if (error) throw error
+  if (path) await supabase.storage.from('attachments').remove([path])
+}
+
 export async function listMembers(teamId: string): Promise<Member[]> {
   const { data: members, error } = await supabase
     .from('team_members')

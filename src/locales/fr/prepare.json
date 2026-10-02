@@ -85,6 +85,28 @@
     "unassigned": "Non assignée",
     "me": "moi"
   },
+  "report": {
+    "title": "Compte-rendu",
+    "statusLabel": "Statut",
+    "interest": "Intérêt",
+    "interestValue": "{{n}} sur 5",
+    "interestShort": "intérêt {{n}}/5",
+    "nextStep": "Prochaine étape",
+    "notes": "Notes",
+    "noNotes": "Aucune note.",
+    "newNote": "Nouvelle note",
+    "addNote": "Ajouter la note",
+    "noteError": "Impossible d'enregistrer la note.",
+    "status": {
+      "to_see": "À voir",
+      "in_progress": "En cours",
+      "done": "Vu",
+      "follow_up": "À relancer",
+      "not_interested": "Pas intéressé",
+      "missed": "Manqué",
+      "skipped": "Écarté"
+    }
+  },
   "sheet": {
     "seeOnPlan": "Voir sur le plan du salon",
     "close": "Fermer la fiche",

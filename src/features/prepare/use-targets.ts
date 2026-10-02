@@ -11,8 +11,10 @@ import {
   setCompanyTag,
   unassignTargets,
   updateTag as updateTagRemote,
+  updateMeetingReport as updateMeetingReportRemote,
   updateTargets,
   type MeetingInput,
+  type MeetingReportPatch,
 } from '@/db/repositories/targets'
 import { listMembers } from '@/db/repositories/teams'
 import type { Goal, Priority, Tag, Target, TeamMember } from '@/db/schemas/prepare'
@@ -222,13 +224,19 @@ export function useTargets(eventId: string, teamId: string) {
         if (!snapshot) return false
         try {
           const id = await saveMeetingRemote({ ...input, teamId, eventId })
+          // Modifier le créneau ne change ni le statut, ni l'intérêt, ni la prochaine étape déjà saisis.
+          const prev = snapshot.targets
+            .find((t) => t.id === input.targetId)
+            ?.meetings.find((m) => m.id === id)
           const meeting = {
             id,
             plannedAt: input.plannedAt,
             durationMin: input.durationMin,
             reminderMin: input.reminderMin,
             ownerId: input.ownerId,
-            status: 'to_see',
+            status: prev?.status ?? 'to_see',
+            interest: prev?.interest ?? null,
+            nextStep: prev?.nextStep ?? '',
           }
           setData(
             (d) =>
@@ -251,6 +259,32 @@ export function useTargets(eventId: string, teamId: string) {
           return false
         }
       },
+
+      /** Compte-rendu : statut, intérêt et prochaine étape d'une rencontre (appliqués tout de suite, annulés en cas d'échec). */
+      updateMeetingReport: (targetId: string, meetingId: string, patch: MeetingReportPatch) =>
+        run(
+          (d) => ({
+            ...d,
+            targets: d.targets.map((t) =>
+              t.id === targetId
+                ? {
+                    ...t,
+                    meetings: t.meetings.map((m) =>
+                      m.id === meetingId
+                        ? {
+                            ...m,
+                            ...(patch.status !== undefined ? { status: patch.status } : {}),
+                            ...(patch.interest !== undefined ? { interest: patch.interest } : {}),
+                            ...(patch.nextStep !== undefined ? { nextStep: patch.nextStep } : {}),
+                          }
+                        : m,
+                    ),
+                  }
+                : t,
+            ),
+          }),
+          () => updateMeetingReportRemote(meetingId, patch),
+        ),
 
       deleteMeeting: (targetId: string, meetingId: string) =>
         run(

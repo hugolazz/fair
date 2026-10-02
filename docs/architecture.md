@@ -46,7 +46,13 @@ Règle : `features/*` → `db/repositories` + `components` + `lib` ; jamais d'ap
 - **Historique** : rencontres et notes des autres salons via `event_companies` de la même entreprise.
 - **Plan** : lien « Voir sur le plan du salon » depuis la fiche d'une entreprise.
 
+## Exports et bilan
+
+Onglets **Bilan** et **Exports** d'un salon : Excel, CSV pour CRM (modèles HubSpot / Salesforce / personnalisé), PDF (global, par commercial,
+fiches de rencontre, bilan d'une page). Code de génération partagé entre le navigateur et l'Edge Function `generate-export`
+(`supabase/functions/_shared/exports/`) ; compte-rendu des rencontres saisi dans la fiche d'une entreprise. Voir [exports.md](exports.md).
+
 ## Reste à faire (idées)
 
-Exports Excel/PDF, bilan et relances, fusion de doublons, duplication de salon, OCR des numéros de stand sur le plan
+Relances et e-mails, fusion de doublons, duplication de salon, OCR des numéros de stand sur le plan
 (structure prête, voir [plan.md](plan.md)), durcissement RGPD / a11y / perfs.
