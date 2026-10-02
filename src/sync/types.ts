@@ -10,7 +10,18 @@ export class SyncError extends Error {
   }
 }
 
-export type PushOp = Pick<OutboxOp, 'table' | 'kind' | 'key' | 'payload'>
+export type PushOp = Pick<OutboxOp, 'table' | 'kind' | 'key' | 'payload' | 'edited'> & {
+  /** Version (server_seq) de la ligne connue de l'appareil : sert à détecter une modification concurrente. */
+  baseSeq?: number
+}
+
+/** Réponse du serveur à l'envoi d'une opération. */
+export type PushResult = {
+  /** Nouvelle version de la ligne côté serveur. */
+  serverSeq?: number
+  /** Note modifiée ailleurs entre-temps : rien n'a été écrasé, voici la version du serveur. */
+  conflict?: { serverBody: string; serverSeq: number }
+}
 
 /** Ce dont le moteur de sync a besoin côté serveur (Supabase en production, un faux dans les tests). */
 export interface Remote {
@@ -23,7 +34,9 @@ export interface Remote {
   }): Promise<Row[]>
   /** Table entière (pour celles sans `server_seq`). */
   pullAll(table: SyncTableName): Promise<Row[]>
-  push(op: PushOp): Promise<void>
+  push(op: PushOp): Promise<PushResult>
+  /** Nombre de lignes (estimation de la taille d'un téléchargement). */
+  count(table: SyncTableName, eventId?: string): Promise<number>
   upload(path: string, blob: Blob, mime: string): Promise<void>
 }
 

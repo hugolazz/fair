@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { ErrorState, Loading } from '@/components/page-states'
 import { useSession } from '@/features/auth-team/session'
+import { SyncRunner } from '@/features/offline/sync-runner'
 
 /** Redirige selon l'état : déconnecté → /login, sans équipe → /onboarding. */
 export function RequireReady() {
@@ -10,7 +11,12 @@ export function RequireReady() {
   if (s.status === 'needsTeam') return <Navigate to="/onboarding" replace />
   if (s.status === 'error')
     return <ErrorState message={s.error.message} onRetry={() => void s.refreshMembership()} />
-  return <Outlet />
+  return (
+    <>
+      <SyncRunner />
+      <Outlet />
+    </>
+  )
 }
 
 export function RequireSignedIn() {

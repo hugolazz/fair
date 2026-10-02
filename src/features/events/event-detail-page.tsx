@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { deleteEvent, updateEvent } from '@/db/repositories/events'
 import { eventToForm } from '@/db/schemas/event'
+import { DownloadCard } from '@/features/offline/download-card'
 import { useEvent } from './event-context'
 import { EventFormDialog } from './event-form-dialog'
 import { formatEventDates } from './event-format'
@@ -48,6 +49,8 @@ export default function EventDetailPage() {
           {tc('actions.delete')}
         </Button>
       </div>
+
+      <DownloadCard eventId={event.id} />
 
       <dl className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-2">
         <div>

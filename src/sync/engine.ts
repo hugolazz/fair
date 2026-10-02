@@ -1,8 +1,14 @@
 import type { Table } from 'dexie'
 import { db, type OutboxOp, type Row, type SyncTableName } from '@/db/local/db'
 import { PULL_ORDER, TABLES } from '@/db/local/tables'
-import { rowKeyOf } from '@/db/local/write'
-import { SyncError, type Remote, type SyncStatus } from './types'
+import { dexieKey, localInsert, rowKeyOf } from '@/db/local/write'
+import { newId } from '@/lib/ids'
+import {
+  SyncError,
+  type PushResult as RemotePushResult,
+  type Remote,
+  type SyncStatus,
+} from './types'
 
 const PAGE = 1000
 
@@ -16,20 +22,23 @@ export type EngineOptions = {
   onStatus?: (patch: Partial<SyncStatus>) => void
 }
 
-export type PushResult = { sent: number; failed: number; stopped: boolean }
+export type PushResult = { sent: number; failed: number; conflicts: number; stopped: boolean }
+export type PullProgress = (table: SyncTableName, done: number, total: number) => void
 
 const cursorKey = (table: SyncTableName, eventId?: string) =>
   `cursor:${table}${eventId ? `:${eventId}` : ''}`
-
 const extOf = (mime: string | null | undefined) =>
   mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg'
+const asIds = (ids?: string | string[]) =>
+  ids === undefined ? [] : Array.isArray(ids) ? ids : [ids]
 
 /**
- * Moteur de synchronisation local-first.
- * - `push` : envoie l'outbox dans l'ordre de création (les parents précèdent les enfants), idempotent ;
- *   une erreur réseau arrête l'envoi (on réessaiera), un refus du serveur met l'opération en quarantaine.
- * - `pull` : lit les changements via `server_seq` (aucune horloge client) ; n'écrase jamais une ligne
- *   qui a une modification locale en attente.
+ * Moteur de synchronisation local-first (voir docs/sync.md).
+ * - `push` : envoie l'outbox dans l'ordre de création (parents avant enfants), idempotent. Les photos partent
+ *   en dernier : un envoi lent ne retarde jamais les notes. Erreur réseau = arrêt et nouvel essai ; refus du
+ *   serveur = quarantaine ; modification concurrente d'une note = les deux versions sont conservées.
+ * - `pull` : lit les changements via `server_seq` (aucune horloge dans le curseur) et n'écrase jamais une
+ *   ligne qui a une modification locale en attente.
  */
 export function createEngine({ remote, isOnline, onStatus }: EngineOptions) {
   let running: Promise<void> | null = null
@@ -41,37 +50,103 @@ export function createEngine({ remote, isOnline, onStatus }: EngineOptions) {
     })
   }
 
-  async function pushOne(op: OutboxOp): Promise<void> {
-    let payload = op.payload
-    // Photo : le fichier part dans le stockage AVANT la ligne qui le décrit.
+  /** Photo : le fichier part dans le stockage AVANT la ligne qui le décrit. */
+  async function uploadIfNeeded(op: OutboxOp): Promise<Row> {
+    const payload = op.payload
     if (op.table === 'attachments' && op.kind === 'insert' && payload.status === 'pending') {
       const blob = await db.blobs.get(String(payload.id))
       if (blob) {
         const path = `${payload.team_id}/${payload.id}.${extOf(blob.mime)}`
         await remote.upload(path, blob.blob, blob.mime)
-        payload = { ...payload, storage_path: path, status: 'uploaded' }
+        return { ...payload, storage_path: path, status: 'uploaded' }
       }
     }
-    await remote.push({ table: op.table, kind: op.kind, key: op.key, payload })
-    if (op.table === 'attachments' && op.kind === 'insert' && payload !== op.payload) {
+    return payload
+  }
+
+  /** Les deux versions d'une note modifiée en parallèle sont conservées ; l'utilisateur peut trancher. */
+  async function keepBothVersions(op: OutboxOp, serverBody: string, serverSeq: number) {
+    const local = await db.notes.get(String(op.key.id))
+    const mine = String(op.payload.body)
+    const copyId = newId()
+    if (local) {
+      await localInsert('notes', {
+        id: copyId,
+        team_id: local.team_id,
+        meeting_id: local.meeting_id,
+        event_company_id: local.event_company_id,
+        contact_id: local.contact_id ?? null,
+        author_id: local.author_id,
+        body: mine,
+        source: local.source,
+        captured_at: new Date().toISOString(),
+        deleted_at: null,
+      })
+      // L'original reprend la version du serveur ; notre texte vit désormais dans la copie.
+      await db.notes.update(local.id, { body: serverBody, server_seq: serverSeq })
+    }
+    await db.conflicts.add({
+      id: newId(),
+      table: 'notes',
+      rowId: String(op.key.id),
+      copyId,
+      mine,
+      theirs: serverBody,
+      createdAt: new Date().toISOString(),
+      status: 'open',
+    })
+  }
+
+  async function pushOne(op: OutboxOp): Promise<{ conflict: boolean }> {
+    const payload = await uploadIfNeeded(op)
+    let baseSeq: number | undefined
+    if (op.table === 'notes' && op.kind === 'update' && typeof payload.body === 'string') {
+      const local = await db.notes.get(String(op.key.id))
+      baseSeq = local?.server_seq === undefined ? undefined : Number(local.server_seq)
+    }
+    const res: RemotePushResult = await remote.push({
+      table: op.table,
+      kind: op.kind,
+      key: op.key,
+      payload,
+      ...(op.edited ? { edited: op.edited } : {}),
+      ...(baseSeq !== undefined ? { baseSeq } : {}),
+    })
+    if (res.conflict) {
+      await keepBothVersions(op, res.conflict.serverBody, res.conflict.serverSeq)
+      return { conflict: true }
+    }
+    if (payload !== op.payload) {
       await db.attachments.update(String(payload.id), {
         storage_path: payload.storage_path as string,
         status: 'uploaded',
       })
     }
+    // Mémorise la version serveur obtenue : la prochaine modification partira de la bonne base.
+    if (res.serverSeq !== undefined && op.kind !== 'delete' && TABLES[op.table].scope !== 'full') {
+      await tableOf(op.table).update(dexieKey(op.table, op.key), { server_seq: res.serverSeq })
+    }
+    return { conflict: false }
+  }
+
+  /** Prochaine opération : tout sauf les photos d'abord, puis les photos (dans l'ordre de création). */
+  function pickNext(ops: OutboxOp[]): OutboxOp | undefined {
+    const open = ops.filter((o) => !o.failed)
+    return open.find((o) => !(o.table === 'attachments' && o.kind === 'insert')) ?? open[0]
   }
 
   async function push(): Promise<PushResult> {
-    const result: PushResult = { sent: 0, failed: 0, stopped: false }
+    const result: PushResult = { sent: 0, failed: 0, conflicts: 0, stopped: false }
     if (!isOnline()) return { ...result, stopped: true }
     for (;;) {
-      const op = (await db.outbox.orderBy('seq').toArray()).find((o) => !o.failed)
+      const op = pickNext(await db.outbox.orderBy('seq').toArray())
       if (!op) return result
       await db.outbox.update(op.seq!, { locked: true })
       try {
-        await pushOne(op)
+        const { conflict } = await pushOne(op)
         await db.outbox.delete(op.seq!)
         result.sent++
+        if (conflict) result.conflicts++
       } catch (e) {
         const retryable = e instanceof SyncError ? e.retryable : true
         const message = e instanceof Error ? e.message : String(e)
@@ -99,11 +174,11 @@ export function createEngine({ remote, isOnline, onStatus }: EngineOptions) {
     return new Set((await db.outbox.toArray()).map((o) => o.rowKey))
   }
 
+  const rowKeyFor = (name: SyncTableName, r: Row) =>
+    rowKeyOf(name, Object.fromEntries(TABLES[name].pk.map((c) => [c, String(r[c])])))
+
   async function applyRows(name: SyncTableName, rows: Row[], pending: Set<string>) {
-    const pk = TABLES[name].pk
-    const keep = rows.filter(
-      (r) => !pending.has(rowKeyOf(name, Object.fromEntries(pk.map((c) => [c, String(r[c])])))),
-    )
+    const keep = rows.filter((r) => !pending.has(rowKeyFor(name, r)))
     if (keep.length) await tableOf(name).bulkPut(keep)
   }
 
@@ -113,18 +188,15 @@ export function createEngine({ remote, isOnline, onStatus }: EngineOptions) {
       const rows = await remote.pullAll(name)
       const pending = await pendingRowKeys()
       // Les lignes absentes du serveur ont été supprimées (taggings) : on remplace, sauf modifications locales en attente.
-      const local = await tableOf(name).toArray()
-      const remoteKeys = new Set(
-        rows.map((r) => rowKeyOf(name, Object.fromEntries(cfg.pk.map((c) => [c, String(r[c])])))),
-      )
-      const stale = local.filter((r) => {
-        const k = rowKeyOf(name, Object.fromEntries(cfg.pk.map((c) => [c, String(r[c])])))
-        return !remoteKeys.has(k) && !pending.has(k)
-      })
-      for (const r of stale)
-        await tableOf(name).delete(
-          cfg.pk.length === 1 ? (r[cfg.pk[0]!] as string) : cfg.pk.map((c) => r[c]),
-        )
+      const remoteKeys = new Set(rows.map((r) => rowKeyFor(name, r)))
+      for (const r of await tableOf(name).toArray()) {
+        const k = rowKeyFor(name, r)
+        if (!remoteKeys.has(k) && !pending.has(k)) {
+          await tableOf(name).delete(
+            cfg.pk.length === 1 ? (r[cfg.pk[0]!] as string) : cfg.pk.map((c) => r[c]),
+          )
+        }
+      }
       await applyRows(name, rows, pending)
       return
     }
@@ -145,42 +217,56 @@ export function createEngine({ remote, isOnline, onStatus }: EngineOptions) {
     }
   }
 
-  /** Lit les changements du serveur : tables d'équipe, puis celles du salon `eventId`. */
-  async function pull(eventId?: string) {
-    if (!isOnline()) return
-    for (const name of PULL_ORDER) {
-      if (TABLES[name].scope === 'event' && !eventId) continue
+  /**
+   * Lit les changements du serveur : tables d'équipe, puis celles de chaque salon téléchargé.
+   * Sans salon téléchargé, rien n'est lu (seuls les envois ont lieu).
+   */
+  async function pull(eventIds?: string | string[], onProgress?: PullProgress) {
+    const events = asIds(eventIds)
+    if (!isOnline() || events.length === 0) return
+    const steps = PULL_ORDER.flatMap((name): [SyncTableName, string | undefined][] =>
+      TABLES[name].scope === 'event'
+        ? events.map((e): [SyncTableName, string] => [name, e])
+        : [[name, undefined]],
+    )
+    let done = 0
+    for (const [name, eventId] of steps) {
       await pullTable(name, eventId)
+      onProgress?.(name, ++done, steps.length)
     }
   }
 
   /** Envoi puis lecture. Un seul cycle à la fois : un appel pendant un cycle attend le même résultat. */
-  function sync(eventId?: string): Promise<void> {
+  function sync(eventIds?: string | string[]): Promise<void> {
     if (running) return running
-    running = (async () => {
-      if (!isOnline()) {
-        onStatus?.({ phase: 'offline' })
-        return
-      }
-      onStatus?.({ phase: 'syncing' })
+    const cycle = (async () => {
       try {
+        if (!isOnline()) {
+          onStatus?.({ phase: 'offline' })
+          return
+        }
+        onStatus?.({ phase: 'syncing' })
         const pushed = await push()
         if (pushed.stopped) {
           onStatus?.({ phase: isOnline() ? 'error' : 'offline', lastError: 'push' })
           return
         }
-        await pull(eventId)
+        await pull(eventIds)
         onStatus?.({ phase: 'idle', lastSyncAt: Date.now(), lastError: null })
       } catch (e) {
         onStatus?.({
           phase: isOnline() ? 'error' : 'offline',
           lastError: e instanceof Error ? e.message : String(e),
         })
-      } finally {
-        running = null
       }
     })()
-    return running
+    // Le verrou n'est posé qu'APRÈS la création de la promesse : un cycle qui se termine tout de suite
+    // (hors-ligne) ne doit pas laisser un verrou périmé.
+    running = cycle
+    void cycle.finally(() => {
+      if (running === cycle) running = null
+    })
+    return cycle
   }
 
   /** « Forcer la sync » : redonne leur chance aux opérations mises en quarantaine. */

@@ -147,11 +147,25 @@ export type OutboxOp = {
   payload: Row
   createdAt: number
   attempts: number
+  /** Heure de modification de chaque champ (appareil) : sert au « dernier écrit gagne » par champ. */
+  edited?: Record<string, string>
   /** Opération en cours d'envoi : les nouvelles écritures ne la fusionnent plus. */
   locked?: boolean
   /** Refusée définitivement par le serveur (mise en quarantaine). */
   failed?: boolean
   lastError?: string
+}
+
+/** Conflit de note conservé pour résolution : les deux versions existent (la nôtre dans copyId). */
+export type LocalConflict = {
+  id: string
+  table: 'notes'
+  rowId: string
+  copyId: string
+  mine: string
+  theirs: string
+  createdAt: string
+  status: 'open' | 'resolved'
 }
 
 export type SyncStateRow = { key: string; value: unknown }
@@ -171,6 +185,7 @@ export class FairDb extends Dexie {
   blobs!: Table<LocalBlob, string>
   outbox!: Table<OutboxOp, number>
   sync_state!: Table<SyncStateRow, string>
+  conflicts!: Table<LocalConflict, string>
 
   constructor(name = 'fair') {
     super(name)
@@ -190,10 +205,17 @@ export class FairDb extends Dexie {
       outbox: '++seq, rowKey, table',
       sync_state: 'key',
     })
+    this.version(2).stores({ conflicts: 'id, status' })
   }
 }
 
 export let db = new FairDb()
+
+/** Change la base courante (tests multi-appareils : une base par appareil). */
+export function setCurrentDb(next: FairDb): FairDb {
+  db = next
+  return db
+}
 
 /** Pour les tests : remplace la base par une instance isolée. */
 export function replaceDbForTests(name: string): FairDb {

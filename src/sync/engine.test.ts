@@ -46,7 +46,7 @@ describe('envoi (push)', () => {
     await localInsert('event_companies', ec('ec1', 'c1'))
     await localInsert('meetings', meeting('m1', 'ec1'))
     const res = await engine().push()
-    expect(res).toEqual({ sent: 3, failed: 0, stopped: false })
+    expect(res).toEqual({ sent: 3, failed: 0, conflicts: 0, stopped: false })
     expect(remote.pushLog.map((o) => o.table)).toEqual(['companies', 'event_companies', 'meetings'])
     expect(await db.outbox.count()).toBe(0)
   })
@@ -60,7 +60,7 @@ describe('envoi (push)', () => {
     expect((await db.outbox.toArray())[0]!.attempts).toBe(1)
 
     remote.offline = false
-    expect(await engine().push()).toEqual({ sent: 1, failed: 0, stopped: false })
+    expect(await engine().push()).toEqual({ sent: 1, failed: 0, conflicts: 0, stopped: false })
     expect(remote.tables.get('meetings')).toMatchObject([{ id: 'm1', status: 'done' }])
   })
 
@@ -76,7 +76,7 @@ describe('envoi (push)', () => {
     await localInsert('meetings', meeting('good', 'ec1'))
     remote.reject = (op) => (op.key.id === 'bad' ? 'violates row-level security' : null)
     const res = await engine().push()
-    expect(res).toEqual({ sent: 1, failed: 1, stopped: false })
+    expect(res).toEqual({ sent: 1, failed: 1, conflicts: 0, stopped: false })
     const left = await db.outbox.toArray()
     expect(left).toHaveLength(1)
     expect(left[0]).toMatchObject({ failed: true, lastError: 'violates row-level security' })
@@ -231,6 +231,16 @@ describe('sync complète', () => {
     online = false
     await e.sync('e1')
     expect(phases).toEqual(['offline'])
+  })
+
+  it('un cycle lancé hors-ligne ne bloque pas les suivants (régression : verrou périmé)', async () => {
+    const e = engine()
+    await localInsert('meetings', meeting('m1', 'ec1'))
+    online = false
+    await e.sync('e1') // se termine aussitôt : « hors-ligne »
+    online = true
+    await e.sync('e1') // doit réellement s'exécuter
+    expect(remote.tables.get('meetings')).toHaveLength(1)
   })
 
   it('un seul cycle à la fois', async () => {

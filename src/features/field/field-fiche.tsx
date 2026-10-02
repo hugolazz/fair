@@ -16,7 +16,7 @@ import { PriorityBadge } from '@/features/prepare/atoms'
 import { InterestPicker, StatusButtons } from './field-atoms'
 import { useFieldCtx } from './field-context'
 import { compressImage } from './photo'
-import { SyncBadge } from './sync-badge'
+import { SyncIndicator } from '@/features/offline/sync-indicator'
 import { ThemeButton } from './theme-button'
 import { useCompanyTags, useFiche } from './use-field-data'
 import { useDictation } from './use-dictation'
@@ -186,7 +186,7 @@ export default function FieldFiche() {
               .join(' · ')}
           </p>
         </div>
-        <SyncBadge eventId={ctx.eventId} />
+        <SyncIndicator />
         <ThemeButton />
       </header>
 

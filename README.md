@@ -33,7 +33,7 @@ pnpm supabase functions serve invite-member
 
 ## Production (Supabase hébergé)
 
-- Appliquer les migrations : `pnpm supabase db push` (ou, sans CLI, coller dans le SQL Editor les fichiers de `supabase/migrations/` dans l'ordre, **y compris `20261002000005_field.sql`** : statuts « à relancer » / « pas intéressé », intérêt 1-5, bucket privé `attachments` pour les photos).
+- Appliquer les migrations : `pnpm supabase db push` (ou, sans CLI, coller dans le SQL Editor les fichiers de `supabase/migrations/` dans l'ordre, **y compris `20261002000005_field.sql`** : statuts, intérêt 1-5, bucket privé `attachments` ; et **`20261002000006_sync_conflicts.sql`** : fonctions de résolution de conflits `patch_meeting` / `patch_note`). Détails : [docs/sync.md](docs/sync.md).
 - Déployer la fonction : `pnpm supabase functions deploy invite-member` et définir le secret `SITE_URL` (URL publique de fair).
 - Les modèles d'e-mails de `supabase/templates/` sont signés « fair » ; en hébergé, les reporter dans _Authentication → Email Templates_ (ou `supabase config push`).
 - Pour que l'expéditeur affiche « fair », configurer un SMTP personnalisé (nom d'expéditeur `fair`).

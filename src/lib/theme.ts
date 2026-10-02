@@ -10,14 +10,14 @@ const META_COLORS: Record<EffectiveTheme, string> = {
   dark: '#020617',
 }
 
-export const THEME_MODES: ThemeMode[] = ['auto', 'light', 'sun', 'dark']
+export const THEME_MODES: ThemeMode[] = ['light', 'sun', 'dark', 'auto']
 
 function read(): ThemeMode {
   try {
     const v = localStorage.getItem(STORAGE_KEY)
-    return v === 'light' || v === 'sun' || v === 'dark' || v === 'auto' ? v : 'auto'
+    return v === 'light' || v === 'sun' || v === 'dark' || v === 'auto' ? v : 'light'
   } catch {
-    return 'auto'
+    return 'light'
   }
 }
 
@@ -59,7 +59,7 @@ export function useThemeMode(): [ThemeMode, (m: ThemeMode) => void] {
       return () => void subscribers.delete(fn)
     },
     () => mode,
-    () => 'auto' as ThemeMode,
+    () => 'light' as ThemeMode,
   )
   return [current, setThemeMode]
 }

@@ -22,7 +22,7 @@ export function keyOf(name: SyncTableName, row: Row): Record<string, string> {
 }
 export const rowKeyOf = (name: SyncTableName, key: Record<string, string>) =>
   `${name}:${TABLES[name].pk.map((c) => key[c]).join('|')}`
-const dexieKey = (name: SyncTableName, key: Record<string, string>) => {
+export const dexieKey = (name: SyncTableName, key: Record<string, string>) => {
   const parts = TABLES[name].pk.map((c) => key[c]!)
   return parts.length === 1 ? parts[0]! : parts
 }
@@ -54,20 +54,47 @@ export async function localInsert(name: SyncTableName, row: Row): Promise<void> 
   notify()
 }
 
-/** Modifie des colonnes ; les modifications successives d'une même ligne sont fusionnées dans l'outbox. */
+/** Horloge de l'appareil, injectable pour les tests (heure de modification des champs). */
+let clock: () => Date = () => new Date()
+export const setClock = (fn: () => Date) => {
+  clock = fn
+}
+
+/** Tables résolues « dernier écrit gagne » champ par champ (heure de chaque champ conservée). */
+const LWW_TABLES = new Set<SyncTableName>(['meetings'])
+
+/**
+ * Modifie des colonnes ; les modifications successives d'une même ligne sont fusionnées dans l'outbox.
+ * Pour les tables « dernier écrit gagne », on mémorise l'heure de chaque champ modifié : le serveur ne
+ * garde que l'écriture la plus récente de chaque champ, quel que soit l'ordre d'arrivée.
+ */
 export async function localUpdate(
   name: SyncTableName,
   key: Record<string, string>,
   patch: Row,
 ): Promise<void> {
   const rowKey = rowKeyOf(name, key)
+  const lww = LWW_TABLES.has(name)
+  const at = clock().toISOString()
+  const edited = lww ? Object.fromEntries(Object.keys(patch).map((c) => [c, at])) : undefined
   await db.transaction('rw', [table(name), db.outbox], async () => {
     const current = await table(name).get(dexieKey(name, key))
     if (!current) return
-    await table(name).put({ ...current, ...patch })
+    const times = lww
+      ? {
+          field_updated_at: { ...((current.field_updated_at as Row | undefined) ?? {}), ...edited },
+        }
+      : {}
+    await table(name).put({ ...current, ...patch, ...times })
     const open = await openOp(rowKey)
-    if (open && open.kind !== 'delete') {
-      await db.outbox.update(open.seq!, { payload: { ...open.payload, ...patch } })
+    if (open && open.kind === 'insert') {
+      // Pas encore parti : la ligne complète porte déjà ces modifications (et leurs heures).
+      await db.outbox.update(open.seq!, { payload: { ...open.payload, ...patch, ...times } })
+    } else if (open && open.kind === 'update') {
+      await db.outbox.update(open.seq!, {
+        payload: { ...open.payload, ...patch },
+        ...(lww ? { edited: { ...open.edited, ...edited } } : {}),
+      })
     } else {
       await db.outbox.add({
         id: newOpId(),
@@ -76,6 +103,7 @@ export async function localUpdate(
         rowKey,
         kind: 'update',
         payload: { ...patch },
+        ...(lww ? { edited } : {}),
         createdAt: Date.now(),
         attempts: 0,
       })
@@ -83,7 +111,6 @@ export async function localUpdate(
   })
   notify()
 }
-
 /** Suppression physique (taggings). Si la ligne n'est jamais partie au serveur, tout s'annule sans rien envoyer. */
 export async function localDelete(name: SyncTableName, key: Record<string, string>): Promise<void> {
   const rowKey = rowKeyOf(name, key)

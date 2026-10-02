@@ -1,0 +1,64 @@
+{
+  "indicator": {
+    "label": "Synchronisation",
+    "ok": "À jour",
+    "offline": "Hors-ligne",
+    "offlinePending": "Hors-ligne · {{count}}",
+    "syncing": "Synchronisation…",
+    "pending": "{{count}} en attente",
+    "error": "Envoi impossible",
+    "conflicts": "{{count}} conflit(s)",
+    "open": "Détails de la synchronisation"
+  },
+  "dialog": {
+    "title": "Synchronisation",
+    "state": "État",
+    "pending": "Modifications à envoyer",
+    "failed": "Modifications refusées par le serveur",
+    "lastSync": "Dernière synchronisation",
+    "never": "jamais",
+    "now": "maintenant",
+    "ago": "il y a {{minutes}} min",
+    "syncNow": "Synchroniser maintenant",
+    "offlineHelp": "Vous êtes hors-ligne : tout est enregistré sur l'appareil et partira dès que le réseau reviendra.",
+    "errorHelp": "Le serveur est injoignable pour le moment. Nouvel essai automatique (de plus en plus espacé).",
+    "failedHelp": "Ces modifications ont été refusées (droits ou données invalides). « Synchroniser maintenant » les renvoie."
+  },
+  "conflicts": {
+    "title": "Conflits à résoudre",
+    "help": "Une note a été modifiée sur deux appareils en même temps. Rien n'est perdu : les deux versions existent.",
+    "mine": "Ma version",
+    "theirs": "L'autre version",
+    "both": "Garder les deux",
+    "keepMine": "Garder la mienne",
+    "keepTheirs": "Garder l'autre",
+    "none": "Aucun conflit."
+  },
+  "download": {
+    "title": "Mode terrain hors-ligne",
+    "notDownloaded": "Téléchargez ce salon pour l'utiliser sans réseau : entreprises, rencontres, notes et tags sont gardés sur cet appareil et synchronisés au retour du réseau.",
+    "estimate": "Taille estimée : {{size}} ({{count}} entreprises)",
+    "estimating": "Calcul de la taille…",
+    "estimateFailed": "Taille indisponible.",
+    "offlineNeeded": "Réseau requis pour télécharger le salon.",
+    "button": "Télécharger pour le terrain",
+    "buttonWithSize": "Télécharger pour le terrain ({{size}})",
+    "downloading": "Téléchargement… {{done}} / {{total}}",
+    "downloaded": "Téléchargé sur cet appareil",
+    "size": "Espace utilisé : {{size}}",
+    "synced": "Mis à jour : {{when}}",
+    "update": "Mettre à jour",
+    "open": "Ouvrir le mode terrain",
+    "remove": "Retirer de cet appareil",
+    "removeConfirm": "Retirer ce salon de l'appareil ? Il faudra le retélécharger pour l'utiliser hors-ligne. Vos données restent sur le serveur.",
+    "removeBlocked": "{{count}} modification(s) pas encore envoyée(s) : connectez-vous au réseau et synchronisez avant de retirer ce salon.",
+    "error": "Le téléchargement a échoué. Réessayez avec du réseau.",
+    "gateTitle": "Ce salon n'est pas encore sur cet appareil"
+  },
+  "eventsOffline": {
+    "downloaded": "Salons téléchargés",
+    "downloadedHelp": "Disponibles sans réseau.",
+    "unavailable": "La liste complète des salons nécessite le réseau.",
+    "terrain": "Mode terrain"
+  }
+}

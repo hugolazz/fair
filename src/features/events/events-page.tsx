@@ -6,6 +6,7 @@ import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/page-s
 import { Button } from '@/components/ui/button'
 import { createEvent, listEvents } from '@/db/repositories/events'
 import { useReadySession } from '@/features/auth-team/session'
+import { DownloadedEvents } from '@/features/offline/downloaded-events'
 import { useAsync } from '@/lib/use-async'
 import { EventFormDialog } from './event-form-dialog'
 import { formatEventDates } from './event-format'
@@ -27,6 +28,8 @@ export default function EventsPage() {
   return (
     <>
       <PageHeader title={t('title')} actions={events?.length ? newButton : undefined} />
+
+      <DownloadedEvents />
 
       {loading && !events ? <Loading /> : null}
       {error ? <ErrorState message={t('errors.load')} onRetry={reload} /> : null}

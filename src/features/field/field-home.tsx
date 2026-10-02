@@ -18,7 +18,7 @@ import {
   type FieldRow,
   type Scope,
 } from './lib/list'
-import { SyncBadge } from './sync-badge'
+import { SyncIndicator } from '@/features/offline/sync-indicator'
 import { ThemeButton } from './theme-button'
 import { UnplannedDialog } from './unplanned-dialog'
 import { useFieldRows, useLocalEvent } from './use-field-data'
@@ -141,7 +141,7 @@ export default function FieldHome() {
             <h1 className="truncate text-xl font-bold">{t('title')}</h1>
             {event ? <p className="truncate text-sm text-slate-700">{event.name}</p> : null}
           </div>
-          <SyncBadge eventId={ctx.eventId} />
+          <SyncIndicator />
           <ThemeButton />
         </div>
         <label className="relative block">
