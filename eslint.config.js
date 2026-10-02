@@ -20,7 +20,7 @@ export default tseslint.config(
     },
   },
   {
-    // Local-first : les features n'accèdent jamais directement à Supabase.
+    // Les features n'accèdent jamais directement à Supabase : tout passe par src/db/repositories.
     files: ['src/features/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
@@ -28,13 +28,7 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: [
-                '@supabase/*',
-                '@/lib/supabase',
-                '@/sync/engine',
-                '@/sync/supabase-remote',
-                '@/sync/fake-remote',
-              ],
+              group: ['@supabase/*', '@/lib/supabase'],
               message:
                 'Les features passent par src/db/repositories, jamais par Supabase directement.',
             },

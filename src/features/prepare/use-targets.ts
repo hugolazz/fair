@@ -155,12 +155,16 @@ export function useTargets(eventId: string, teamId: string) {
           async () => {
             await assignTargets(teamId, eventId, ids, userId)
             for (const [u, targetIds] of others) await unassignTargets(targetIds, u)
+            // (le remplacement ne signale pas un retrait sans effet : l'assignation du nouveau commercial a réussi)
           },
         )
       },
 
       unassign: (ids: string[], userId: string) => {
         const set = byId(ids)
+        const expected = (dataRef.current?.targets ?? []).filter(
+          (t) => set.has(t.id) && t.assigneeIds.includes(userId),
+        ).length
         return run(
           (d) => ({
             ...d,
@@ -168,7 +172,12 @@ export function useTargets(eventId: string, teamId: string) {
               set.has(t.id) ? { ...t, assigneeIds: t.assigneeIds.filter((u) => u !== userId) } : t,
             ),
           }),
-          () => unassignTargets(ids, userId),
+          async () => {
+            // Rien de modifié alors qu'il y avait des assignations : on le signale et on annule l'affichage.
+            if ((await unassignTargets(ids, userId)) === 0 && expected > 0) {
+              throw new Error('unassign had no effect')
+            }
+          },
         )
       },
 

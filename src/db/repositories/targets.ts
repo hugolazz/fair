@@ -1,5 +1,5 @@
 // Préparation du salon : cibles (event_companies), tags, assignations, rendez-vous, fiche et historique.
-// Comme events.ts, écrit directement sur Supabase (la bascule Dexie/outbox viendra avec la synchronisation).
+// Comme events.ts, lit et écrit directement sur Supabase.
 import { supabase } from '@/lib/supabase'
 import { newId } from '@/lib/ids'
 import {
@@ -239,16 +239,24 @@ export async function assignTargets(
   }
 }
 
-/** Retire un commercial des cibles (soft delete, réactivable). */
-export async function unassignTargets(targetIds: string[], userId: string): Promise<void> {
+/**
+ * Retire un commercial des cibles (soft delete, réactivable). Renvoie le nombre d'assignations réellement
+ * modifiées : PostgREST ne signale pas une mise à jour qui n'a touché aucune ligne (droits, ligne absente).
+ */
+export async function unassignTargets(targetIds: string[], userId: string): Promise<number> {
+  let updated = 0
   for (const part of chunks(targetIds, IN_CHUNK)) {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('event_company_assignees')
       .update({ deleted_at: new Date().toISOString() })
       .eq('user_id', userId)
+      .is('deleted_at', null)
       .in('event_company_id', part)
+      .select('event_company_id')
     if (error) throw error
+    updated += data?.length ?? 0
   }
+  return updated
 }
 
 // --- Rendez-vous planifiés ----------------------------------------------------------------------------------------------

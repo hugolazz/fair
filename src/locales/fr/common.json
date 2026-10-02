@@ -25,6 +25,5 @@
   "config": {
     "missingTitle": "Configuration manquante",
     "missingBody": "Renseignez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans .env.local, puis relancez le serveur."
-  },
-  "offline": "Vous êtes hors-ligne."
+  }
 }

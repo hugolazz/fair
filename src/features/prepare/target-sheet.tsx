@@ -1,6 +1,7 @@
 import { ExternalLink, MapPin, Settings2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { SelectField, TextareaField } from '@/components/ui/field'
 import { Sheet } from '@/components/ui/sheet'
@@ -136,6 +137,13 @@ function Body({
             {target.website.replace(/^https?:\/\//, '')}
           </a>
         ) : null}
+        <Link
+          to={`/events/${target.eventId}/plan?target=${target.id}`}
+          className="text-brand-700 inline-flex min-h-8 items-center gap-1.5 underline"
+        >
+          <MapPin aria-hidden className="size-4 shrink-0" />
+          {t('sheet.seeOnPlan')}
+        </Link>
       </div>
 
       <Section title={t('sheet.prep')}>

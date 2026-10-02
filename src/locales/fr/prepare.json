@@ -86,6 +86,7 @@
     "me": "moi"
   },
   "sheet": {
+    "seeOnPlan": "Voir sur le plan du salon",
     "close": "Fermer la fiche",
     "prep": "Préparation",
     "comment": "Commentaire de préparation",

@@ -24,42 +24,12 @@ const SessionContext = createContext<SessionContextValue | null>(null)
 
 type Loaded = { userId: string; membership: Membership | null; error?: Error }
 
-const CACHE_KEY = 'fair.membership.v1'
-
-function readCachedMembership(uid: string): Membership | null {
-  try {
-    const raw = JSON.parse(localStorage.getItem(CACHE_KEY) ?? 'null') as {
-      uid: string
-      membership: Membership
-    } | null
-    return raw?.uid === uid ? raw.membership : null
-  } catch {
-    return null
-  }
-}
-
-function cacheMembership(uid: string, membership: Membership | null) {
-  try {
-    if (membership) localStorage.setItem(CACHE_KEY, JSON.stringify({ uid, membership }))
-  } catch {
-    /* stockage indisponible : on se contentera du réseau */
-  }
-}
-
-const looksOffline = (e: unknown) =>
-  !navigator.onLine || /fetch|network|offline|load failed/i.test(toError(e).message)
-
 async function loadFor(uid: string): Promise<Loaded> {
   try {
     // Un utilisateur invité rejoint son équipe avant qu'on lui propose d'en créer une.
     await acceptPendingInvitations()
-    const membership = await fetchMembership(uid)
-    cacheMembership(uid, membership)
-    return { userId: uid, membership }
+    return { userId: uid, membership: await fetchMembership(uid) }
   } catch (e) {
-    // Hors-ligne (salon sans wifi) : on réutilise l'équipe connue lors de la dernière connexion.
-    const cached = looksOffline(e) ? readCachedMembership(uid) : null
-    if (cached) return { userId: uid, membership: cached }
     return { userId: uid, membership: null, error: toError(e) }
   }
 }

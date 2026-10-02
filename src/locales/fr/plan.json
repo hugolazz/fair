@@ -1,0 +1,94 @@
+{
+  "viewerLabel": "Plan du salon",
+  "keyboardHelp": "Flèches pour déplacer le plan, plus et moins pour zoomer, zéro pour revoir tout le plan.",
+  "defaultName": "Plan du salon",
+  "empty": {
+    "title": "Aucun plan pour ce salon",
+    "bodyEdit": "Ajoutez le plan du salon pour placer les stands et retrouver chaque entreprise sur le plan."
+  },
+  "upload": {
+    "button": "Ajouter le plan (image ou PDF)",
+    "another": "Ajouter un autre plan",
+    "hint": "PNG, JPEG, WebP ou PDF (première page uniquement), 40 Mo maximum.",
+    "processing": "Préparation du plan…",
+    "convertingPdf": "Conversion de la première page du PDF…",
+    "errors": {
+      "unsupported": "Format non pris en charge. Utilisez une image (PNG, JPEG, WebP) ou un PDF.",
+      "unreadable": "Impossible de lire cette image.",
+      "tooLarge": "Ce fichier dépasse 40 Mo.",
+      "pdfFailed": "Impossible de convertir ce PDF (protégé ou illisible). Exportez-le en image puis réessayez.",
+      "pdfOffline": "La conversion d\u0027un PDF demande du réseau. Réessayez en ligne, ou ajoutez le plan sous forme d\u0027image.",
+      "generic": "Impossible d\u0027ajouter ce plan."
+    }
+  },
+  "controls": {
+    "group": "Zoom du plan",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "fit": "Voir tout le plan"
+  },
+  "here": {
+    "button": "Je suis ici",
+    "move": "Déplacer ma position",
+    "center": "Me centrer",
+    "placing": "Touchez le plan à l\u0027endroit où vous êtes.",
+    "clear": "Effacer",
+    "cancel": "Annuler",
+    "marker": "Vous êtes ici"
+  },
+  "pin": {
+    "stand": "stand {{stand}}",
+    "suggested": "à confirmer"
+  },
+  "legend": {
+    "title": "Légende",
+    "standOnly": "Numéro de stand seul"
+  },
+  "list": {
+    "label": "Entreprises du salon",
+    "search": "Rechercher une entreprise ou un stand",
+    "noTargets": "Aucune entreprise pour ce salon sur cet appareil.",
+    "noMatch": "Aucune entreprise ne correspond.",
+    "placed": "Placé",
+    "stand": "Stand {{stand}}"
+  },
+  "edit": {
+    "progress": "{{placed}} / {{total}} entreprises placées",
+    "companies": "Entreprises",
+    "help": "Cliquez sur le plan pour poser un pin, ou choisissez d\u0027abord une entreprise ci-dessous puis cliquez à son emplacement.",
+    "place": "Placer {{name}} sur le plan",
+    "show": "Retrouver {{name}} sur le plan",
+    "armed": "Cliquez sur le plan pour placer {{name}}.",
+    "moving": "Cliquez sur le plan pour déplacer le pin.",
+    "newPin": "Nouveau pin",
+    "newPinHelp": "Choisissez l\u0027entreprise (Entrée valide la première), ou saisissez seulement un numéro de stand.",
+    "standLabel": "Numéro de stand",
+    "standPlaceholder": "Ex. B12",
+    "standOnly": "Stand seul",
+    "linkTo": "Relier à {{name}}",
+    "pinDetails": "Pin sélectionné",
+    "linkedTo": "Relié à {{name}}",
+    "notLinked": "Numéro de stand seul, relié à aucune entreprise.",
+    "link": "Relier à une entreprise",
+    "relink": "Changer d\u0027entreprise",
+    "unlink": "Délier",
+    "unlinkNeedsStand": "Saisissez d\u0027abord un numéro de stand : un pin garde au moins l\u0027un des deux.",
+    "move": "Déplacer",
+    "remove": "Supprimer",
+    "close": "Fermer",
+    "cancel": "Annuler",
+    "saveError": "Impossible d\u0027enregistrer la modification.",
+    "added": "Pin posé : {{name}}",
+    "removed": "Pin supprimé : {{name}}",
+    "undo": "Annuler",
+    "deletePlan": "Supprimer le plan",
+    "deleteConfirm": "Supprimer ce plan et ses pins ?"
+  },
+  "select": "Plan affiché",
+  "title": "Plan du salon",
+  "errors": {
+    "load": "Impossible de charger le plan.",
+    "image": "Impossible de charger l\u0027image du plan."
+  },
+  "seeOnPlan": "Voir sur le plan"
+}

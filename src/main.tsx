@@ -1,16 +1,17 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { registerSW } from 'virtual:pwa-register'
 import { I18nextProvider, useTranslation } from 'react-i18next'
 import { AppRouter } from '@/app/router'
 import { SessionProvider } from '@/features/auth-team/session'
 import { i18n } from '@/lib/i18n'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { initTheme } from '@/lib/theme'
 import './index.css'
 
-initTheme()
-registerSW({ immediate: true })
+// L'appli ne fonctionne plus hors-ligne : on retire le service worker et les caches d'une ancienne version.
+void navigator.serviceWorker
+  ?.getRegistrations()
+  .then((rs) => rs.forEach((r) => void r.unregister()))
+void globalThis.caches?.keys().then((ks) => ks.forEach((k) => void caches.delete(k)))
 
 function Root() {
   const { t } = useTranslation()

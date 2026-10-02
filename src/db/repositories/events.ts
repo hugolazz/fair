@@ -1,5 +1,4 @@
-// NB : étape 0 — lecture/écriture directes sur Supabase. L'étape 1 basculera ce dépôt sur
-// Dexie + outbox (local-first) sans changer son interface, donc sans toucher aux features.
+// Salons : lecture/écriture directes sur Supabase.
 import { supabase } from '@/lib/supabase'
 import { newId } from '@/lib/ids'
 import {

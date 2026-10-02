@@ -2,7 +2,6 @@ import { Building2, CalendarDays, Settings, type LucideIcon } from 'lucide-react
 import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Wordmark } from '@/components/wordmark'
-import { SyncIndicator } from '@/features/offline/sync-indicator'
 import { cn } from '@/lib/cn'
 
 const NAV: { to: string; labelKey: string; icon: LucideIcon }[] = [
@@ -38,9 +37,6 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto px-3 py-4">
-          <SyncIndicator />
-        </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -48,7 +44,6 @@ export function AppLayout() {
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] md:hidden">
           <div className="flex h-14 items-center justify-between">
             <Wordmark />
-            <SyncIndicator />
           </div>
         </header>
 

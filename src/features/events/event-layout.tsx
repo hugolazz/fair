@@ -13,7 +13,7 @@ const TABS = [
   { to: '', end: true, key: 'overview' },
   { to: 'participants', end: false, key: 'participants' },
   { to: 'my-list', end: false, key: 'myList' },
-  { to: 'field', end: false, key: 'field' },
+  { to: 'plan', end: false, key: 'plan' },
 ] as const
 
 /** Cadre commun d'un salon : titre, statut et onglets Aperçu / Participants / Ma liste. */

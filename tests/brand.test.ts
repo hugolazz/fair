@@ -9,10 +9,20 @@ const SCANNED = [
   'supabase/functions',
   'supabase/config.toml',
   'index.html',
-  'vite.config.ts',
+  'public/manifest.webmanifest',
   'scripts',
 ]
-const EXT = new Set(['.ts', '.tsx', '.json', '.html', '.toml', '.css', '.mjs', '.md'])
+const EXT = new Set([
+  '.ts',
+  '.tsx',
+  '.json',
+  '.webmanifest',
+  '.html',
+  '.toml',
+  '.css',
+  '.mjs',
+  '.md',
+])
 
 function walk(path: string): string[] {
   const s = statSync(join(root, path))
@@ -32,8 +42,13 @@ describe('branding', () => {
   })
 
   it('déclare name et short_name « fair » dans le manifest PWA', () => {
-    const config = readFileSync(join(root, 'vite.config.ts'), 'utf8')
-    expect(config).toMatch(/\bname: 'fair'/)
-    expect(config).toMatch(/short_name: 'fair'/)
+    const manifest = JSON.parse(
+      readFileSync(join(root, 'public/manifest.webmanifest'), 'utf8'),
+    ) as {
+      name: string
+      short_name: string
+    }
+    expect(manifest.name).toBe('fair')
+    expect(manifest.short_name).toBe('fair')
   })
 })

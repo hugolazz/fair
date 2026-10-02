@@ -10,9 +10,7 @@ const EventsPage = lazy(() => import('@/features/events/events-page'))
 const EventLayout = lazy(() => import('@/features/events/event-layout'))
 const EventDetailPage = lazy(() => import('@/features/events/event-detail-page'))
 const PreparePage = lazy(() => import('@/features/prepare/prepare-page'))
-const FieldLayout = lazy(() => import('@/features/field/field-layout'))
-const FieldHome = lazy(() => import('@/features/field/field-home'))
-const FieldFiche = lazy(() => import('@/features/field/field-fiche'))
+const PlanPage = lazy(() => import('@/features/plan/plan-page'))
 const MyListPage = lazy(() => import('@/features/prepare/my-list-page'))
 const ImportPage = lazy(() => import('@/features/import/import-page'))
 const CompaniesPage = lazy(() => import('@/features/companies/companies-page'))
@@ -32,14 +30,6 @@ const router = createBrowserRouter([
     element: <RequireReady />,
     children: [
       {
-        path: '/events/:eventId/field',
-        element: <FieldLayout />,
-        children: [
-          { index: true, element: <FieldHome /> },
-          { path: ':targetId', element: <FieldFiche /> },
-        ],
-      },
-      {
         element: <AppLayout />,
         children: [
           { path: '/', element: <Navigate to="/events" replace /> },
@@ -52,6 +42,7 @@ const router = createBrowserRouter([
               { index: true, element: <EventDetailPage /> },
               { path: 'participants', element: <PreparePage /> },
               { path: 'my-list', element: <MyListPage /> },
+              { path: 'plan', element: <PlanPage /> },
             ],
           },
           { path: '/companies', element: <CompaniesPage /> },
