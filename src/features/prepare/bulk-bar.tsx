@@ -1,0 +1,139 @@
+import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
+import {
+  GOALS,
+  PRIORITIES,
+  type Goal,
+  type Priority,
+  type Tag,
+  type TeamMember,
+} from '@/db/schemas/prepare'
+
+type Props = {
+  count: number
+  tags: Tag[]
+  members: TeamMember[]
+  meId: string
+  onPriority: (p: Priority | null) => void
+  onGoal: (g: Goal | null) => void
+  onTag: (tagId: string, on: boolean) => void
+  onAssign: (userId: string) => void
+  onUnassign: (userId: string) => void
+  onClear: () => void
+}
+
+const selectCls =
+  'min-h-11 min-w-0 rounded-lg border border-slate-300 bg-white px-2 text-sm md:min-h-9'
+
+/** Barre d'actions en masse : chaque liste applique son choix tout de suite à la sélection. */
+export function BulkBar(p: Props) {
+  const { t } = useTranslation('prepare')
+
+  /** Applique la valeur choisie puis remet la liste sur son libellé. */
+  const pick = (apply: (value: string) => void) => (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const v = e.target.value
+    e.target.value = ''
+    if (v !== '') apply(v)
+  }
+  const memberOptions = [
+    <option key="me" value={p.meId}>
+      {t('assign.me')}
+    </option>,
+    ...p.members
+      .filter((m) => m.userId !== p.meId)
+      .map((m) => (
+        <option key={m.userId} value={m.userId}>
+          {m.name}
+        </option>
+      )),
+  ]
+
+  return (
+    <div
+      role="toolbar"
+      aria-label={t('bulk.label')}
+      className="border-brand-600 bg-brand-50 fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 flex flex-wrap items-center gap-2 border-t-2 px-3 py-2 shadow-lg md:sticky md:inset-x-auto md:bottom-0 md:z-10 md:rounded-xl md:border-2"
+    >
+      <p role="status" className="mr-1 text-sm font-semibold">
+        {t('select.count', { count: p.count })}
+      </p>
+      <select
+        aria-label={t('bulk.priority')}
+        className={selectCls}
+        defaultValue=""
+        onChange={pick((v) => p.onPriority(v === 'none' ? null : (v as Priority)))}
+      >
+        <option value="">{t('bulk.priority')}</option>
+        {PRIORITIES.map((x) => (
+          <option key={x} value={x}>
+            {t(`priority.${x}`)}
+          </option>
+        ))}
+        <option value="none">{t('priority.none')}</option>
+      </select>
+      <select
+        aria-label={t('bulk.goal')}
+        className={selectCls}
+        defaultValue=""
+        onChange={pick((v) => p.onGoal(v === 'none' ? null : (v as Goal)))}
+      >
+        <option value="">{t('bulk.goal')}</option>
+        {GOALS.map((x) => (
+          <option key={x} value={x}>
+            {t(`goal.${x}`)}
+          </option>
+        ))}
+        <option value="none">{t('goal.none')}</option>
+      </select>
+      <select
+        aria-label={t('bulk.addTag')}
+        className={selectCls}
+        defaultValue=""
+        onChange={pick((v) => p.onTag(v, true))}
+      >
+        <option value="">{t('bulk.addTag')}</option>
+        {p.tags.map((tag) => (
+          <option key={tag.id} value={tag.id}>
+            {tag.label}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label={t('bulk.removeTag')}
+        className={selectCls}
+        defaultValue=""
+        onChange={pick((v) => p.onTag(v, false))}
+      >
+        <option value="">{t('bulk.removeTag')}</option>
+        {p.tags.map((tag) => (
+          <option key={tag.id} value={tag.id}>
+            {tag.label}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label={t('bulk.assign')}
+        className={selectCls}
+        defaultValue=""
+        onChange={pick(p.onAssign)}
+      >
+        <option value="">{t('bulk.assign')}</option>
+        {memberOptions}
+      </select>
+      <select
+        aria-label={t('bulk.unassign')}
+        className={selectCls}
+        defaultValue=""
+        onChange={pick(p.onUnassign)}
+      >
+        <option value="">{t('bulk.unassign')}</option>
+        {memberOptions}
+      </select>
+      <Button variant="ghost" className="ml-auto min-h-9" onClick={p.onClear}>
+        <X aria-hidden className="size-4" />
+        {t('select.clear')}
+      </Button>
+    </div>
+  )
+}

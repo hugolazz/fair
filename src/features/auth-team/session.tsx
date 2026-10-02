@@ -1,0 +1,123 @@
+import { toError } from '@/lib/to-error'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
+import { devAutoSignIn, getSession, onAuthChange, type Session } from '@/db/repositories/auth'
+import { acceptPendingInvitations, fetchMembership, type Membership } from '@/db/repositories/teams'
+
+type SessionState =
+  | { status: 'loading' }
+  | { status: 'signedOut' }
+  | { status: 'needsTeam'; session: Session }
+  | { status: 'ready'; session: Session; membership: Membership }
+  | { status: 'error'; session: Session; error: Error }
+
+type SessionContextValue = SessionState & { refreshMembership: () => Promise<void> }
+
+const SessionContext = createContext<SessionContextValue | null>(null)
+
+type Loaded = { userId: string; membership: Membership | null; error?: Error }
+
+const CACHE_KEY = 'fair.membership.v1'
+
+function readCachedMembership(uid: string): Membership | null {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CACHE_KEY) ?? 'null') as {
+      uid: string
+      membership: Membership
+    } | null
+    return raw?.uid === uid ? raw.membership : null
+  } catch {
+    return null
+  }
+}
+
+function cacheMembership(uid: string, membership: Membership | null) {
+  try {
+    if (membership) localStorage.setItem(CACHE_KEY, JSON.stringify({ uid, membership }))
+  } catch {
+    /* stockage indisponible : on se contentera du réseau */
+  }
+}
+
+const looksOffline = (e: unknown) =>
+  !navigator.onLine || /fetch|network|offline|load failed/i.test(toError(e).message)
+
+async function loadFor(uid: string): Promise<Loaded> {
+  try {
+    // Un utilisateur invité rejoint son équipe avant qu'on lui propose d'en créer une.
+    await acceptPendingInvitations()
+    const membership = await fetchMembership(uid)
+    cacheMembership(uid, membership)
+    return { userId: uid, membership }
+  } catch (e) {
+    // Hors-ligne (salon sans wifi) : on réutilise l'équipe connue lors de la dernière connexion.
+    const cached = looksOffline(e) ? readCachedMembership(uid) : null
+    if (cached) return { userId: uid, membership: cached }
+    return { userId: uid, membership: null, error: toError(e) }
+  }
+}
+
+export function SessionProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null | undefined>(undefined)
+  // Résultat du chargement, rattaché à l'utilisateur concerné : jamais réutilisé pour un autre compte.
+  const [loaded, setLoaded] = useState<Loaded>()
+  const userId = session?.user.id
+
+  useEffect(() => {
+    void (async () => {
+      let current = await getSession()
+      if (!current) {
+        await devAutoSignIn() // no-op hors développement ou sans identifiants de dev
+        current = await getSession()
+      }
+      setSession(current)
+    })().catch(() => setSession(null))
+    return onAuthChange(setSession)
+  }, [])
+
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    void loadFor(userId).then((result) => {
+      if (!cancelled) setLoaded(result)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  const refreshMembership = useCallback(async () => {
+    if (userId) setLoaded(await loadFor(userId))
+  }, [userId])
+
+  const value = useMemo<SessionContextValue>(() => {
+    if (session === undefined) return { status: 'loading', refreshMembership }
+    if (session === null) return { status: 'signedOut', refreshMembership }
+    if (loaded?.userId !== session.user.id) return { status: 'loading', refreshMembership }
+    if (loaded.error) return { status: 'error', session, error: loaded.error, refreshMembership }
+    if (loaded.membership === null) return { status: 'needsTeam', session, refreshMembership }
+    return { status: 'ready', session, membership: loaded.membership, refreshMembership }
+  }, [session, loaded, refreshMembership])
+
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
+}
+
+export function useSession(): SessionContextValue {
+  const ctx = useContext(SessionContext)
+  if (!ctx) throw new Error('useSession doit être utilisé dans <SessionProvider>')
+  return ctx
+}
+
+/** Pour les pages protégées : garantit session + équipe. */
+export function useReadySession() {
+  const s = useSession()
+  if (s.status !== 'ready') throw new Error('Session non prête')
+  return s
+}

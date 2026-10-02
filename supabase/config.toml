@@ -1,0 +1,64 @@
+# Configuration Supabase locale (supabase start). Voir https://supabase.com/docs/guides/local-development
+project_id = "fair"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[studio]
+enabled = true
+port = 54323
+
+# Boîte mail locale : tous les e-mails d'auth et d'invitation y arrivent (http://127.0.0.1:54324).
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:4173"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+# Connexion par lien magique (OTP e-mail) : pas de mot de passe.
+enable_confirmations = false
+max_frequency = "10s"
+
+# E-mails signés « fair » (toujours en minuscules).
+[auth.email.template.magic_link]
+subject = "Votre lien de connexion à fair"
+content_path = "./templates/magic_link.html"
+
+[auth.email.template.invite]
+subject = "Vous êtes invité(e) à rejoindre fair"
+content_path = "./templates/invite.html"
+
+[auth.email.template.confirmation]
+subject = "Confirmez votre adresse e-mail pour fair"
+content_path = "./templates/confirmation.html"
+
+[auth.email.template.email_change]
+subject = "Confirmez votre nouvelle adresse e-mail pour fair"
+content_path = "./templates/email_change.html"
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+
+[functions.invite-member]
+verify_jwt = true

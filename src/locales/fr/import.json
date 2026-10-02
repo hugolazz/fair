@@ -1,0 +1,117 @@
+{
+  "title": "Importer des participants",
+  "back": "Retour au salon",
+  "steps": {
+    "label": "Étapes de l'import",
+    "source": "Fichier",
+    "mapping": "Colonnes",
+    "review": "Vérification",
+    "report": "Rapport"
+  },
+  "source": {
+    "fileTitle": "Fichier CSV ou Excel",
+    "fileHelp": "Formats acceptés : .csv, .tsv, .txt, .xlsx (5 000 lignes et plus sans souci). Les anciens .xls doivent d'abord être enregistrés en .xlsx.",
+    "chooseFile": "Choisir un fichier",
+    "dropHere": "ou déposez-le ici",
+    "orPaste": "ou collez depuis un tableur",
+    "pasteLabel": "Contenu copié depuis Excel, Google Sheets…",
+    "pastePlaceholder": "Collez ici les cellules copiées, en-têtes compris.",
+    "analyze": "Analyser",
+    "analyzing": "Lecture du fichier…",
+    "selected": "Fichier : {{name}}"
+  },
+  "mapping": {
+    "title": "Associez vos colonnes",
+    "help": "fair a deviné les colonnes. Corrigez si besoin : seule la société est obligatoire.",
+    "restored": "Mapping du dernier import de ce salon réutilisé ({{count}} colonnes).",
+    "firstRowIsHeader": "La première ligne contient les titres des colonnes",
+    "ignore": "— Ignorer —",
+    "required": "obligatoire",
+    "preview": "Aperçu des premières lignes",
+    "rowsDetected": "{{count}} lignes détectées",
+    "continue": "Vérifier avant d'importer",
+    "loading": "Analyse des données…",
+    "companyRequired": "Choisissez la colonne qui contient le nom de la société.",
+    "fields": {
+      "companyName": "Société",
+      "website": "Site web",
+      "stand": "Stand",
+      "industry": "Secteur",
+      "country": "Pays",
+      "city": "Ville",
+      "contactName": "Contact (nom complet)",
+      "contactFirstName": "Contact (prénom)",
+      "contactLastName": "Contact (nom)",
+      "jobTitle": "Poste",
+      "email": "E-mail",
+      "phone": "Téléphone"
+    }
+  },
+  "review": {
+    "title": "Vérifiez avant d'importer",
+    "stats": {
+      "ready": "Lignes prêtes",
+      "empty": "Lignes vides ou de total retirées",
+      "errors": "Lignes en erreur",
+      "duplicates": "Doublons détectés",
+      "companies": "Sociétés créées",
+      "merged": "Sociétés rapprochées",
+      "contacts": "Contacts ajoutés"
+    },
+    "duplicatesTitle": "Doublons",
+    "duplicatesHelp": "Fusionner complète la société existante (sans rien écraser) et rattache les contacts. Ignorer écarte la ligne. Créer en fait une société distincte.",
+    "noDuplicates": "Aucun doublon détecté.",
+    "kind": {
+      "known": "Déjà connue de votre équipe",
+      "file": "Doublon dans le fichier"
+    },
+    "rows": "Lignes {{rows}}",
+    "rowsMore": "Lignes {{rows}} et {{count}} autres",
+    "decision": {
+      "label": "Décision pour {{name}}",
+      "merge": "Fusionner",
+      "skip": "Ignorer",
+      "create": "Créer"
+    },
+    "bulk": "Pour tous :",
+    "errorsTitle": "Lignes en erreur",
+    "errorsHelp": "Ces lignes ne seront pas importées.",
+    "removedHeaders": "{{count}} répétition(s) de la ligne de titres retirée(s).",
+    "warnings": "{{count}} valeur(s) invalide(s) (e-mail ou site) ont été ignorées, la ligne est importée.",
+    "start": "Importer {{count}} lignes",
+    "nothing": "Aucune ligne à importer.",
+    "back": "Modifier les colonnes"
+  },
+  "progress": {
+    "label": "Import en cours",
+    "text": "{{done}} / {{total}} lots enregistrés"
+  },
+  "report": {
+    "title": "Rapport d'import",
+    "imported": "Lignes importées",
+    "skipped": "Lignes ignorées",
+    "errors": "Lignes en erreur",
+    "companiesCreated": "Sociétés créées",
+    "companiesMerged": "Sociétés rapprochées",
+    "alreadyInEvent": "Déjà présentes dans ce salon",
+    "contactsCreated": "Contacts créés",
+    "contactsLinked": "Contacts déjà connus rattachés",
+    "exportErrors": "Exporter les erreurs (CSV)",
+    "errorsTitle": "Détail des erreurs",
+    "newImport": "Nouvel import",
+    "done": "Import terminé.",
+    "partial": "Import terminé avec des erreurs : corrigez le fichier d'erreurs et ré-importez-le."
+  },
+  "csv": { "row": "Ligne", "reason": "Motif" },
+  "errors": {
+    "missing_company": "Nom de société manquant",
+    "save_failed": "Échec d'enregistrement",
+    "empty": "Le fichier est vide.",
+    "file_too_large": "Fichier trop volumineux (25 Mo maximum).",
+    "too_many_rows": "Trop de lignes (20 000 maximum).",
+    "unsupported_format": "Format non pris en charge. Enregistrez le fichier en .xlsx ou .csv.",
+    "parse_failed": "Impossible de lire ce fichier.",
+    "load": "Impossible de charger les données de votre équipe.",
+    "import": "L'import a échoué avant l'enregistrement. Rien n'a été modifié."
+  }
+}

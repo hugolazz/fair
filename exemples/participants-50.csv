@@ -1,0 +1,55 @@
+Société;Site web;Stand;Secteur;Contact;Fonction;E-mail;Téléphone
+Carrefour;www.carrefour.com;B12;Distribution;Claire Dubois;Directrice Innovation;claire.dubois@demo.example;+33 6 12 34 56 01
+Carrefour SA;carrefour.com;B12;Distribution;Marc Lefèvre;Responsable Retail Media;marc.lefevre@demo.example;
+Décathlon;https://www.decathlon.fr;B14;Sport;Julie Martin;Head of Digital;julie.martin@demo.example;+33 6 12 34 56 02
+Leroy Merlin;leroymerlin.fr;B20;Bricolage;Thomas Bernard;Directeur E-commerce;thomas.bernard@demo.example;
+Fnac Darty;www.fnacdarty.com;C03;Distribution;Sophie Petit;Chef de projet Omnicanal;sophie.petit@demo.example;+33 6 12 34 56 03
+Auchan Retail;auchan.fr;C05;Distribution;Nicolas Robert;Responsable Data;nicolas.robert@demo.example;
+Intermarché;www.intermarche.com;C07;Distribution;Camille Richard;Directrice Marketing;camille.richard@demo.example;
+Monoprix;monoprix.fr;C09;Distribution;Antoine Durand;Responsable Innovation;antoine.durand@demo.example;
+Galeries Lafayette;galerieslafayette.com;C11;Mode;Léa Moreau;Directrice Digitale;lea.moreau@demo.example;+33 6 12 34 56 04
+Printemps;printemps.com;C13;Mode;Hugo Simon;Responsable CRM;hugo.simon@demo.example;
+Zalando;zalando.fr;C15;Mode;Emma Laurent;Retail Tech Lead;emma.laurent@demo.example;
+Veepee;https://www.veepee.com/;C17;Mode;Louis Michel;Directeur Produit;louis.michel@demo.example;
+Veepee SAS;veepee.com;C17;Mode;Chloé Garcia;Responsable Partenariats;chloe.garcia@demo.example;
+Sephora;sephora.fr;D02;Beauté;Manon David;Responsable Expérience Client;manon.david@demo.example;
+L'Oréal (France);loreal.com;D04;Beauté;Paul Bertrand;Directeur E-commerce;paul.bertrand@demo.example;
+Yves Rocher;yves-rocher.fr;D06;Beauté;Inès Roux;Directrice Omnicanal;ines.roux@demo.example;
+Nocibé;nocibe.fr;D08;Beauté;Maxime Vincent;Head of Innovation;maxime.vincent@demo.example;
+Boulanger;boulanger.com;D10;Électronique;Laura Fournier;Responsable Digital;laura.fournier@demo.example;
+Darty;darty.com;D12;Électronique;Alexandre Morel;Chef de produit;alexandre.morel@demo.example;
+Cdiscount;www.cdiscount.com;E01;E-commerce;Pauline Girard;Directrice des Ventes;pauline.girard@demo.example;
+Amazon France;amazon.fr;E03;E-commerce;Romain André;Account Manager;romain.andre@demo.example;
+Rakuten France;fr.shopping.rakuten.com;E05;E-commerce;Marion Lefebvre;Responsable Marketplace;marion.lefebvre@demo.example;
+ManoMano;manomano.fr;E07;E-commerce;Julien Mercier;Directeur Technique;julien.mercier@demo.example;
+Back Market;backmarket.fr;E09;E-commerce;Sarah Dupont;Responsable Partenariats;sarah.dupont@demo.example;
+Vinted;vinted.fr;E11;E-commerce;Kevin Lambert;Head of Growth;kevin.lambert@demo.example;
+Shopify;shopify.com;F01;Plateforme e-commerce;Alice Bonnet;Account Executive;alice.bonnet@demo.example;
+Salesforce;salesforce.com;F03;CRM;Benoît François;Directeur Retail;benoit.francois@demo.example;
+Adyen N.V.;adyen.com;F05;Paiement;Élodie Martinez;Business Development;elodie.martinez@demo.example;
+Stripe;stripe.com;F07;Paiement;Théo Legrand;Responsable Grands Comptes;theo.legrand@demo.example;
+Ingenico;ingenico.com;F09;Paiement;Margaux Garnier;Directrice Commerciale;margaux.garnier@demo.example;
+Worldline;worldline.com;F11;Paiement;Adrien Faure;Responsable Retail;adrien.faure@demo.example;
+Lightspeed;lightspeedhq.fr;G01;Caisse / POS;Clara Rousseau;Sales Manager;clara.rousseau@demo.example;
+Zebra Technologies;zebra.com;G03;Matériel retail;Victor Blanc;Directeur Régional;victor.blanc@demo.example;
+Samsung Electronics France;samsung.com;G05;Matériel retail;Anaïs Guerin;Responsable B2B;anais.guerin@demo.example;
+Epson France;epson.fr;G07;Matériel retail;Gabriel Muller;Chef de marché;gabriel.muller@demo.example;
+SES-imagotag;ses-imagotag.com;G09;Étiquettes électroniques;Océane Henry;Directrice Commerciale;oceane.henry@demo.example;
+Hanshow;hanshow.com;G11;Étiquettes électroniques;Jérémy Roussel;Business Developer;jeremy.roussel@demo.example;
+Criteo;criteo.com;H01;Retail Media;Lucie Nicolas;Responsable Partenariats;lucie.nicolas@demo.example;
+Mirakl;mirakl.com;H03;Marketplace;Dylan Perrin;Directeur Grands Comptes;dylan.perrin@demo.example;
+Algolia;algolia.com;H05;Recherche;Eva Morin;Account Executive;eva.morin@demo.example;
+Contentsquare;contentsquare.com;H07;Analytics;Simon Mathieu;Directeur Commercial;simon.mathieu@demo.example;
+Dataiku;dataiku.com;H09;Data / IA;Jade Clement;Responsable Retail;jade.clement@demo.example;
+Akeneo;akeneo.com;H11;PIM;Axel Gauthier;Sales Director;axel.gauthier@demo.example;
+Lengow;lengow.com;H13;Feeds produits;Zoé Masson;Business Developer;zoe.masson@demo.example;
+Retency;retency.com;H15;CRM / Fidélité;Enzo Lopez;Directeur Général;enzo.lopez@demo.example;
+Storelift;;J01;Retail analytics;Nina Fontaine;CEO;nina.fontaine@demo.example;
+Hoppy Labs;hoppylabs.example;J03;Start-up;Tom Chevalier;Fondateur;tom.chevalier-demo;
+Aldebaran Retail;aldebaran-retail.example;J05;Robotique;Anna Robin;Responsable Partenariats;anna.robin@demo.example;
+;;J07;Start-up;Contact sans société;Directeur;orphelin@demo.example;
+Orange Business;orange-business.com;K01;Télécom;Pierre Boyer;Directeur Retail;pierre.boyer@demo.example;
+Capgemini;capgemini.com;K03;Conseil;Charlotte Colin;Partner Retail;charlotte.colin@demo.example;
+Accenture;accenture.com;K05;Conseil;Bastien Renard;Managing Director;bastien.renard@demo.example;
+Sopra Steria;soprasteria.com;K07;Conseil;Mélanie Giraud;Responsable Offre Retail;melanie.giraud@demo.example;
+Total;;;;;;;

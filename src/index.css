@@ -1,0 +1,101 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-600: #0f766e;
+  --color-brand-700: #115e59;
+  --color-brand-900: #134e4a;
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+}
+
+/*
+ * Thèmes : on redéfinit les variables de couleur de Tailwind sous [data-theme] (posé sur <html> par
+ * src/lib/theme.ts). Toute l'interface suit sans classe `dark:` à répéter.
+ *  - sun  : plein soleil — fond blanc, texte quasi noir, bordures marquées.
+ *  - dark : salle sombre — fond bleu nuit, texte clair (contrastes ≥ 4,5:1).
+ */
+:root[data-theme='sun'] {
+  --color-slate-50: #ffffff;
+  --color-slate-100: #e2e8f0;
+  --color-slate-200: #94a3b8;
+  --color-slate-300: #64748b;
+  --color-slate-400: #475569;
+  --color-slate-500: #1e293b;
+  --color-slate-600: #0f172a;
+  --color-slate-700: #020617;
+  --color-slate-800: #000000;
+  --color-slate-900: #000000;
+  --color-brand-50: #d5f5ef;
+  --color-brand-100: #a7ebdc;
+  --color-brand-600: #0b524c;
+  --color-brand-700: #083f3a;
+  --color-brand-900: #052e2b;
+  --color-red-700: #7f1d1d;
+  --color-amber-900: #451a03;
+}
+:root[data-theme='sun'] body {
+  font-weight: 500;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-white: #0f172a;
+  --color-slate-50: #020617;
+  --color-slate-100: #1e293b;
+  --color-slate-200: #334155;
+  --color-slate-300: #475569;
+  --color-slate-400: #64748b;
+  --color-slate-500: #94a3b8;
+  --color-slate-600: #cbd5e1;
+  --color-slate-700: #e2e8f0;
+  --color-slate-800: #f1f5f9;
+  --color-slate-900: #f8fafc;
+  --color-brand-50: #042f2e;
+  --color-brand-100: #134e4a;
+  --color-brand-600: #2dd4bf;
+  --color-brand-700: #5eead4;
+  --color-brand-900: #99f6e4;
+  --color-red-50: #3b0a0a;
+  --color-red-100: #5b1111;
+  --color-red-200: #7f1d1d;
+  --color-red-300: #b91c1c;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-red-900: #fecaca;
+  --color-amber-50: #3a2304;
+  --color-amber-100: #4a2d05;
+  --color-amber-300: #b45309;
+  --color-amber-500: #f59e0b;
+  --color-amber-900: #fde68a;
+  --color-amber-950: #fef3c7;
+  --color-emerald-100: #064e3b;
+  --color-emerald-800: #a7f3d0;
+  --color-emerald-900: #a7f3d0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  @apply outline-brand-600 outline-2 outline-offset-2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

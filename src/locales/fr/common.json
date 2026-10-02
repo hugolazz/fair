@@ -1,0 +1,30 @@
+{
+  "appName": "fair",
+  "tagline": "Vos salons, préparés, vécus, exploités.",
+  "nav": {
+    "events": "Salons",
+    "companies": "Entreprises",
+    "settings": "Réglages",
+    "main": "Navigation principale"
+  },
+  "actions": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "back": "Retour",
+    "close": "Fermer",
+    "retry": "Réessayer"
+  },
+  "states": {
+    "loading": "Chargement…",
+    "error": "Une erreur est survenue.",
+    "notFound": "Page introuvable."
+  },
+  "config": {
+    "missingTitle": "Configuration manquante",
+    "missingBody": "Renseignez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans .env.local, puis relancez le serveur."
+  },
+  "offline": "Vous êtes hors-ligne."
+}

@@ -1,0 +1,52 @@
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+
+export default tseslint.config(
+  { ignores: ['dist', 'dev-dist', 'node_modules', 'supabase/functions', 'public'] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
+    plugins: { 'react-hooks': reactHooks, 'react-refresh': reactRefresh },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/consistent-type-imports': 'error',
+    },
+  },
+  {
+    // Local-first : les features n'accèdent jamais directement à Supabase.
+    files: ['src/features/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@supabase/*',
+                '@/lib/supabase',
+                '@/sync/engine',
+                '@/sync/supabase-remote',
+                '@/sync/fake-remote',
+              ],
+              message:
+                'Les features passent par src/db/repositories, jamais par Supabase directement.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Providers/contexte : exportent un provider et son hook ensemble, c'est voulu.
+    files: ['src/main.tsx', 'src/features/auth-team/session.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  { files: ['scripts/**/*.mjs', '*.config.js'], languageOptions: { globals: globals.node } },
+)

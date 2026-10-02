@@ -1,0 +1,1 @@
+-- Aucune donnée de démonstration : l'équipe se crée au premier login (RPC create_team).

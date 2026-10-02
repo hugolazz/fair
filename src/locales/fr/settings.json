@@ -1,0 +1,28 @@
+{
+  "title": "Réglages",
+  "account": {
+    "title": "Compte",
+    "signedInAs": "Connecté en tant que {{email}}"
+  },
+  "team": {
+    "title": "Équipe",
+    "name": "Nom de l'équipe",
+    "rename": "Renommer",
+    "renamed": "Équipe renommée.",
+    "members": "Membres",
+    "roles": { "owner": "Propriétaire", "admin": "Administrateur", "member": "Membre" },
+    "you": "vous",
+    "pending": "Invitations en attente",
+    "cancelInvite": "Annuler l'invitation"
+  },
+  "invite": {
+    "title": "Inviter un collègue",
+    "email": "Adresse e-mail du collègue",
+    "role": "Rôle",
+    "submit": "Envoyer l'invitation",
+    "sending": "Envoi…",
+    "sent": "Invitation envoyée à {{email}}.",
+    "error": "Impossible d'envoyer l'invitation.",
+    "adminOnly": "Seuls les administrateurs peuvent inviter des collègues."
+  }
+}

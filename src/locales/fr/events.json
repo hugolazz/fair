@@ -1,0 +1,57 @@
+{
+  "title": "Salons",
+  "new": "Nouveau salon",
+  "empty": {
+    "title": "Aucun salon pour l'instant",
+    "body": "Créez votre premier salon pour préparer vos rencontres."
+  },
+  "status": {
+    "draft": "Brouillon",
+    "preparing": "En préparation",
+    "live": "En cours",
+    "done": "Terminé",
+    "archived": "Archivé"
+  },
+  "fields": {
+    "name": "Nom du salon",
+    "namePlaceholder": "Ex. Tech For Retail 2027",
+    "startsOn": "Début",
+    "endsOn": "Fin",
+    "venue": "Lieu",
+    "venuePlaceholder": "Ex. Paris Expo Porte de Versailles",
+    "city": "Ville",
+    "status": "Statut",
+    "goals": "Objectifs",
+    "goalsPlaceholder": "Ex. Rencontrer 20 retailers, signer 3 démos…"
+  },
+  "form": {
+    "createTitle": "Nouveau salon",
+    "editTitle": "Modifier le salon"
+  },
+  "errors": {
+    "nameRequired": "Le nom du salon est obligatoire.",
+    "datesOrder": "La fin ne peut pas précéder le début.",
+    "save": "Impossible d'enregistrer le salon.",
+    "load": "Impossible de charger les salons."
+  },
+  "detail": {
+    "dates": "Dates",
+    "location": "Lieu",
+    "goals": "Objectifs",
+    "noGoals": "Aucun objectif défini.",
+    "import": "Importer des participants",
+    "prepare": "Préparer les rencontres",
+    "notFound": "Ce salon n'existe pas ou a été supprimé.",
+    "placeholder": "Les participants, le plan et les rencontres de ce salon arriveront dans les prochaines étapes.",
+    "confirmDelete": "Supprimer ce salon ?",
+    "confirmDeleteBody": "Le salon « {{name}} » sera retiré de votre liste."
+  },
+  "datesUnknown": "Dates à définir",
+  "tabs": {
+    "label": "Sections du salon",
+    "overview": "Aperçu",
+    "participants": "Participants",
+    "myList": "Ma liste",
+    "field": "Mode terrain"
+  }
+}
