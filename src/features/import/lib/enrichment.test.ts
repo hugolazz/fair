@@ -247,25 +247,53 @@ describe('plusieurs contacts dans une même ligne', () => {
 })
 
 describe('aller-retour export → import', () => {
-  it('les colonnes de l’onglet Contacts de l’export se re-mappent toutes seules à l’import', async () => {
-    const { COLUMNS } = await import('@shared/exports/tables.ts')
-    const headers = COLUMNS.contacts.map((c) => c.label)
+  it('le fichier exporté se réimporte tel quel : colonnes reconnues et valeurs identiques', async () => {
+    const { buildSalonTable, cellText } = await import('@shared/exports/tables.ts')
+    const { sampleData } = await import('../../../../tests/exports/fixtures')
+    const data = sampleData()
+    data.targets[0]!.history = 'Déjà contacté M. X le 19 janvier 2026.'
+    const exported = buildSalonTable(data)
     const table = {
-      headers,
-      rows: [headers.map(() => 'x')],
-      rowNumbers: [2],
+      headers: exported.columns.map((c) => c.label),
+      rows: exported.rows.map((r) =>
+        exported.columns.map((c) => cellText(r.cells[c.key] ?? null, c.kind)),
+      ),
+      rowNumbers: exported.rows.map((_, i) => i + 2),
     }
+
     const m = detectMapping(table)
-    const at = (f: keyof typeof m) => headers[m[f]!]
-    expect(at('companyName')).toBe('Entreprise')
+    const at = (f: keyof typeof m) => table.headers[m[f]!]
+    expect(at('companyName')).toBe('Société')
+    expect(at('website')).toBe('Site web')
     expect(at('stand')).toBe('Stand')
+    expect(at('industry')).toBe('Secteur')
+    expect(at('country')).toBe('Pays')
+    expect(at('city')).toBe('Ville')
     expect(at('priority')).toBe('Priorité')
-    expect(at('contactFirstName')).toBe('Prénom')
-    expect(at('contactLastName')).toBe('Nom')
+    expect(at('tag')).toBe('Type')
+    expect(at('contactName')).toBe('Contact')
     expect(at('jobTitle')).toBe('Fonction')
     expect(at('email')).toBe('E-mail')
     expect(at('phone')).toBe('Téléphone')
     expect(at('contactLinkedin')).toBe('LinkedIn')
+    expect(at('comment')).toBe('Commentaire')
+
+    // Les valeurs reviennent à l'identique une fois nettoyées (Carrefour, premier contact).
+    const { rows } = cleanRows(table, m)
+    const carrefour = rows.find((r) => r.company.name === 'Carrefour')!
+    expect(carrefour.company).toMatchObject({
+      domain: 'carrefour.com',
+      stand: 'B12',
+      priority: 'A',
+      tag: 'Client',
+      comment: 'Déjà contacté M. X le 19 janvier 2026.',
+    })
+    expect(carrefour.contacts[0]).toMatchObject({
+      firstName: 'Jean',
+      lastName: 'Martin',
+      email: 'jean.martin@carrefour.com',
+      jobTitle: 'Directeur innovation',
+    })
   })
 })
 

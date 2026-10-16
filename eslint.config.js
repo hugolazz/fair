@@ -15,7 +15,6 @@ export default tseslint.config(
       'lighthouse-report',
       'node_modules',
       'supabase/functions/invite-member',
-      'supabase/functions/generate-export',
       'public',
     ],
   },

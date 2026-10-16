@@ -24,8 +24,9 @@ Usage interne : l'appli est utilisée connectée (pas de mode hors-ligne ni de m
 - **Vue équipe** : qui a rencontré quelle entreprise, qui doit encore la voir, risque de doublon de relance.
 - **Plan du salon** : image ou PDF, pins de stands reliés aux entreprises, mode « Je suis ici ».
 - **Compte-rendu et notes** par rencontre, **historique** de l'entreprise sur les autres salons.
-- **Bilan et exports** : Excel, CSV pour CRM (HubSpot, Salesforce, personnalisé), PDF (global, par commercial, par rencontre,
-  bilan d'une page).
+- **Export** : le fichier importé, **enrichi de tout ce qui s'est passé pendant le salon** (statut, date, intérêt, à recontacter,
+  prochaine étape, notes, nouveaux contacts), une ligne par contact, en Excel, CSV ou PDF. Aucun filtre, aucun réglage ; le
+  fichier se réimporte tel quel. **Bilan** du salon en PDF d'une page.
 - **Rôles** : admin d'équipe et commercial (voir ci-dessous).
 
 ### Rôles
@@ -144,7 +145,7 @@ worker** (pas de mode hors-ligne) : l'écran de connexion est audité, les écra
 supabase/{migrations,functions,templates}   base, Edge Functions, e-mails
 src/
   app/        routeur, gardes (connexion, équipe, admin), cadre
-  features/   un dossier par domaine : auth-team, events, import, companies, prepare, plan, exports, settings
+  features/   un dossier par domaine : auth-team, events, import, manual-entry, prepare, plan, exports, settings
   db/         repositories (seul accès à Supabase) et schémas zod
   components/ lib/ locales/fr/
 tests/{rls,exports,fixtures,e2e}

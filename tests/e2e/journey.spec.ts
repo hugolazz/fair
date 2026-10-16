@@ -259,7 +259,7 @@ test.describe.serial('parcours complet', () => {
     await expect(edit.getByLabel('Prochaine étape')).toHaveValue('Envoyer la démo')
   })
 
-  test('exporter en Excel et relire le fichier', async ({ page }) => {
+  test('exporter le fichier enrichi en Excel, CSV et PDF', async ({ page }) => {
     await login(page, USERS.newcomer)
     await page
       .getByRole('link', { name: /Tech For Retail 2027/ })
@@ -267,41 +267,80 @@ test.describe.serial('parcours complet', () => {
       .click()
     await page.getByRole('link', { name: 'Exports' }).click()
 
-    await page.getByRole('radio', { name: /Excel/ }).check({ force: true })
-    await page.getByLabel('Sur mon ordinateur').check({ force: true })
-    const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      page.getByRole('button', { name: "Générer l'export" }).click(),
-    ])
-    expect(download.suggestedFilename()).toMatch(/\.xlsx$/)
-    const path = await download.path()
+    // Trois formats, aucun filtre ni réglage.
+    await expect(page.getByRole('radio')).toHaveCount(3)
+    await expect(page.getByText(/Filtres|Colonnes|Modèle/)).toHaveCount(0)
+
+    const download = async () => {
+      const [d] = await Promise.all([
+        page.waitForEvent('download'),
+        page.getByRole('button', { name: 'Télécharger' }).click(),
+      ])
+      return d
+    }
+
+    // Excel : un onglet « Salon », une ligne par contact, le fichier d'import enrichi.
+    await page.getByRole('radio', { name: /^Excel/ }).check({ force: true })
+    const xlsx = await download()
+    expect(xlsx.suggestedFilename()).toMatch(/\.xlsx$/)
     const wb = new ExcelJS.Workbook()
     // Les typings d'ExcelJS attendent l'ancien `Buffer` de @types/node.
-    await wb.xlsx.load((await readFile(path)) as unknown as Parameters<typeof wb.xlsx.load>[0])
-    expect(wb.worksheets.map((w) => w.name)).toEqual(
-      expect.arrayContaining(['Entreprises', 'Contacts', 'Rencontres', 'Notes']),
+    await wb.xlsx.load(
+      (await readFile(await xlsx.path())) as unknown as Parameters<typeof wb.xlsx.load>[0],
     )
-    const companies = wb.getWorksheet('Entreprises')!
-    const names = companies.getColumn(1).values.map((v) => String(v ?? ''))
-    expect(names.some((n) => n.includes('Carrefour'))).toBe(true)
-    const notes = wb.getWorksheet('Notes')!
-    expect(JSON.stringify(notes.getSheetValues())).toContain('Très intéressée par le retail media.')
+    expect(wb.worksheets.map((w) => w.name)).toEqual(['Salon'])
+    const ws = wb.getWorksheet('Salon')!
+    const head = (ws.getRow(1).values as unknown[]).slice(1).map(String)
+    expect(head.slice(0, 14)).toEqual([
+      'Société',
+      'Site web',
+      'Stand',
+      'Secteur',
+      'Pays',
+      'Ville',
+      'Priorité',
+      'Type',
+      'Contact',
+      'Fonction',
+      'E-mail',
+      'Téléphone',
+      'LinkedIn',
+      'Commentaire',
+    ])
+    const rows = (ws.getSheetValues() as unknown[][]).slice(2)
+    const cell = (row: unknown[], label: string) => String(row[head.indexOf(label) + 1] ?? '')
+    const find = (pred: (r: unknown[]) => boolean) => rows.find((r) => r && pred(r))!
 
-    // L'entreprise et le contact saisis à la main sont dans l'export, chaque info dans sa colonne, « à recontacter » compris.
-    expect(names.some((n) => n.includes('Startup Manuelle'))).toBe(true)
-    const contacts = wb.getWorksheet('Contacts')!
-    const head = (contacts.getRow(1).values as unknown[]).slice(1).map(String)
-    const grace = (contacts.getSheetValues() as unknown[][]).find((r) =>
-      r?.includes('grace@manuelle.example'),
-    )!
-    const cell = (label: string) => String((grace as unknown[])[head.indexOf(label) + 1])
-    expect(cell('Prénom')).toBe('Grace')
-    expect(cell('Nom')).toBe('Hopper')
-    expect(cell('Fonction')).toBe('CTO')
-    expect(cell('Téléphone')).toBe('06 11 22 33 44')
-    expect(cell('LinkedIn')).toBe('https://www.linkedin.com/in/grace')
-    expect(cell('À recontacter')).toBe('Oui')
-    const meetings = wb.getWorksheet('Rencontres')!
-    expect(JSON.stringify(meetings.getSheetValues())).toContain('Oui')
+    // Carrefour : données d'import, historique (CSV puis ajout), rencontre et notes du salon.
+    const carrefour = find((r) => cell(r, 'Société') === 'Carrefour')
+    expect(cell(carrefour, 'Priorité')).toBe('A')
+    expect(cell(carrefour, 'Type')).toBe('Client')
+    expect(cell(carrefour, 'Commentaire')).toContain(
+      'On a déjà contacté Claire Dubois le 19 janvier 2026',
+    )
+    expect(cell(carrefour, 'Commentaire')).toContain('Parler retail media')
+    expect(cell(carrefour, 'Statut de la rencontre')).toBe('Vu')
+    expect(cell(carrefour, 'Intérêt (1-5)')).toBe('4')
+    expect(cell(carrefour, 'Prochaine étape')).toBe('Envoyer la démo')
+    expect(cell(carrefour, 'Notes du salon')).toContain('Très intéressée par le retail media.')
+
+    // Entreprise et contact saisis à la main : chaque info dans sa colonne, « à recontacter » compris.
+    const grace = find((r) => cell(r, 'E-mail') === 'grace@manuelle.example')
+    expect(cell(grace, 'Société')).toBe('Startup Manuelle')
+    expect(cell(grace, 'Contact')).toBe('Grace Hopper')
+    expect(cell(grace, 'Fonction')).toBe('CTO')
+    expect(cell(grace, 'Téléphone')).toBe('06 11 22 33 44')
+    expect(cell(grace, 'LinkedIn')).toBe('https://www.linkedin.com/in/grace')
+    expect(cell(grace, 'À recontacter')).toBe('Oui')
+    expect(cell(grace, 'Commentaire')).toContain('Contactée par e-mail le 2 février 2026')
+
+    // CSV et PDF.
+    await page.getByRole('radio', { name: /^CSV/ }).check({ force: true })
+    const csv = await download()
+    expect(csv.suggestedFilename()).toMatch(/\.csv$/)
+    expect(await readFile(await csv.path(), 'utf8')).toContain('Société;Site web;Stand')
+    await page.getByRole('radio', { name: /^PDF/ }).check({ force: true })
+    const pdf = await download()
+    expect(pdf.suggestedFilename()).toMatch(/\.pdf$/)
   })
 })

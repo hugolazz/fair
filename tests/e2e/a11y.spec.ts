@@ -61,7 +61,6 @@ test.describe.serial('accessibilité', () => {
     ['bilan', (id) => `/events/${id}/bilan`],
     ['exports', (id) => `/events/${id}/exports`],
     ['import', (id) => `/events/${id}/import`],
-    ['entreprises', () => '/companies'],
     ['réglages', () => '/settings'],
   ]
   for (const [label, path] of screens) {
