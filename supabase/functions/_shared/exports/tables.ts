@@ -3,6 +3,7 @@ import { GOAL_LABEL, SOURCE_LABEL, priorityLabel, statusLabel } from './labels.t
 import { formatDate, formatDateTime, wallClock } from './format.ts'
 import {
   HELD_STATUSES,
+  type ContactRec,
   type ExportData,
   type MeetingRec,
   type Priority,
@@ -47,6 +48,7 @@ export const COLUMNS: Record<TableId, Column[]> = {
     col('interest', 'Intérêt (1-5)', 'number', 12),
     col('meetingsPlanned', 'Rencontres prévues', 'number', 12),
     col('meetingsHeld', 'Rencontres réalisées', 'number', 12),
+    col('recontact', 'À recontacter', 'text', 14),
     col('contacts', 'Contacts', 'number', 10),
     col('industry', 'Secteur', 'text', 18),
     col('city', 'Ville', 'text', 16),
@@ -54,6 +56,7 @@ export const COLUMNS: Record<TableId, Column[]> = {
     col('domain', 'Domaine', 'text', 22),
     col('website', 'Site web', 'text', 28),
     col('prepComment', 'Commentaire de préparation', 'longtext', 40),
+    col('history', 'Historique', 'longtext', 50),
   ],
   contacts: [
     col('company', 'Entreprise', 'text', 28),
@@ -65,6 +68,7 @@ export const COLUMNS: Record<TableId, Column[]> = {
     col('email', 'E-mail', 'text', 30),
     col('phone', 'Téléphone', 'text', 18),
     col('linkedin', 'LinkedIn', 'text', 28),
+    col('recontact', 'À recontacter', 'text', 14),
     col('language', 'Langue', 'text', 10),
     col('optOut', 'Désinscrit', 'text', 12),
   ],
@@ -78,6 +82,7 @@ export const COLUMNS: Record<TableId, Column[]> = {
     col('status', 'Statut', 'status', 16),
     col('interest', 'Intérêt (1-5)', 'number', 12),
     col('contact', 'Contact', 'text', 22),
+    col('recontact', 'À recontacter', 'text', 14),
     col('need', 'Besoin', 'longtext', 30),
     col('budget', 'Budget', 'text', 16),
     col('timing', 'Timing', 'text', 16),
@@ -108,6 +113,17 @@ function latest(meetings: MeetingRec[]): MeetingRec | undefined {
     .slice()
     .sort((a, b) => (a.plannedAt ?? '').localeCompare(b.plannedAt ?? ''))
     .at(-1)
+}
+
+/**
+ * « À recontacter » d'un contact : Oui si une rencontre de son entreprise est marquée à recontacter et qu'elle concerne
+ * ce contact (ou ne précise pas de contact) ; vide si l'entreprise n'a eu aucune rencontre.
+ */
+function contactRecontact(c: ContactRec, meetings: MeetingRec[]): string | null {
+  if (meetings.length === 0) return null
+  return meetings.some((m) => m.recontact && (m.contactId === null || m.contactId === c.id))
+    ? 'Oui'
+    : 'Non'
 }
 
 /** Construit les quatre tables (Entreprises, Contacts, Rencontres, Notes) depuis des données déjà filtrées. */
@@ -149,6 +165,7 @@ export function buildTables(data: ExportData, selection: ColumnSelection = {}): 
         interest: interests.length ? Math.max(...interests) : null,
         meetingsPlanned: ms.filter((m) => !m.unplanned).length,
         meetingsHeld: ms.filter((m) => HELD_STATUSES.includes(m.status)).length,
+        recontact: ms.length ? (ms.some((m) => m.recontact) ? 'Oui' : 'Non') : null,
         contacts: contactsOf.get(t.companyId) ?? 0,
         industry: orNull(t.industry),
         city: orNull(t.city),
@@ -156,6 +173,7 @@ export function buildTables(data: ExportData, selection: ColumnSelection = {}): 
         domain: orNull(t.domain),
         website: orNull(t.website),
         prepComment: orNull(t.prepComment),
+        history: orNull(t.history),
       },
     }
   })
@@ -180,6 +198,7 @@ export function buildTables(data: ExportData, selection: ColumnSelection = {}): 
         email: orNull(c.email),
         phone: orNull(c.phone),
         linkedin: orNull(c.linkedin),
+        recontact: contactRecontact(c, t ? (meetingsOf.get(t.id) ?? []) : []),
         language: orNull(c.language),
         optOut: c.optOut ? 'Oui' : null,
       },
@@ -205,6 +224,7 @@ export function buildTables(data: ExportData, selection: ColumnSelection = {}): 
           status: statusLabel(m.status),
           interest: m.interest,
           contact: orNull(m.contactId ? contactName.get(m.contactId) : null),
+          recontact: m.recontact ? 'Oui' : 'Non',
           need: orNull(m.need),
           budget: orNull(m.budget),
           timing: orNull(m.timing),

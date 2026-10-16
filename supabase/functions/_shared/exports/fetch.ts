@@ -108,7 +108,7 @@ export async function fetchExportData(
   for (const c of await byIds(companyIds, (part, from, to) =>
     client
       .from('companies')
-      .select('id, name, domain, website, industry, city, country')
+      .select('id, name, domain, website, industry, city, country, history')
       .in('id', part)
       .order('id')
       .range(from, to),
@@ -161,6 +161,7 @@ export async function fetchExportData(
         priority: (str(r.priority) as Priority | null) ?? null,
         goal: str(r.objective),
         prepComment: str(r.prep_comment),
+        history: str(c.history),
         assigneeIds: assignees.get(String(r.id)) ?? [],
         tagIds: tagLinks.get(String(r.company_id)) ?? [],
       },
@@ -209,7 +210,7 @@ export async function fetchExportData(
       client
         .from('meetings')
         .select(
-          'id, event_company_id, contact_id, owner_id, status, planned_at, planned_duration_min, is_unplanned, interest, need, budget, timing, decision_maker, next_step, outcome',
+          'id, event_company_id, contact_id, owner_id, status, planned_at, planned_duration_min, is_unplanned, interest, need, budget, timing, decision_maker, next_step, outcome, recontact',
         )
         .eq('event_id', eventId)
         .is('deleted_at', null)
@@ -234,6 +235,7 @@ export async function fetchExportData(
     decisionMaker: str(m.decision_maker),
     nextStep: str(m.next_step),
     outcome: str(m.outcome),
+    recontact: m.recontact === true,
   }))
 
   const noteCols = 'id, meeting_id, event_company_id, author_id, body, source, captured_at'

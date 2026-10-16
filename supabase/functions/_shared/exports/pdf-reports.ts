@@ -341,9 +341,11 @@ export async function buildMeetingSheetsPdf(data: ExportData): Promise<Uint8Arra
       kv(w, 'Fonction', c.jobTitle)
       kv(w, 'E-mail', c.email)
       kv(w, 'Téléphone', c.phone)
+      kv(w, 'LinkedIn', c.linkedin)
     }
 
     const structured: [string, string | null][] = [
+      ['À recontacter après le salon', m.recontact ? 'Oui' : null],
       ['Besoin', m.need],
       ['Budget', m.budget],
       ['Timing', m.timing],

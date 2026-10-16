@@ -76,6 +76,11 @@ export const CSV_FIELDS: { key: string; label: string; get: (c: Ctx) => string }
     get: (c) => clean(c.target.prepComment),
   },
   {
+    key: 'company.history',
+    label: 'Entreprise : historique',
+    get: (c) => clean(c.target.history),
+  },
+  {
     key: 'meeting.status',
     label: 'Rencontre : statut (code)',
     get: (c) => c.meeting?.status ?? 'none',
@@ -99,6 +104,11 @@ export const CSV_FIELDS: { key: string; label: string; get: (c: Ctx) => string }
     key: 'meeting.date',
     label: 'Rencontre : date',
     get: (c) => formatDateTime(c.meeting?.plannedAt ?? null, c.data.event.timezone),
+  },
+  {
+    key: 'meeting.recontact',
+    label: 'Rencontre : à recontacter (Oui / Non)',
+    get: (c) => (c.meeting ? (c.meeting.recontact ? 'Oui' : 'Non') : ''),
   },
   {
     key: 'meeting.nextStep',

@@ -52,6 +52,8 @@ export type TargetRec = {
   priority: Priority | null
   goal: string | null
   prepComment: string | null
+  /** Historique avec l'entreprise (colonne « Commentaire » de l'import). */
+  history: string | null
   assigneeIds: string[]
   tagIds: string[]
 }
@@ -86,6 +88,8 @@ export type MeetingRec = {
   decisionMaker: string | null
   nextStep: string | null
   outcome: string | null
+  /** À recontacter après le salon. */
+  recontact: boolean
 }
 
 export type NoteRec = {
