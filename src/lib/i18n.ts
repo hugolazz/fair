@@ -2,7 +2,6 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import auth from '@/locales/fr/auth.json'
 import common from '@/locales/fr/common.json'
-import companies from '@/locales/fr/companies.json'
 import events from '@/locales/fr/events.json'
 import importer from '@/locales/fr/import.json'
 import manual from '@/locales/fr/manual.json'
@@ -17,24 +16,12 @@ void i18n.use(initReactI18next).init({
   lng: 'fr',
   fallbackLng: 'fr',
   defaultNS,
-  ns: [
-    'common',
-    'auth',
-    'events',
-    'companies',
-    'settings',
-    'import',
-    'manual',
-    'prepare',
-    'plan',
-    'exports',
-  ],
+  ns: ['common', 'auth', 'events', 'settings', 'import', 'manual', 'prepare', 'plan', 'exports'],
   resources: {
     fr: {
       common,
       auth,
       events,
-      companies,
       settings,
       import: importer,
       manual,

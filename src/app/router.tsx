@@ -16,7 +16,6 @@ const BilanPage = lazy(() => import('@/features/exports/bilan-page'))
 const ExportsPage = lazy(() => import('@/features/exports/exports-page'))
 const MyListPage = lazy(() => import('@/features/prepare/my-list-page'))
 const ImportPage = lazy(() => import('@/features/import/import-page'))
-const CompaniesPage = lazy(() => import('@/features/companies/companies-page'))
 const SettingsPage = lazy(() => import('@/features/settings/settings-page'))
 const NotFoundPage = lazy(() => import('@/features/not-found-page'))
 
@@ -58,7 +57,6 @@ const router = createBrowserRouter([
               { path: 'exports', element: <ExportsPage /> },
             ],
           },
-          { path: '/companies', element: <CompaniesPage /> },
           { path: '/settings', element: <SettingsPage /> },
         ],
       },

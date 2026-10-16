@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, Settings, type LucideIcon } from 'lucide-react'
+import { CalendarDays, Settings, type LucideIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Wordmark } from '@/components/wordmark'
@@ -6,7 +6,6 @@ import { cn } from '@/lib/cn'
 
 const NAV: { to: string; labelKey: string; icon: LucideIcon }[] = [
   { to: '/events', labelKey: 'nav.events', icon: CalendarDays },
-  { to: '/companies', labelKey: 'nav.companies', icon: Building2 },
   { to: '/settings', labelKey: 'nav.settings', icon: Settings },
 ]
 
@@ -70,7 +69,7 @@ export function AppLayout() {
       {/* Barre du bas mobile */}
       <nav
         aria-label={t('nav.main')}
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         {NAV.map(({ to, labelKey, icon: Icon }) => (
           <NavLink
