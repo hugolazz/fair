@@ -7,7 +7,8 @@ import { formatSlot } from './lib/format'
 import type { ListProps } from './targets-table'
 import { useVirtualRows } from './use-virtual-rows'
 
-const CARD_HEIGHT = 124
+// Contenu : nom, stand, tags, assignés (≈ 128 px avec les marges) + 8 px d'espacement entre cartes.
+const CARD_HEIGHT = 144
 
 type Props = ListProps & { selectMode: boolean; tags: Tag[] }
 
@@ -69,12 +70,7 @@ export function TargetsCards(p: Props) {
                         .filter(Boolean)
                         .join(' · ')}
                     </span>
-                    <span className="flex items-center gap-1 overflow-hidden">
-                      {row.goal ? (
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium">
-                          {t(`goal.${row.goal}`)}
-                        </span>
-                      ) : null}
+                    <span className="flex min-h-6 items-center gap-1 overflow-hidden">
                       {row.tagIds.slice(0, 2).map((id) => {
                         const tag = tagById.get(id)
                         return tag ? <TagChip key={id} tag={tag} /> : null

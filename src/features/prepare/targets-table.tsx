@@ -1,14 +1,7 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  GOALS,
-  PRIORITIES,
-  type Goal,
-  type Priority,
-  type Tag,
-  type Target,
-} from '@/db/schemas/prepare'
+import { PRIORITIES, type Priority, type Tag, type Target } from '@/db/schemas/prepare'
 import { canPrepareTarget, useIsAdmin } from '@/features/auth-team/roles'
 import { cn } from '@/lib/cn'
 import { Assignees, PriorityBadge, TagChip } from './atoms'
@@ -34,14 +27,13 @@ type Props = ListProps & {
   someSelected: boolean
   onToggleAll: () => void
   onPriority: (id: string, p: Priority | null) => void
-  onGoal: (id: string, g: Goal | null) => void
 }
 
 const ROW_HEIGHT = 44
-// case · prio · entreprise · stand · secteur · tags · objectif · assignés · rdv · contacts
+// case · prio · entreprise · stand · secteur · tags · assignés · rdv · contacts
 const GRID =
-  'grid grid-cols-[2.75rem_3rem_minmax(14rem,2.4fr)_5.5rem_minmax(8rem,1.2fr)_minmax(10rem,1.6fr)_9.5rem_minmax(9rem,1.3fr)_8.5rem_3.5rem] items-center'
-const MIN_WIDTH = 'min-w-[68rem]'
+  'grid grid-cols-[2.75rem_3rem_minmax(14rem,2.4fr)_5.5rem_minmax(8rem,1.2fr)_minmax(10rem,1.6fr)_minmax(9rem,1.3fr)_8.5rem_3.5rem] items-center'
+const MIN_WIDTH = 'min-w-[58rem]'
 
 const COLUMNS: { key: SortKey | null; label: string; className?: string }[] = [
   { key: 'priority', label: 'priority' },
@@ -49,7 +41,6 @@ const COLUMNS: { key: SortKey | null; label: string; className?: string }[] = [
   { key: 'stand', label: 'stand' },
   { key: 'industry', label: 'industry' },
   { key: null, label: 'tags' },
-  { key: 'goal', label: 'goal' },
   { key: 'assignee', label: 'assignees' },
   { key: 'meeting', label: 'meeting' },
   { key: null, label: 'contacts' },
@@ -195,22 +186,6 @@ export function TargetsTable(p: Props) {
                   {row.tagIds.length > 3 ? (
                     <span className="text-xs text-slate-600">+{row.tagIds.length - 3}</span>
                   ) : null}
-                </div>
-                <div role="cell" className="px-1">
-                  <select
-                    value={row.goal ?? ''}
-                    disabled={!canPrepareTarget(admin, row.assigneeIds, p.meId)}
-                    onChange={(e) => p.onGoal(row.id, (e.target.value || null) as Goal | null)}
-                    aria-label={`${t('goal.label')} — ${row.name}`}
-                    className="h-8 w-full rounded border border-transparent bg-transparent px-1 text-sm hover:border-slate-300"
-                  >
-                    <option value="">–</option>
-                    {GOALS.map((g) => (
-                      <option key={g} value={g}>
-                        {t(`goal.${g}`)}
-                      </option>
-                    ))}
-                  </select>
                 </div>
                 <div role="cell" className="min-w-0 px-2">
                   <Assignees target={row} nameOf={p.nameOf} meId={p.meId} compact />

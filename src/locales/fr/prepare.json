@@ -107,7 +107,38 @@
       "skipped": "Écarté"
     }
   },
+  "notepad": {
+    "title": "Notes de la rencontre",
+    "label": "Note de la rencontre",
+    "placeholder": "Écrivez ici ce qui se dit pendant la rencontre…",
+    "save": "Enregistrer la note",
+    "recontact": "À recontacter après le salon",
+    "recontactBadge": "À recontacter",
+    "yes": "Oui",
+    "no": "Non",
+    "finish": "Rencontre terminée",
+    "finished": "Rencontre marquée comme terminée.",
+    "error": "La note n'a pas pu être enregistrée. Votre texte est conservé, réessayez."
+  },
+  "edit": {
+    "button": "Modifier la fiche",
+    "title": "Modifier la fiche : {{name}}",
+    "company": "Informations de l'entreprise",
+    "save": "Enregistrer la fiche",
+    "saved": "Fiche enregistrée.",
+    "error": "La fiche n'a pas pu être enregistrée.",
+    "domainTaken": "Ce site correspond déjà à une autre entreprise de l'équipe.",
+    "editContact": "Modifier le contact {{name}}",
+    "deleteContact": "Supprimer le contact {{name}}",
+    "confirmDeleteContact": "Supprimer ce contact ?",
+    "yesDelete": "Oui, supprimer"
+  },
   "sheet": {
+    "keyContact": "Contact clé",
+    "linkedin": "LinkedIn",
+    "otherContacts": "Autres contacts ({{count}})",
+    "noContact": "Aucun contact renseigné pour cette entreprise.",
+    "more": "Plus de détails : préparation, tags, assignation, rendez-vous, contacts",
     "prepReadOnly": "Cette entreprise ne vous est pas assignée : seuls un admin d'équipe et le commercial assigné peuvent modifier sa préparation. Assignez-vous-la pour la préparer.",
     "seeOnPlan": "Voir sur le plan du salon",
     "close": "Fermer la fiche",
@@ -153,6 +184,8 @@
   "history": {
     "title": "Historique avec cette entreprise",
     "empty": "Première rencontre : aucun historique sur d'autres salons.",
+    "noneWritten": "Aucun historique renseigné pour cette entreprise.",
+    "otherEvents": "Rencontres enregistrées sur d'autres salons ({{count}})",
     "loadError": "Impossible de charger l'historique.",
     "meetingOn": "Rencontre du {{date}}",
     "outcome": "Résultat",

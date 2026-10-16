@@ -1,7 +1,9 @@
 import { supabase } from '@/lib/supabase'
 import { normalizeName } from '@/lib/normalize-name'
+import { createTag, ensureDefaultTags, setCompanyTag } from './targets'
 import {
   storedMappingSchema,
+  type CompanyTagWrite,
   type ImportPlan,
   type ImportReport,
   type KnownCompany,
@@ -35,7 +37,10 @@ const str = (v: unknown) => (typeof v === 'string' && v !== '' ? v : null)
 
 /** Toutes les sociétés de l'équipe : sert au rapprochement avec les salons précédents. */
 export async function fetchKnownCompanies(): Promise<KnownCompany[]> {
-  const rows = await fetchAll('companies', 'id, name, domain, website, industry, country, city')
+  const rows = await fetchAll(
+    'companies',
+    'id, name, domain, website, industry, country, city, history',
+  )
   return rows.map((r) => ({
     id: r.id as string,
     name: r.name as string,
@@ -45,6 +50,7 @@ export async function fetchKnownCompanies(): Promise<KnownCompany[]> {
     industry: str(r.industry),
     country: str(r.country),
     city: str(r.city),
+    history: str(r.history),
   }))
 }
 
@@ -95,12 +101,39 @@ function chunks<T>(items: T[], size = CHUNK): T[][] {
   return out
 }
 
+/**
+ * Pose la typologie (client, prospect…) du fichier sur les sociétés. Un libellé inconnu crée le tag. Une erreur ici ne
+ * remet pas en cause l'import des sociétés : les tags se corrigent ensuite depuis la fiche.
+ */
+async function applyCompanyTags(teamId: string, tags: CompanyTagWrite[]): Promise<void> {
+  if (tags.length === 0) return
+  try {
+    const known = new Map(
+      (await ensureDefaultTags(teamId)).map((t) => [normalizeName(t.label), t.id]),
+    )
+    const byTag = new Map<string, string[]>()
+    for (const { company_id, label } of tags) {
+      const key = normalizeName(label)
+      let tagId = known.get(key)
+      if (!tagId) {
+        tagId = (await createTag(teamId, label, '#475569')).id
+        known.set(key, tagId)
+      }
+      byTag.set(tagId, [...(byTag.get(tagId) ?? []), company_id])
+    }
+    for (const [tagId, companyIds] of byTag) await setCompanyTag(teamId, companyIds, tagId, true)
+  } catch {
+    // voir ci-dessus
+  }
+}
+
 export type ExecuteInput = {
   plan: ImportPlan
   teamId: string
   eventId: string
   filename: string
-  mapping: StoredMapping
+  /** `null` = saisie manuelle : pas de lot d'import (un commercial n'en crée pas), `import_batch_id` reste vide. */
+  mapping: StoredMapping | null
   /** Erreurs de nettoyage déjà détectées (lignes inexploitables). */
   cleaningErrors: RowError[]
   /** Cellules d'origine de chaque ligne, pour le rapport d'erreurs. */
@@ -127,18 +160,21 @@ export async function executeImport(input: ExecuteInput): Promise<ImportReport> 
   let done = 0
   const tick = () => input.onProgress?.(++done, total)
 
-  const { error: batchErr } = await supabase.from('import_batches').upsert(
-    {
-      id: plan.batchId,
-      team_id: teamId,
-      event_id: eventId,
-      filename: input.filename,
-      row_count: plan.stats.rowsTotal + input.cleaningErrors.length,
-      mapping: input.mapping,
-    },
-    { onConflict: 'id' },
-  )
-  if (batchErr) throw batchErr
+  const batchId = input.mapping === null ? null : plan.batchId
+  if (batchId !== null) {
+    const { error: batchErr } = await supabase.from('import_batches').upsert(
+      {
+        id: batchId,
+        team_id: teamId,
+        event_id: eventId,
+        filename: input.filename,
+        row_count: plan.stats.rowsTotal + input.cleaningErrors.length,
+        mapping: input.mapping,
+      },
+      { onConflict: 'id' },
+    )
+    if (batchErr) throw batchErr
+  }
 
   async function write<T extends { rowNumbers: number[] }>(
     items: T[],
@@ -169,6 +205,7 @@ export async function executeImport(input: ExecuteInput): Promise<ImportReport> 
     industry: c.industry,
     country: c.country,
     city: c.city,
+    history: c.history,
   })
   const markCompanies = (items: { id: string }[]) => items.forEach((c) => failedCompanies.add(c.id))
 
@@ -190,10 +227,16 @@ export async function executeImport(input: ExecuteInput): Promise<ImportReport> 
       event_id: e.event_id,
       company_id: e.company_id,
       stand_label: e.stand_label,
-      import_batch_id: e.import_batch_id,
+      priority: e.priority,
+      import_batch_id: batchId,
     }),
     'id',
     (items) => items.forEach((e) => failedCompanies.add(e.company_id)),
+  )
+
+  await applyCompanyTags(
+    teamId,
+    plan.companyTags.filter((t) => !failedCompanies.has(t.company_id)),
   )
 
   await write(
@@ -208,6 +251,7 @@ export async function executeImport(input: ExecuteInput): Promise<ImportReport> 
       job_title: c.job_title,
       email: c.email,
       phone: c.phone,
+      linkedin_url: c.linkedin_url,
     }),
     'id',
     (items) => items.forEach((c) => failedContacts.add(c.id)),
@@ -257,9 +301,13 @@ export async function executeImport(input: ExecuteInput): Promise<ImportReport> 
   }
 
   // Compteurs seulement (pas de données personnelles dans le rapport stocké).
-  await supabase
-    .from('import_batches')
-    .update({ report: { ...report, skipped: report.skipped.length, errors: report.errors.length } })
-    .eq('id', plan.batchId)
+  if (batchId !== null) {
+    await supabase
+      .from('import_batches')
+      .update({
+        report: { ...report, skipped: report.skipped.length, errors: report.errors.length },
+      })
+      .eq('id', batchId)
+  }
   return report
 }

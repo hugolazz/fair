@@ -78,6 +78,7 @@ describe('myList', () => {
       status: 'to_see',
       interest: null,
       nextStep: '',
+      recontact: false,
     },
   ]
   it('ne garde que mes cibles, triées par priorité, rendez-vous puis nom', () => {
@@ -180,9 +181,20 @@ describe('toHistory', () => {
     notes: [],
     ...extra,
   })
+  const withNote = (id: string) => ({
+    notes: [{ id: `n-${id}`, body: 'x', captured_at: '2026-01-01T10:00:00Z', deleted_at: null }],
+  })
   it('classe les salons du plus récent au plus ancien, sans date en dernier', () => {
-    const h = toHistory([row('a', '2025-03-01'), row('b', '2026-06-01'), row('c', null)])
+    const h = toHistory([
+      row('a', '2025-03-01', withNote('a')),
+      row('b', '2026-06-01', withNote('b')),
+      row('c', null, withNote('c')),
+    ])
     expect(h.map((e) => e.eventName)).toEqual(['Salon b', 'Salon a', 'Salon c'])
+  })
+  it('écarte les salons où rien n’a été enregistré (ni rencontre ni note)', () => {
+    const h = toHistory([row('a', '2025-03-01'), row('b', '2026-06-01', withNote('b'))])
+    expect(h.map((e) => e.eventName)).toEqual(['Salon b'])
   })
   it('regroupe rencontres et notes, récents d’abord, en écartant les éléments supprimés', () => {
     const n = (id: string, at: string, deleted: string | null = null) => ({

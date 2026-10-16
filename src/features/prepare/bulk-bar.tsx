@@ -1,14 +1,7 @@
 import { X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import {
-  GOALS,
-  PRIORITIES,
-  type Goal,
-  type Priority,
-  type Tag,
-  type TeamMember,
-} from '@/db/schemas/prepare'
+import { PRIORITIES, type Priority, type Tag, type TeamMember } from '@/db/schemas/prepare'
 import { useIsAdmin } from '@/features/auth-team/roles'
 
 type Props = {
@@ -17,7 +10,6 @@ type Props = {
   members: TeamMember[]
   meId: string
   onPriority: (p: Priority | null) => void
-  onGoal: (g: Goal | null) => void
   onTag: (tagId: string, on: boolean) => void
   onAssign: (userId: string) => void
   onUnassign: (userId: string) => void
@@ -74,20 +66,6 @@ export function BulkBar(p: Props) {
           </option>
         ))}
         <option value="none">{t('priority.none')}</option>
-      </select>
-      <select
-        aria-label={t('bulk.goal')}
-        className={selectCls}
-        defaultValue=""
-        onChange={pick((v) => p.onGoal(v === 'none' ? null : (v as Goal)))}
-      >
-        <option value="">{t('bulk.goal')}</option>
-        {GOALS.map((x) => (
-          <option key={x} value={x}>
-            {t(`goal.${x}`)}
-          </option>
-        ))}
-        <option value="none">{t('goal.none')}</option>
       </select>
       <select
         aria-label={t('bulk.addTag')}

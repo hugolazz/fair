@@ -1,10 +1,12 @@
-import { CheckSquare, Upload } from 'lucide-react'
+import { CheckSquare, Plus, Upload } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { EmptyState, ErrorState, Loading } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
+import { useIsAdmin } from '@/features/auth-team/roles'
 import { useReadySession } from '@/features/auth-team/session'
+import { AddCompanyDialog } from '@/features/manual-entry/add-company-dialog'
 import { useEvent } from '@/features/events/event-context'
 import { useMediaQuery } from '@/lib/use-media-query'
 import { BulkBar } from './bulk-bar'
@@ -21,6 +23,10 @@ import { useTargets } from './use-targets'
 /** Préparation du salon : tableau des participants (desktop) / cartes (mobile), filtres, actions en masse, fiche. */
 export default function PreparePage() {
   const { t } = useTranslation('prepare')
+  const { t: tm } = useTranslation('manual')
+  const admin = useIsAdmin()
+  const [adding, setAdding] = useState(false)
+  const [notice, setNotice] = useState<string>()
   const { event } = useEvent()
   const { session, membership } = useReadySession()
   const meId = session.user.id
@@ -66,21 +72,46 @@ export default function PreparePage() {
     setSelectMode(false)
   }
 
+  const addDialog = (
+    <AddCompanyDialog
+      eventId={event.id}
+      open={adding}
+      onOpenChange={setAdding}
+      onAdded={(result, name) => {
+        setNotice(tm(`company.${result.status}`, { name }))
+        api.reload()
+        // La fiche s'ouvre dès que la liste rechargée contient la nouvelle cible.
+        if (result.targetId) setOpenId(result.targetId)
+      }}
+    />
+  )
+
   if (api.loading) return <Loading />
   if (api.error) return <ErrorState message={t('errors.load')} onRetry={api.reload} />
   const total = api.targets?.length ?? 0
   if (total === 0) {
     return (
-      <EmptyState
-        icon={<Upload className="size-10" />}
-        title={t('title')}
-        body={t('filters.none')}
-        action={
-          <Button asChild>
-            <Link to="../import">{t('import')}</Link>
-          </Button>
-        }
-      />
+      <>
+        <EmptyState
+          icon={<Upload className="size-10" />}
+          title={t('title')}
+          body={t('filters.none')}
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              {admin ? (
+                <Button asChild>
+                  <Link to="../import">{t('import')}</Link>
+                </Button>
+              ) : null}
+              <Button variant={admin ? 'secondary' : 'primary'} onClick={() => setAdding(true)}>
+                <Plus aria-hidden className="size-4" />
+                {tm('company.open')}
+              </Button>
+            </div>
+          }
+        />
+        {addDialog}
+      </>
     )
   }
 
@@ -108,6 +139,25 @@ export default function PreparePage() {
           </Button>
         </p>
       ) : null}
+
+      {notice ? (
+        <p
+          role="status"
+          className="flex items-center justify-between gap-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-950"
+        >
+          {notice}
+          <Button variant="ghost" className="min-h-9" onClick={() => setNotice(undefined)}>
+            {t('errors.dismiss')}
+          </Button>
+        </p>
+      ) : null}
+
+      <div className="flex justify-end">
+        <Button variant="secondary" onClick={() => setAdding(true)}>
+          <Plus aria-hidden className="size-4" />
+          {tm('company.open')}
+        </Button>
+      </div>
 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -154,7 +204,6 @@ export default function PreparePage() {
           someSelected={selected.size > 0}
           onToggleAll={toggleAll}
           onPriority={(id, p) => void api.actions.setPriority([id], p)}
-          onGoal={(id, g) => void api.actions.setGoal([id], g)}
         />
       ) : (
         <TargetsCards {...common} selectMode={selectMode} />
@@ -167,7 +216,6 @@ export default function PreparePage() {
           members={api.members}
           meId={meId}
           onPriority={(p) => void api.actions.setPriority(ids, p)}
-          onGoal={(g) => void api.actions.setGoal(ids, g)}
           onTag={(tagId, on) => void api.actions.toggleTag(ids, tagId, on)}
           onAssign={(userId) => request(ids, userId)}
           onUnassign={(userId) => void api.actions.unassign(ids, userId)}
@@ -184,6 +232,7 @@ export default function PreparePage() {
         onClose={() => setOpenId(undefined)}
       />
       {dialog}
+      {addDialog}
     </div>
   )
 }

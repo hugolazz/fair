@@ -21,6 +21,7 @@ const target = (id: string, name: string, over: Partial<Target> = {}): Target =>
   prepComment: '',
   assigneeIds: [],
   tagIds: [],
+  history: '',
   contactCount: 0,
   meetings: [],
   searchKey: buildSearchKey([name, over.stand]),

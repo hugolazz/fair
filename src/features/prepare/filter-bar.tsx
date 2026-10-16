@@ -2,7 +2,7 @@ import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { GOALS, PRIORITIES, type Priority, type Tag, type TeamMember } from '@/db/schemas/prepare'
+import { PRIORITIES, type Priority, type Tag, type TeamMember } from '@/db/schemas/prepare'
 import { cn } from '@/lib/cn'
 import { countActiveFilters, emptyFilters, type Filters } from './lib/filter'
 
@@ -120,22 +120,6 @@ export function FilterBar({
                 {m.name}
               </option>
             ))}
-        </select>
-      </label>
-      <label className="flex items-center gap-2 text-sm">
-        <span className="text-slate-700">{t('filters.goal')}</span>
-        <select
-          className={selectCls}
-          value={filters.goal}
-          onChange={(e) => set({ goal: e.target.value as Filters['goal'] })}
-        >
-          <option value="any">{t('filters.any')}</option>
-          {GOALS.map((g) => (
-            <option key={g} value={g}>
-              {t(`goal.${g}`)}
-            </option>
-          ))}
-          <option value="none">{t('filters.noGoal')}</option>
         </select>
       </label>
       {active > 0 ? (

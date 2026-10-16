@@ -22,6 +22,7 @@ const target = (id: string, name: string, over: Partial<TargetRec> = {}): Target
   priority: null,
   goal: null,
   prepComment: null,
+  history: null,
   assigneeIds: [],
   tagIds: [],
   ...over,
@@ -49,6 +50,7 @@ const meeting = (
   decisionMaker: null,
   nextStep: null,
   outcome: null,
+  recontact: false,
   ...over,
 })
 

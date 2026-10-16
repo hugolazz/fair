@@ -5,6 +5,7 @@ import common from '@/locales/fr/common.json'
 import companies from '@/locales/fr/companies.json'
 import events from '@/locales/fr/events.json'
 import importer from '@/locales/fr/import.json'
+import manual from '@/locales/fr/manual.json'
 import prepare from '@/locales/fr/prepare.json'
 import plan from '@/locales/fr/plan.json'
 import exportsNs from '@/locales/fr/exports.json'
@@ -16,7 +17,18 @@ void i18n.use(initReactI18next).init({
   lng: 'fr',
   fallbackLng: 'fr',
   defaultNS,
-  ns: ['common', 'auth', 'events', 'companies', 'settings', 'import', 'prepare', 'plan', 'exports'],
+  ns: [
+    'common',
+    'auth',
+    'events',
+    'companies',
+    'settings',
+    'import',
+    'manual',
+    'prepare',
+    'plan',
+    'exports',
+  ],
   resources: {
     fr: {
       common,
@@ -25,6 +37,7 @@ void i18n.use(initReactI18next).init({
       companies,
       settings,
       import: importer,
+      manual,
       prepare,
       plan,
       exports: exportsNs,

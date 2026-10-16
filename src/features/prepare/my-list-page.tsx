@@ -94,10 +94,7 @@ export default function MyListPage() {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-base font-semibold">{tg.name}</span>
                   <span className="block truncate text-sm text-slate-700">
-                    {[
-                      tg.stand && t('sheet.stand', { stand: tg.stand }),
-                      tg.goal && t(`goal.${tg.goal}`),
-                    ]
+                    {[tg.stand && t('sheet.stand', { stand: tg.stand }), tg.industry]
                       .filter(Boolean)
                       .join(' · ')}
                   </span>

@@ -31,9 +31,9 @@ function chunks<T>(items: T[], size: number): T[][] {
 
 const TARGET_SELECT =
   'id, event_id, company_id, stand_label, priority, objective, prep_comment, ' +
-  'companies(id, name, domain, website, industry, country, city, contacts(count)), ' +
+  'companies(id, name, domain, website, industry, country, city, history, contacts(count)), ' +
   'event_company_assignees(user_id, deleted_at), ' +
-  'meetings(id, planned_at, planned_duration_min, reminder_minutes, owner_id, status, interest, next_step, deleted_at)'
+  'meetings(id, planned_at, planned_duration_min, reminder_minutes, owner_id, status, interest, next_step, recontact, deleted_at)'
 
 export async function fetchTags(): Promise<Tag[]> {
   const { data, error } = await supabase
@@ -111,10 +111,11 @@ export async function listTargets(eventId: string): Promise<Target[]> {
 export async function fetchContacts(companyId: string): Promise<TargetContact[]> {
   const { data, error } = await supabase
     .from('contacts')
-    .select('id, first_name, last_name, job_title, email, phone')
+    .select('id, first_name, last_name, job_title, email, phone, linkedin_url')
     .eq('company_id', companyId)
     .is('deleted_at', null)
-    .order('last_name')
+    // Ordre de saisie (identifiants UUIDv7) : le premier contact importé reste le contact clé, les ajouts suivent.
+    .order('id')
   if (error) throw error
   return (data ?? []).map((c) => ({
     id: c.id as string,
@@ -122,7 +123,48 @@ export async function fetchContacts(companyId: string): Promise<TargetContact[]>
     jobTitle: (c.job_title as string | null) ?? '',
     email: (c.email as string | null) ?? '',
     phone: (c.phone as string | null) ?? '',
+    linkedin: (c.linkedin_url as string | null) ?? '',
   }))
+}
+
+export type NewContact = {
+  firstName: string
+  lastName: string
+  jobTitle: string
+  email: string
+  phone: string
+  linkedin: string
+}
+
+const orNull = (s: string) => (s.trim() === '' ? null : s.trim())
+
+/** Ajoute un contact à une entreprise (saisie manuelle pendant ou après une rencontre). */
+export async function addContact(
+  teamId: string,
+  companyId: string,
+  c: NewContact,
+): Promise<TargetContact> {
+  const id = newId()
+  const { error } = await supabase.from('contacts').insert({
+    id,
+    team_id: teamId,
+    company_id: companyId,
+    first_name: orNull(c.firstName),
+    last_name: orNull(c.lastName),
+    job_title: orNull(c.jobTitle),
+    email: orNull(c.email),
+    phone: orNull(c.phone),
+    linkedin_url: orNull(c.linkedin),
+  })
+  if (error) throw error
+  return {
+    id,
+    name: [c.firstName, c.lastName].filter(Boolean).join(' '),
+    jobTitle: c.jobTitle,
+    email: c.email,
+    phone: c.phone,
+    linkedin: c.linkedin,
+  }
 }
 
 /** Rencontres et notes de la même entreprise lors des autres salons. */
@@ -133,13 +175,15 @@ export async function fetchHistory(
   const { data, error } = await supabase
     .from('event_companies')
     .select(
-      'id, event_id, stand_label, priority, objective, events(id, name, starts_on, city), ' +
+      'id, event_id, stand_label, priority, objective, events!inner(id, name, starts_on, city), ' +
         'meetings(id, status, temperature, outcome, next_step, planned_at, deleted_at, notes(id, body, captured_at, deleted_at)), ' +
         'notes(id, body, captured_at, deleted_at)',
     )
     .eq('company_id', companyId)
     .neq('event_id', currentEventId)
     .is('deleted_at', null)
+    // Un salon supprimé (suppression logique) ne doit plus apparaître dans l'historique.
+    .is('events.deleted_at', null)
   if (error) throw error
   return toHistory(historyRowSchema.array().parse(data ?? []))
 }
@@ -150,6 +194,54 @@ export type TargetPatch = {
   priority?: Priority | null
   objective?: Goal | null
   prep_comment?: string
+  stand_label?: string | null
+}
+
+/** Informations d'une entreprise modifiables depuis « Modifier la fiche ». */
+export type CompanyPatch = {
+  name: string
+  name_normalized: string
+  website: string | null
+  domain: string | null
+  industry: string | null
+  city: string | null
+  country: string | null
+  history: string | null
+}
+
+/** Modifie la fiche d'une entreprise (partagée par toute l'équipe). Un domaine déjà pris renvoie l'erreur 23505. */
+export async function updateCompany(id: string, patch: CompanyPatch): Promise<void> {
+  const { data, error } = await supabase.from('companies').update(patch).eq('id', id).select('id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
+}
+
+export async function updateContact(id: string, c: NewContact): Promise<void> {
+  const { data, error } = await supabase
+    .from('contacts')
+    .update({
+      first_name: orNull(c.firstName),
+      last_name: orNull(c.lastName),
+      job_title: orNull(c.jobTitle),
+      email: orNull(c.email),
+      phone: orNull(c.phone),
+      linkedin_url: orNull(c.linkedin),
+    })
+    .eq('id', id)
+    .select('id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
+}
+
+/** Suppression logique d'un contact (il disparaît de la fiche et des exports). */
+export async function deleteContact(id: string): Promise<void> {
+  const { data, error } = await supabase
+    .from('contacts')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
 }
 
 /**
@@ -311,12 +403,18 @@ export type MeetingReportPatch = {
   status?: MeetingStatus
   interest?: number | null
   nextStep?: string
+  /** À recontacter après le salon. */
+  recontact?: boolean
+  /** Contact avec qui la rencontre a eu lieu. */
+  contactId?: string | null
 }
 
-/** Statut, intérêt (1 à 5) et prochaine étape d'une rencontre. */
+/** Statut, intérêt (1 à 5), prochaine étape, « à recontacter » et contact d'une rencontre. */
 export async function updateMeetingReport(id: string, patch: MeetingReportPatch): Promise<void> {
   const columns: Record<string, unknown> = {}
   if (patch.status !== undefined) columns.status = patch.status
+  if (patch.recontact !== undefined) columns.recontact = patch.recontact
+  if (patch.contactId !== undefined) columns.contact_id = patch.contactId
   if (patch.interest !== undefined) columns.interest = patch.interest
   if (patch.nextStep !== undefined)
     columns.next_step = patch.nextStep.trim() === '' ? null : patch.nextStep

@@ -18,6 +18,7 @@ export function target(id: string, name: string, o: Partial<Target> = {}): Targe
     prepComment: '',
     assigneeIds: [],
     tagIds: [],
+    history: '',
     contactCount: 0,
     meetings: [],
     searchKey: '',

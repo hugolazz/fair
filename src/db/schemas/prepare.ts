@@ -39,6 +39,8 @@ export type TargetMeeting = {
   /** Intérêt constaté, de 1 à 5. */
   interest: number | null
   nextStep: string
+  /** À recontacter après le salon. */
+  recontact: boolean
 }
 
 /** Statuts d'une rencontre, dans l'ordre proposé au commercial. */
@@ -70,6 +72,8 @@ export type Target = {
   prepComment: string
   assigneeIds: string[]
   tagIds: string[]
+  /** Historique avec l'entreprise (texte libre, renseigné à l'import ou à la main). */
+  history: string
   contactCount: number
   meetings: TargetMeeting[]
   /** Texte de recherche : minuscules, sans accents. */
@@ -102,6 +106,7 @@ export const targetRowSchema = z.object({
     industry: str,
     country: str,
     city: str,
+    history: str.default(''),
     contacts: z.array(z.object({ count: z.number() })).default([]),
   }),
   event_company_assignees: z
@@ -118,6 +123,7 @@ export const targetRowSchema = z.object({
         status: z.string(),
         interest: z.number().nullable().default(null),
         next_step: z.string().nullable().default(null),
+        recontact: z.boolean().nullable().default(false),
         deleted_at: z.string().nullable(),
       }),
     )
@@ -143,6 +149,7 @@ export function rowToTarget(row: TargetRow, tagIds: string[]): Target {
     prepComment: row.prep_comment,
     assigneeIds: row.event_company_assignees.filter((a) => !a.deleted_at).map((a) => a.user_id),
     tagIds,
+    history: c.history,
     contactCount: c.contacts[0]?.count ?? 0,
     meetings: row.meetings
       .filter((m) => !m.deleted_at && m.planned_at)
@@ -155,6 +162,7 @@ export function rowToTarget(row: TargetRow, tagIds: string[]): Target {
         status: m.status,
         interest: m.interest,
         nextStep: m.next_step ?? '',
+        recontact: m.recontact === true,
       }))
       .sort((a, b) => a.plannedAt.localeCompare(b.plannedAt)),
     searchKey: buildSearchKey([c.name, row.stand_label, c.industry, c.city, c.country, c.domain]),
@@ -167,6 +175,7 @@ export type TargetContact = {
   jobTitle: string
   email: string
   phone: string
+  linkedin: string
 }
 
 export type HistoryNote = { id: string; body: string; capturedAt: string }
@@ -270,5 +279,9 @@ export function toHistory(rows: HistoryRow[]): HistoryEntry[] {
       (n) => n.capturedAt,
     ),
   }))
-  return newestFirst(entries, (e) => e.startsOn)
+  // Un salon où l'entreprise figurait sans qu'aucune rencontre ni note n'ait été enregistrée n'apprend rien : écarté.
+  return newestFirst(
+    entries.filter((e) => e.meetings.length > 0 || e.notes.length > 0),
+    (e) => e.startsOn,
+  )
 }

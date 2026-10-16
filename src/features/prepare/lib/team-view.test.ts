@@ -12,6 +12,7 @@ const meeting = (id: string, ownerId: string, o: Partial<TargetMeeting> = {}): T
   status: 'to_see',
   interest: null,
   nextStep: '',
+  recontact: false,
   ...o,
 })
 

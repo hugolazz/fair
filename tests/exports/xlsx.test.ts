@@ -55,7 +55,44 @@ describe('export Excel', () => {
       // Le filtre couvre toute la ligne d'en-têtes : A1 jusqu'à la dernière colonne.
       expect(ws.autoFilter).toBe(`A1:${ws.getColumn(ws.columnCount).letter}1`)
     }
-    expect(wb.getWorksheet('Entreprises')!.autoFilter).toBe('A1:Q1')
+    expect(wb.getWorksheet('Entreprises')!.autoFilter).toBe('A1:S1')
+  })
+
+  it('exporte l’historique de l’entreprise (colonne « Historique »)', async () => {
+    const data = sampleData()
+    data.targets[0]!.history = 'Déjà contacté M. X le 19 janvier 2026 au sujet du retail media.'
+    const { wb } = await build(data)
+    const ws = wb.getWorksheet('Entreprises')!
+    const col = headers(ws).indexOf('Historique') + 1
+    expect(col).toBeGreaterThan(0)
+    expect(JSON.stringify(ws.getSheetValues())).toContain('Déjà contacté M. X le 19 janvier 2026')
+  })
+
+  it('exporte « À recontacter » (Oui / Non) sur les rencontres, les entreprises et les contacts', async () => {
+    const data = sampleData()
+    const first = data.meetings.find((m) => m.contactId === 'c1')!
+    first.recontact = true
+    const { wb } = await build(data)
+
+    const col = (name: string) => headers(wb.getWorksheet(name)!).indexOf('À recontacter') + 1
+    for (const name of ['Entreprises', 'Contacts', 'Rencontres'])
+      expect(col(name)).toBeGreaterThan(0)
+
+    const meetings = wb.getWorksheet('Rencontres')!
+    const values = new Set<string>()
+    meetings.eachRow((row, i) => i > 1 && values.add(String(row.getCell(col('Rencontres')).value)))
+    expect([...values].sort()).toEqual(['Non', 'Oui'])
+
+    // Le contact de la rencontre marquée « à recontacter » est le seul à porter « Oui ».
+    const contacts = wb.getWorksheet('Contacts')!
+    const emailCol = headers(contacts).indexOf('E-mail') + 1
+    const c1 = data.contacts.find((c) => c.id === 'c1')!
+    let found = ''
+    contacts.eachRow((row, i) => {
+      if (i > 1 && row.getCell(emailCol).value === c1.email)
+        found = String(row.getCell(col('Contacts')).value)
+    })
+    expect(found).toBe('Oui')
   })
 
   it('met en forme les en-têtes (gras, blanc sur fond vert)', async () => {

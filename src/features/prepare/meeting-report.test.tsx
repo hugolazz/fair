@@ -28,6 +28,7 @@ const meeting: TargetMeeting = {
   status: 'to_see',
   interest: null,
   nextStep: '',
+  recontact: false,
 }
 const target = { id: 'ec1', name: 'Carrefour' } as Target
 

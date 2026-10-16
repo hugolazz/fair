@@ -67,26 +67,49 @@ function Entry({ entry, defaultOpen }: { entry: HistoryEntry; defaultOpen: boole
   )
 }
 
-/** Rencontres et notes de la même entreprise lors des autres salons. */
-export function HistorySection({ companyId, eventId }: { companyId: string; eventId: string }) {
+type Props = {
+  companyId: string
+  eventId: string
+  /** Historique saisi (colonne « Commentaire » de l'import ou saisie manuelle) : ce qu'on sait déjà de l'entreprise. */
+  history: string
+}
+
+/**
+ * Historique de l'entreprise : d'abord le texte renseigné (« déjà contacté M. X le 19 janvier pour… »), puis, repliées,
+ * les rencontres et notes enregistrées dans fair lors d'autres salons (hors salons supprimés).
+ */
+export function HistorySection({ companyId, eventId, history }: Props) {
   const { t } = useTranslation('prepare')
   const { data, error, loading, reload } = useAsync(
     () => fetchHistory(companyId, eventId),
     [companyId, eventId],
   )
+  const past = data ?? []
   return (
     <section aria-labelledby="history-title" className="flex flex-col gap-3">
-      <h3 id="history-title" className="font-semibold">
+      <h3 id="history-title" className="text-base font-semibold">
         {t('history.title')}
       </h3>
-      {error ? <ErrorState message={t('history.loadError')} onRetry={reload} /> : null}
-      {!error && data?.length === 0 ? (
-        <p className="text-sm text-slate-600">{t('history.empty')}</p>
+      {history ? (
+        <p className="rounded-xl border border-slate-200 bg-white p-3 text-base whitespace-pre-wrap">
+          {history}
+        </p>
+      ) : !loading && past.length === 0 ? (
+        <p className="text-sm text-slate-600">{t('history.noneWritten')}</p>
       ) : null}
-      {loading && !data ? <p className="text-sm text-slate-600">…</p> : null}
-      {data?.map((e, i) => (
-        <Entry key={e.id} entry={e} defaultOpen={i === 0} />
-      ))}
+      {error ? <ErrorState message={t('history.loadError')} onRetry={reload} /> : null}
+      {past.length > 0 ? (
+        <details className="rounded-xl border border-slate-200 bg-white">
+          <summary className="min-h-11 cursor-pointer px-3 py-2.5 text-sm font-semibold">
+            {t('history.otherEvents', { count: past.length })}
+          </summary>
+          <div className="flex flex-col gap-2 border-t border-slate-100 p-2">
+            {past.map((e, i) => (
+              <Entry key={e.id} entry={e} defaultOpen={i === 0} />
+            ))}
+          </div>
+        </details>
+      ) : null}
     </section>
   )
 }

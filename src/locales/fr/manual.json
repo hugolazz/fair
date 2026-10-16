@@ -1,0 +1,51 @@
+{
+  "contact": {
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "jobTitle": "Poste",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "linkedin": "LinkedIn (adresse du profil)",
+    "identityRequired": "Indiquez au moins un prénom, un nom ou un e-mail.",
+    "emailInvalid": "Adresse e-mail invalide.",
+    "linkedinInvalid": "Adresse LinkedIn invalide (ex. https://www.linkedin.com/in/nom)."
+  },
+  "company": {
+    "open": "Ajouter une entreprise",
+    "title": "Ajouter une entreprise",
+    "body": "Une entreprise qui n'est pas dans votre fichier ? Saisissez-la ici : elle est rapprochée des entreprises déjà connues de l'équipe, jamais dupliquée.",
+    "name": "Entreprise",
+    "website": "Site web",
+    "stand": "Stand",
+    "industry": "Secteur",
+    "city": "Ville",
+    "country": "Pays",
+    "priority": "Priorité",
+    "noPriority": "Sans priorité",
+    "tag": "Type (client, prospect…)",
+    "noTag": "Aucun",
+    "history": "Historique avec l'entreprise",
+    "historyPlaceholder": "Ex. On a déjà contacté M. X le 19 janvier 2026 au sujet de…",
+    "contactTitle": "Contact clé (facultatif)",
+    "assignToMe": "M'assigner cette entreprise",
+    "submit": "Ajouter l'entreprise",
+    "nameRequired": "Indiquez le nom de l'entreprise.",
+    "websiteInvalid": "Adresse de site invalide.",
+    "error": "L'entreprise n'a pas pu être ajoutée.",
+    "created": "« {{name}} » a été ajoutée.",
+    "merged": "« {{name}} » était déjà connue de l'équipe : elle est ajoutée à ce salon avec son historique.",
+    "already": "« {{name}} » est déjà dans ce salon.",
+    "seeParticipants": "Voir les participants",
+    "orManual": "Pas de fichier ? Ajoutez vos entreprises une à une."
+  },
+  "addContact": {
+    "button": "Ajouter un contact",
+    "title": "Nouveau contact",
+    "save": "Enregistrer le contact",
+    "cancel": "Annuler",
+    "saved": "Contact ajouté : {{name}}.",
+    "error": "Le contact n'a pas pu être enregistré.",
+    "duplicate": "Ce contact existe déjà pour cette entreprise.",
+    "metWith": "Rencontré pendant cette rencontre"
+  }
+}

@@ -31,6 +31,9 @@
     "rowsDetected": "{{count}} lignes détectées",
     "continue": "Vérifier avant d'importer",
     "loading": "Analyse des données…",
+    "multiContactsHint": "Plusieurs contacts pour une même entreprise ? Mettez-les dans la même cellule, séparés par « ; » ou un retour à la ligne (nom 1 ; nom 2 — e-mail 1 ; e-mail 2), ou sur des lignes distinctes : l'entreprise est alors fusionnée. Le premier contact est le contact clé.",
+    "multiContactsFound": "{{count}} ligne(s) contiennent plusieurs contacts : un contact sera créé pour chacun.",
+    "multiContactsMismatch": "Dans {{count}} de ces lignes, il n'y a pas autant d'e-mails que de noms : vérifiez l'alignement (le 1er nom va avec le 1er e-mail, etc.).",
     "companyRequired": "Choisissez la colonne qui contient le nom de la société.",
     "fields": {
       "companyName": "Société",
@@ -44,7 +47,11 @@
       "contactLastName": "Contact (nom)",
       "jobTitle": "Poste",
       "email": "E-mail",
-      "phone": "Téléphone"
+      "phone": "Téléphone",
+      "contactLinkedin": "LinkedIn du contact",
+      "priority": "Priorité (A, B, C)",
+      "tag": "Type (client, prospect…)",
+      "comment": "Commentaire / historique"
     }
   },
   "review": {
