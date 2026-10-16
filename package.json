@@ -16,7 +16,6 @@
     "test:rls": "vitest run tests/rls",
     "test:e2e": "playwright test",
     "fake-supabase": "node tests/e2e/fake-supabase/server.ts",
-    "demo": "node scripts/demo.mjs",
     "lighthouse": "node scripts/lighthouse.mjs",
     "icons": "node scripts/generate-icons.mjs",
     "fixtures": "node scripts/generate-import-fixtures.mjs",

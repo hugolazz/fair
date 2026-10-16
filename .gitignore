@@ -13,4 +13,3 @@ dist-e2e
 playwright-report
 test-results
 lighthouse-report
-dist-demo
