@@ -49,22 +49,22 @@ export default function EventLayout() {
       <div>
         <Link
           to="/events"
-          className="text-brand-700 inline-flex min-h-11 items-center gap-2 text-sm font-medium"
+          className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm text-slate-600 transition-colors duration-200 hover:text-slate-900"
         >
           <ArrowLeft aria-hidden className="size-4" />
-          {t('title')}
+          {t('back')}
         </Link>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold">{event.name}</h1>
-          <StatusBadge status={event.status} />
-        </div>
+        <StatusBadge status={event.status} className="mb-3 flex" />
+        <h1 className="text-4xl leading-[1.05] font-medium tracking-[-0.03em] break-words md:text-5xl">
+          {event.name}
+        </h1>
       </div>
 
       <nav
         aria-label={t('tabs.label')}
-        className="-mx-4 overflow-x-auto border-b border-slate-200 px-4 md:mx-0 md:px-0"
+        className="-mx-4 mt-4 mb-6 overflow-x-auto px-4 shadow-[inset_0_-1px_0_0_var(--color-slate-200)] md:mx-0 md:mt-6 md:px-0"
       >
-        <ul className="flex gap-1">
+        <ul className="flex gap-7">
           {TABS.map((tab) => (
             <li key={tab.key}>
               <NavLink
@@ -72,10 +72,10 @@ export default function EventLayout() {
                 end={tab.end}
                 className={({ isActive }) =>
                   cn(
-                    'inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-medium whitespace-nowrap',
+                    'inline-flex min-h-11 min-w-11 items-center justify-center border-b-2 pb-0.5 text-sm font-medium whitespace-nowrap transition-colors duration-200',
                     isActive
-                      ? 'border-brand-600 text-brand-700'
-                      : 'border-transparent text-slate-700 hover:text-slate-900',
+                      ? 'border-brand-600 text-brand-600'
+                      : 'border-transparent text-slate-600 hover:text-slate-900',
                   )
                 }
               >

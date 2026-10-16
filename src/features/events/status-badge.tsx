@@ -1,28 +1,22 @@
-import { Archive, CheckCircle2, CircleDot, FileEdit, Radio, type LucideIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { EventStatus } from '@/db/schemas/event'
 import { cn } from '@/lib/cn'
 
-const STYLES: Record<EventStatus, { icon: LucideIcon; className: string }> = {
-  draft: { icon: FileEdit, className: 'bg-slate-100 text-slate-800' },
-  preparing: { icon: CircleDot, className: 'bg-amber-100 text-amber-900' },
-  live: { icon: Radio, className: 'bg-brand-100 text-brand-900' },
-  done: { icon: CheckCircle2, className: 'bg-emerald-100 text-emerald-900' },
-  archived: { icon: Archive, className: 'bg-slate-100 text-slate-700' },
+const STYLES: Record<EventStatus, { text: string; dot: string }> = {
+  draft: { text: 'text-slate-600', dot: 'bg-[#cfcbbf]' },
+  preparing: { text: 'text-gold-700', dot: 'bg-gold-500' },
+  live: { text: 'text-brand-600', dot: 'bg-brand-600 animate-pulse-dot' },
+  done: { text: 'text-slate-600', dot: 'bg-[#a9c9c3]' },
+  archived: { text: 'text-slate-600', dot: 'bg-[#cfcbbf]' },
 }
 
-/** Statut = icône + texte (jamais la couleur seule). */
-export function StatusBadge({ status }: { status: EventStatus }) {
+/** Statut = point + texte (jamais la couleur seule). « En cours » : le point pulse. */
+export function StatusBadge({ status, className }: { status: EventStatus; className?: string }) {
   const { t } = useTranslation('events')
-  const { icon: Icon, className } = STYLES[status]
+  const s = STYLES[status]
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
-        className,
-      )}
-    >
-      <Icon aria-hidden className="size-3.5" />
+    <span className={cn('inline-flex items-center gap-2 text-[13px]', s.text, className)}>
+      <span aria-hidden className={cn('size-[7px] rounded-full', s.dot)} />
       {t(`status.${status}`)}
     </span>
   )

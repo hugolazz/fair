@@ -33,10 +33,8 @@ function Toggle({
       aria-pressed={pressed}
       onClick={onClick}
       className={cn(
-        'inline-flex min-h-9 items-center rounded-full border px-3 text-sm font-medium md:min-h-8',
-        pressed
-          ? 'border-brand-600 bg-brand-600 text-white'
-          : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50',
+        'inline-flex min-h-11 items-center rounded-full px-4 text-[13px] font-medium transition-colors duration-200 md:min-h-9',
+        pressed ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-900 hover:bg-[#e8e5dc]',
       )}
     >
       {children}
@@ -44,7 +42,8 @@ function Toggle({
   )
 }
 
-const selectCls = 'min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm md:min-h-9'
+const selectCls =
+  'min-h-11 rounded-full border-0 bg-slate-100 px-4 text-[13px] font-medium text-slate-900 md:min-h-9'
 
 export function FilterBar({
   filters,
@@ -75,14 +74,17 @@ export function FilterBar({
 
   const panel = (
     <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
-      <div role="group" aria-label={t('filters.priority')} className="flex flex-wrap gap-1.5">
+      <div role="group" aria-label={t('filters.priority')} className="flex flex-wrap gap-2">
+        <Toggle pressed={filters.priorities.length === 0} onClick={() => set({ priorities: [] })}>
+          {t('filters.all')}
+        </Toggle>
         {PRIORITIES.map((p) => (
           <Toggle
             key={p}
             pressed={filters.priorities.includes(p)}
             onClick={() => togglePriority(p)}
           >
-            {p}
+            {t('filters.priorityLabel', { p })}
           </Toggle>
         ))}
         <Toggle
@@ -145,7 +147,7 @@ export function FilterBar({
             value={filters.search}
             onChange={(e) => set({ search: e.target.value })}
             placeholder={t('filters.search')}
-            className="min-h-11 w-full rounded-lg border border-slate-300 bg-white pr-3 pl-9 text-base placeholder:text-slate-500 md:min-h-9 md:text-sm"
+            className="min-h-11 w-full rounded-full border-0 bg-slate-100 pr-4 pl-10 text-base placeholder:text-slate-500 md:min-h-9 md:text-[13px]"
           />
         </label>
         {collapsible ? (
@@ -154,13 +156,18 @@ export function FilterBar({
             {active > 0 ? t('filters.toggleActive', { count: active }) : t('filters.toggle')}
           </Button>
         ) : null}
-        <p role="status" className="hidden text-sm whitespace-nowrap text-slate-600 md:block">
+        <p
+          role="status"
+          className="ml-auto hidden text-[13px] whitespace-nowrap text-slate-600 md:block"
+        >
           {t('filters.count', { count: shown, total })}
         </p>
       </div>
       {collapsible ? (
         open ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-3">{panel}</div>
+          <div className="rounded-3xl bg-white p-4 shadow-[0_0_0_1px_var(--color-slate-200)]">
+            {panel}
+          </div>
         ) : null
       ) : (
         panel

@@ -1,4 +1,3 @@
-import { ClipboardList, Copy, Pencil, Trash2, Upload } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
@@ -29,52 +28,47 @@ export default function EventDetailPage() {
   const place = [event.venue, event.city].filter(Boolean).join(', ')
 
   return (
-    <article className="flex flex-col gap-6">
-      <div className="flex flex-wrap gap-2">
+    <article className="flex flex-col gap-5">
+      <dl className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-5">
+        <div className="rounded-3xl bg-white p-7 shadow-[0_0_0_1px_var(--color-slate-200)]">
+          <dt className="mb-2.5 text-[13px] text-slate-600">{t('detail.dates')}</dt>
+          <dd className="text-2xl leading-tight font-medium tracking-[-0.02em]">
+            {dates ?? t('datesUnknown')}
+          </dd>
+        </div>
+        <div className="rounded-3xl bg-white p-7 shadow-[0_0_0_1px_var(--color-slate-200)]">
+          <dt className="mb-2.5 text-[13px] text-slate-600">{t('detail.location')}</dt>
+          <dd className="text-2xl leading-tight font-medium tracking-[-0.02em]">{place || '—'}</dd>
+        </div>
+      </dl>
+      <div className="rounded-3xl bg-white p-7 shadow-[0_0_0_1px_var(--color-slate-200)]">
+        <h2 className="mb-2.5 text-[13px] font-normal text-slate-600">{t('detail.goals')}</h2>
+        <p className="max-w-[640px] text-base leading-[1.65] text-pretty whitespace-pre-wrap">
+          {event.goals?.text || t('detail.noGoals')}
+        </p>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2.5">
         <Button asChild>
-          <Link to="participants">
-            <ClipboardList aria-hidden className="size-4" />
-            {t('detail.prepare')}
-          </Link>
+          <Link to="participants">{t('detail.prepare')}</Link>
         </Button>
         {admin ? (
           <>
             <Button asChild variant="secondary">
-              <Link to="import">
-                <Upload aria-hidden className="size-4" />
-                {t('detail.import')}
-              </Link>
+              <Link to="import">{t('detail.import')}</Link>
             </Button>
             <Button variant="secondary" onClick={() => setEditing(true)}>
-              <Pencil aria-hidden className="size-4" />
               {tc('actions.edit')}
             </Button>
             <Button variant="secondary" onClick={() => setDuplicating(true)}>
-              <Copy aria-hidden className="size-4" />
               {t('detail.duplicate')}
             </Button>
-            <Button variant="ghost" onClick={() => setConfirming(true)}>
-              <Trash2 aria-hidden className="size-4" />
+            <Button variant="quiet" onClick={() => setConfirming(true)}>
               {tc('actions.delete')}
             </Button>
           </>
         ) : null}
       </div>
-
-      <dl className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-2">
-        <div>
-          <dt className="text-sm text-slate-600">{t('detail.dates')}</dt>
-          <dd className="font-medium">{dates ?? t('datesUnknown')}</dd>
-        </div>
-        <div>
-          <dt className="text-sm text-slate-600">{t('detail.location')}</dt>
-          <dd className="font-medium">{place || '—'}</dd>
-        </div>
-        <div className="md:col-span-2">
-          <dt className="text-sm text-slate-600">{t('detail.goals')}</dt>
-          <dd className="whitespace-pre-wrap">{event.goals?.text || t('detail.noGoals')}</dd>
-        </div>
-      </dl>
 
       <DuplicateEventDialog event={event} open={duplicating} onOpenChange={setDuplicating} />
 

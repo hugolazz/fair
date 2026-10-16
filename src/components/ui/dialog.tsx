@@ -18,10 +18,10 @@ export function Dialog({ open, onOpenChange, title, description, children }: Pro
       <DialogPrimitive.Portal>
         {/* Au-dessus d'une fiche ouverte (z-50) : le fond sombre doit aussi la recouvrir. */}
         <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-slate-950/70" />
-        <DialogPrimitive.Content className="fixed inset-x-0 bottom-0 z-[70] max-h-[92dvh] overflow-y-auto rounded-t-2xl bg-white p-5 shadow-xl md:inset-auto md:top-1/2 md:left-1/2 md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl">
-          <div className="mb-4 flex items-start justify-between gap-4">
+        <DialogPrimitive.Content className="fixed inset-x-0 bottom-0 z-[70] max-h-[92dvh] overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl md:inset-auto md:top-1/2 md:left-1/2 md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl">
+          <div className="mb-5 flex items-start justify-between gap-4">
             <div>
-              <DialogPrimitive.Title className="text-lg font-semibold">
+              <DialogPrimitive.Title className="text-[1.625rem] leading-[1.15] font-medium tracking-[-0.02em]">
                 {title}
               </DialogPrimitive.Title>
               {description ? (
@@ -35,7 +35,7 @@ export function Dialog({ open, onOpenChange, title, description, children }: Pro
               )}
             </div>
             <DialogPrimitive.Close
-              className="-m-2 inline-flex size-11 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
+              className="-m-2 inline-flex size-11 items-center justify-center rounded-full text-slate-600 transition-colors duration-200 hover:bg-slate-100"
               aria-label={t('actions.close')}
             >
               <X aria-hidden className="size-5" />

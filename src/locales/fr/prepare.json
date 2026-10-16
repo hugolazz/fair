@@ -43,6 +43,8 @@
     "unassigned": "Non assignées",
     "noGoal": "Sans objectif",
     "reset": "Réinitialiser",
+    "all": "Toutes",
+    "priorityLabel": "Priorité {{p}}",
     "toggle": "Filtres",
     "toggleActive": "Filtres ({{count}})",
     "count": "{{count}} sur {{total}} entreprises",

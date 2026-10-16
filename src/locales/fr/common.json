@@ -11,7 +11,8 @@
   "nav": {
     "events": "Salons",
     "settings": "Réglages",
-    "main": "Navigation principale"
+    "main": "Navigation principale",
+    "account": "Mon compte"
   },
   "actions": {
     "save": "Enregistrer",

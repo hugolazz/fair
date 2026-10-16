@@ -1,4 +1,4 @@
-import { CalendarDays, MapPin, Plus } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { createEvent, listEvents } from '@/db/repositories/events'
 import { useIsAdmin } from '@/features/auth-team/roles'
 import { useReadySession } from '@/features/auth-team/session'
+import { firstNameOf } from '@/lib/person'
 import { useAsync } from '@/lib/use-async'
 import { EventFormDialog } from './event-form-dialog'
 import { formatEventDates } from './event-format'
@@ -14,22 +15,27 @@ import { StatusBadge } from './status-badge'
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
-  const { membership } = useReadySession()
+  const { membership, session } = useReadySession()
   const { data: events, error, loading, reload } = useAsync(listEvents, [])
   const [creating, setCreating] = useState(false)
 
   const admin = useIsAdmin()
   // Créer un salon est réservé aux admins d'équipe : un commercial n'a pas ce bouton.
   const newButton = admin ? (
-    <Button onClick={() => setCreating(true)}>
+    <Button variant="ink" onClick={() => setCreating(true)}>
       <Plus aria-hidden className="size-5" />
       {t('new')}
     </Button>
   ) : undefined
+  const firstName = firstNameOf(session.user.email)
 
   return (
     <>
-      <PageHeader title={t('title')} actions={events?.length ? newButton : undefined} />
+      <PageHeader
+        title={t('title')}
+        eyebrow={firstName ? t('greeting', { name: firstName }) : undefined}
+        actions={events?.length ? newButton : undefined}
+      />
 
       {loading && !events ? <Loading /> : null}
       {error ? <ErrorState message={t('errors.load')} onRetry={reload} /> : null}
@@ -43,7 +49,7 @@ export default function EventsPage() {
       ) : null}
 
       {events && events.length > 0 ? (
-        <ul className="grid gap-3 md:grid-cols-2">
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,440px),1fr))] gap-5">
           {events.map((e) => {
             const dates = formatEventDates(e.starts_on, e.ends_on)
             const place = [e.venue, e.city].filter(Boolean).join(', ')
@@ -51,22 +57,20 @@ export default function EventsPage() {
               <li key={e.id}>
                 <Link
                   to={`/events/${e.id}`}
-                  className="hover:border-brand-600 flex min-h-11 flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors"
+                  className="flex h-full flex-col gap-7 rounded-3xl bg-white p-7 shadow-[0_0_0_1px_var(--color-slate-200)] transition-[transform,box-shadow] duration-[250ms] ease-out hover:-translate-y-[3px] hover:shadow-[0_0_0_1px_#d7e6e2,0_16px_32px_-20px_rgb(15_118_110/0.35)]"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <h2 className="text-lg font-semibold">{e.name}</h2>
+                  <div className="flex items-center justify-between gap-3">
                     <StatusBadge status={e.status} />
+                    <ArrowUpRight aria-hidden className="size-5 text-[#bdb9ad]" />
                   </div>
-                  <p className="flex items-center gap-2 text-sm text-slate-700">
-                    <CalendarDays aria-hidden className="size-4" />
-                    {dates ?? t('datesUnknown')}
-                  </p>
-                  {place ? (
-                    <p className="flex items-center gap-2 text-sm text-slate-700">
-                      <MapPin aria-hidden className="size-4" />
-                      {place}
+                  <div>
+                    <h2 className="mb-1.5 text-[1.625rem] leading-[1.15] font-medium tracking-[-0.02em]">
+                      {e.name}
+                    </h2>
+                    <p className="text-sm text-slate-600">
+                      {[dates ?? t('datesUnknown'), place].filter(Boolean).join(' · ')}
                     </p>
-                  ) : null}
+                  </div>
                 </Link>
               </li>
             )

@@ -8,7 +8,7 @@ import type { ListProps } from './targets-table'
 import { useVirtualRows } from './use-virtual-rows'
 
 // Contenu : nom, stand, tags, assignés (≈ 128 px avec les marges) + 8 px d'espacement entre cartes.
-const CARD_HEIGHT = 144
+const CARD_HEIGHT = 168
 
 type Props = ListProps & { selectMode: boolean; tags: Tag[] }
 
@@ -39,7 +39,7 @@ export function TargetsCards(p: Props) {
               <div key={row.id} role="listitem" style={{ height: CARD_HEIGHT }} className="pb-2">
                 <div
                   className={cn(
-                    'flex h-full items-stretch gap-1 rounded-xl border bg-white',
+                    'flex h-full items-stretch gap-1 rounded-3xl border bg-white',
                     isSelected ? 'border-brand-600 bg-brand-50' : 'border-slate-200',
                   )}
                 >
@@ -65,12 +65,12 @@ export function TargetsCards(p: Props) {
                         {row.name}
                       </span>
                     </span>
-                    <span className="truncate text-sm text-slate-700">
+                    <span className="shrink-0 truncate text-sm leading-5 text-slate-700">
                       {[row.stand && t('sheet.stand', { stand: row.stand }), row.industry]
                         .filter(Boolean)
                         .join(' · ')}
                     </span>
-                    <span className="flex min-h-6 items-center gap-1 overflow-hidden">
+                    <span className="flex min-h-6 shrink-0 items-center gap-1 overflow-hidden">
                       {row.tagIds.slice(0, 2).map((id) => {
                         const tag = tagById.get(id)
                         return tag ? <TagChip key={id} tag={tag} /> : null

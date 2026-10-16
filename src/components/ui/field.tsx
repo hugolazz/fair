@@ -8,8 +8,11 @@ import {
 } from 'react'
 import { cn } from '@/lib/cn'
 
-const control =
-  'min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 placeholder:text-slate-500 aria-[invalid=true]:border-red-700'
+// Champs « sans cadre » : libellé atténué au-dessus, simple soulignement qui passe au brand au focus.
+const underline =
+  'min-h-12 w-full border-0 border-b border-slate-300 bg-transparent px-0 text-base text-slate-900 placeholder:text-slate-500 transition-colors duration-200 focus:border-brand-600 focus-visible:shadow-[0_1px_0_0_var(--color-brand-600)] focus-visible:outline-none aria-[invalid=true]:border-danger'
+const boxed =
+  'w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 transition-colors duration-200 focus:border-brand-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-600 aria-[invalid=true]:border-danger'
 
 type FieldShellProps = {
   label: string
@@ -21,13 +24,13 @@ function FieldShell({ label, error, children }: FieldShellProps) {
   const id = useId()
   const errorId = `${id}-error`
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-slate-800">
+    <div className="flex flex-col gap-1">
+      <label htmlFor={id} className="text-[13px] text-slate-500">
         {label}
       </label>
       {children({ id, ...(error ? { describedBy: errorId } : {}) })}
       {error ? (
-        <p id={errorId} role="alert" className="text-sm text-red-700">
+        <p id={errorId} role="alert" className="text-danger text-sm">
           {error}
         </p>
       ) : null}
@@ -52,7 +55,7 @@ export const InputField = forwardRef<HTMLInputElement, InputProps>(function Inpu
           id={id}
           aria-invalid={!!error}
           aria-describedby={describedBy}
-          className={cn(control, className)}
+          className={cn(underline, className)}
           {...props}
         />
       )}
@@ -78,7 +81,7 @@ export const TextareaField = forwardRef<HTMLTextAreaElement, TextareaProps>(func
           rows={4}
           aria-invalid={!!error}
           aria-describedby={describedBy}
-          className={cn(control, 'py-2', className)}
+          className={cn(boxed, className)}
           {...props}
         />
       )}
@@ -103,7 +106,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectProps>(function S
           id={id}
           aria-invalid={!!error}
           aria-describedby={describedBy}
-          className={cn(control, className)}
+          className={cn(underline, className)}
           {...props}
         >
           {children}

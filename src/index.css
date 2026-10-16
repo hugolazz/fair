@@ -1,14 +1,68 @@
 @import 'tailwindcss';
+@import '@fontsource/instrument-sans/latin-400.css';
+@import '@fontsource/instrument-sans/latin-500.css';
+@import '@fontsource/instrument-sans/latin-600.css';
+@import '@fontsource/instrument-serif/latin-400-italic.css';
 
+/*
+ * Refonte « épurée » : palette chaude, une seule police d'interface (Instrument Sans), un seul usage du serif (le logo).
+ * Les gris « slate » de Tailwind sont remappés sur la palette : toute l'appli suit sans toucher chaque classe.
+ * - 50 fond de page · 100 pilules et surfaces secondaires · 200 filets fins · 300 soulignements de champs
+ * - 400 décoratif uniquement (jamais du texte) · 500/600 texte atténué (AA sur le fond de page) · 900 encre
+ */
 @theme {
-  --color-brand-50: #f0fdfa;
-  --color-brand-100: #ccfbf1;
+  --color-slate-50: #faf9f6;
+  --color-slate-100: #f1efe9;
+  --color-slate-200: #ece9e1;
+  --color-slate-300: #d9d6cd;
+  --color-slate-400: #a8a498;
+  --color-slate-500: #646f6b;
+  --color-slate-600: #596460;
+  --color-slate-700: #444e4a;
+  --color-slate-800: #2b3532;
+  --color-slate-900: #1d2623;
+  --color-slate-950: #131a18;
+
+  --color-brand-50: #e3efec;
+  --color-brand-100: #d7e6e2;
   --color-brand-600: #0f766e;
   --color-brand-700: #115e59;
-  --color-brand-900: #134e4a;
+  --color-brand-900: #0b4a45;
+
+  /* Accent doré : point du logo et statut « en préparation ». */
+  --color-gold-500: #d9a441;
+  --color-gold-700: #8a6a1c;
+  --color-danger: #b4372c;
+
   --font-sans:
-    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial,
     sans-serif;
+  --font-serif: 'Instrument Serif', ui-serif, Georgia, serif;
+
+  --radius-xl: 1.5rem;
+  --radius-2xl: 1.5rem;
+
+  --animate-rise: rise 0.5s ease both;
+  --animate-pulse-dot: pulse-dot 1.8s ease-out infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pulse-dot {
+    0% {
+      box-shadow: 0 0 0 0 rgb(15 118 110 / 0.35);
+    }
+    100% {
+      box-shadow: 0 0 0 7px rgb(15 118 110 / 0);
+    }
+  }
 }
 
 html,
@@ -32,5 +86,8 @@ body {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+  .animate-pulse-dot {
+    animation: none;
   }
 }

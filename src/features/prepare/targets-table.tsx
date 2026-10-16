@@ -29,11 +29,11 @@ type Props = ListProps & {
   onPriority: (id: string, p: Priority | null) => void
 }
 
-const ROW_HEIGHT = 44
+const ROW_HEIGHT = 52
 // case · prio · entreprise · stand · secteur · tags · assignés · rdv · contacts
 const GRID =
-  'grid grid-cols-[2.75rem_3rem_minmax(14rem,2.4fr)_5.5rem_minmax(8rem,1.2fr)_minmax(10rem,1.6fr)_minmax(9rem,1.3fr)_8.5rem_3.5rem] items-center'
-const MIN_WIDTH = 'min-w-[58rem]'
+  'grid grid-cols-[2.75rem_3rem_minmax(12rem,2.4fr)_4.5rem_minmax(7rem,1.2fr)_minmax(7rem,1.4fr)_minmax(6rem,1fr)_8rem_4.5rem] items-center'
+const MIN_WIDTH = 'min-w-[50rem]'
 
 const COLUMNS: { key: SortKey | null; label: string; className?: string }[] = [
   { key: 'priority', label: 'priority' },
@@ -65,14 +65,14 @@ export function TargetsTable(p: Props) {
       role="table"
       aria-rowcount={p.rows.length + 1}
       aria-label={t('title')}
-      className="max-h-[calc(100dvh-17rem)] min-h-80 overflow-auto rounded-xl border border-slate-200 bg-white"
+      className="max-h-[calc(100dvh-17rem)] min-h-80 overflow-auto rounded-3xl bg-white p-2 shadow-[0_0_0_1px_var(--color-slate-200)]"
     >
       <div
         role="row"
         className={cn(
           GRID,
           MIN_WIDTH,
-          'sticky top-0 z-10 h-10 border-b border-slate-200 bg-slate-100 text-xs font-semibold text-slate-700',
+          'sticky top-0 z-10 h-10 bg-white text-[13px] font-medium text-slate-600 shadow-[0_1px_0_0_var(--color-slate-200)]',
         )}
       >
         <div role="columnheader" className="flex justify-center">
@@ -137,7 +137,7 @@ export function TargetsTable(p: Props) {
                 }}
                 className={cn(
                   GRID,
-                  'cursor-pointer border-b border-slate-100 text-sm hover:bg-slate-50',
+                  'cursor-pointer rounded-2xl text-sm transition-colors duration-200 hover:bg-slate-50',
                   isSelected && 'bg-brand-50 hover:bg-brand-50',
                   p.openId === row.id && 'outline-brand-600 outline-2 -outline-offset-2',
                 )}
@@ -157,7 +157,7 @@ export function TargetsTable(p: Props) {
                     type="button"
                     disabled={!canPrepareTarget(admin, row.assigneeIds, p.meId)}
                     onClick={() => p.onPriority(row.id, nextPriority(row.priority))}
-                    className="rounded-md disabled:cursor-not-allowed"
+                    className="rounded-full disabled:cursor-not-allowed"
                     aria-label={t('priority.set', { p: row.priority ?? t('priority.none') })}
                   >
                     <PriorityBadge priority={row.priority} />
@@ -167,7 +167,7 @@ export function TargetsTable(p: Props) {
                   <button
                     type="button"
                     onClick={() => p.onOpen(row.id)}
-                    className="max-w-full truncate text-left font-medium hover:underline"
+                    className="max-w-full truncate text-left text-base font-medium hover:underline"
                   >
                     {row.name}
                   </button>

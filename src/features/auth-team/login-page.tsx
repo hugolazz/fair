@@ -43,18 +43,16 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 px-6 py-10">
+    <main className="animate-rise mx-auto flex min-h-dvh w-full max-w-[380px] flex-col justify-center gap-10 px-6 py-10">
       <div>
-        <Wordmark className="text-4xl" />
-        <p className="mt-2 text-slate-600">{tc('tagline')}</p>
+        <Wordmark className="text-[4rem]" />
+        <p className="mt-3.5 text-[17px] leading-normal text-balance text-slate-600">
+          {tc('tagline')}
+        </p>
       </div>
 
-      <form
-        onSubmit={onSubmit}
-        noValidate
-        className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm"
-      >
-        <h1 className="text-xl font-semibold">{t('login.title')}</h1>
+      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
+        <h1 className="sr-only">{t('login.title')}</h1>
         <InputField
           label={t('login.email')}
           type="email"
@@ -75,7 +73,7 @@ export default function LoginPage() {
           error={error}
           required
         />
-        <Button type="submit" disabled={signingIn}>
+        <Button type="submit" disabled={signingIn} className="mt-3 min-h-[50px] w-full text-[15px]">
           {signingIn ? t('login.signingIn') : t('login.submit')}
         </Button>
       </form>

@@ -47,6 +47,8 @@ TypeScript strict · React + Vite + React Router (SPA, pas de SSR) · Tailwind +
 - Mobile first ; desktop complet pour Avant/Après. Cibles tactiles ≥ 44 px, actions principales à portée de pouce.
 - WCAG 2.2 AA : contraste, focus visible, navigation clavier, labels/ARIA, statuts jamais portés par la couleur seule, `prefers-reduced-motion`.
 
+- **Design** (`design_handoff_fair_redesign/`) : tokens dans `src/index.css` (`@theme` : palette chaude, les `slate-*` sont remappés, `brand`, `gold`, `danger`), polices Instrument Sans / Instrument Serif auto-hébergées (`@fontsource`), boutons en pilule, champs soulignés, cartes à 24 px de rayon. Statut = pastille + texte, priorité = lettre.
+
 ## RGPD
 
 Les contacts sont des données personnelles. Données scopées par équipe (RLS sur toutes les tables, tests dans `tests/rls/`). Minimisation, durée de conservation configurable, export / suppression / anonymisation d'un contact, opt-out respecté dans les relances, hébergement UE. Ne jamais logger de données personnelles (notes, e-mails, noms) dans la console, Sentry ou les analytics. Détails dans `docs/rgpd.md`.

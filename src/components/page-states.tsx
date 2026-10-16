@@ -22,7 +22,7 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className="flex flex-col items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-900"
+      className="flex flex-col items-start gap-3 rounded-3xl bg-[#fbe9e6] p-6 text-[#7a2a21]"
     >
       <p>{message ?? t('states.error')}</p>
       {onRetry ? (
@@ -46,21 +46,35 @@ export function EmptyState({
   action?: ReactNode
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <div className="text-slate-500" aria-hidden>
+    <div className="flex flex-col items-center gap-3 rounded-3xl bg-white px-6 py-14 text-center ring-1 ring-slate-200">
+      <div className="text-slate-400" aria-hidden>
         {icon}
       </div>
-      <h2 className="text-lg font-semibold">{title}</h2>
+      <h2 className="text-[1.625rem] leading-[1.15] font-medium tracking-[-0.02em]">{title}</h2>
       <p className="max-w-sm text-slate-600">{body}</p>
       {action}
     </div>
   )
 }
 
-export function PageHeader({ title, actions }: { title: string; actions?: ReactNode }) {
+/** En-tête de page : titre 48 px, actions alignées en bas à droite. */
+export function PageHeader({
+  title,
+  actions,
+  eyebrow,
+}: {
+  title: string
+  actions?: ReactNode
+  eyebrow?: string
+}) {
   return (
-    <div className="mb-5 flex items-center justify-between gap-3">
-      <h1 className="text-2xl font-semibold">{title}</h1>
+    <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        {eyebrow ? <p className="mb-2 text-sm text-slate-600">{eyebrow}</p> : null}
+        <h1 className="text-4xl leading-[1.05] font-medium tracking-[-0.03em] md:text-5xl">
+          {title}
+        </h1>
+      </div>
       {actions}
     </div>
   )

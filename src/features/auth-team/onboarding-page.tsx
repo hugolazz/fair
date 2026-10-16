@@ -33,16 +33,16 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 px-6 py-10">
-      <Wordmark className="text-4xl" />
-      <form
-        onSubmit={onSubmit}
-        noValidate
-        className="flex flex-col gap-4 rounded-2xl bg-white p-6 shadow-sm"
-      >
+    <main className="animate-rise mx-auto flex min-h-dvh w-full max-w-[380px] flex-col justify-center gap-10 px-6 py-10">
+      <Wordmark className="text-[4rem]" />
+      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
         <div>
-          <h1 className="text-xl font-semibold">{t('onboarding.title')}</h1>
-          <p className="mt-1 text-sm text-slate-600">{t('onboarding.subtitle')}</p>
+          <h1 className="text-[1.625rem] leading-[1.15] font-medium tracking-[-0.02em]">
+            {t('onboarding.title')}
+          </h1>
+          <p className="mt-2 text-[15px] leading-normal text-slate-600">
+            {t('onboarding.subtitle')}
+          </p>
         </div>
         <InputField
           label={t('onboarding.teamName')}
@@ -52,10 +52,10 @@ export default function OnboardingPage() {
           error={error}
           autoFocus
         />
-        <Button type="submit" disabled={saving}>
+        <Button type="submit" disabled={saving} className="mt-3 min-h-[50px] w-full text-[15px]">
           {t('onboarding.submit')}
         </Button>
-        <Button variant="ghost" onClick={() => void signOut()}>
+        <Button variant="ghost" className="w-full" onClick={() => void signOut()}>
           {t('signOut')}
         </Button>
       </form>

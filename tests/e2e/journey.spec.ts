@@ -148,6 +148,8 @@ test.describe.serial('parcours complet', () => {
       .first()
       .click()
     await page.getByRole('link', { name: 'Participants', exact: true }).click()
+    // Liste fenêtrée : on filtre pour que la ligne soit rendue.
+    await page.getByRole('searchbox').fill('Mirakl')
     await page.getByRole('button', { name: 'Mirakl' }).first().click()
     const sheet = page.getByRole('dialog')
     await expect(sheet.getByText('Dylan Perrin').first()).toBeVisible()
@@ -163,6 +165,7 @@ test.describe.serial('parcours complet', () => {
       .first()
       .click()
     await page.getByRole('link', { name: 'Participants', exact: true }).click()
+    await page.getByRole('searchbox').fill('Mirakl')
     await page.getByRole('button', { name: 'Mirakl' }).first().click()
     const sheet = page.getByRole('dialog', { name: 'Mirakl' })
     const edit = await openEdit(page)

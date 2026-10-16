@@ -1,5 +1,7 @@
 {
-  "title": "Salons",
+  "title": "Vos salons",
+  "greeting": "Bonjour {{name}}",
+  "back": "Salons",
   "new": "Nouveau salon",
   "empty": {
     "title": "Aucun salon pour l'instant",
