@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { Priority } from './prepare'
 
 // Types et schémas partagés par l'import de participants (UI, worker et dépôt).
 
@@ -15,6 +16,10 @@ export const IMPORT_FIELDS = [
   'jobTitle',
   'email',
   'phone',
+  'contactLinkedin',
+  'priority',
+  'tag',
+  'comment',
 ] as const
 export type ImportField = (typeof IMPORT_FIELDS)[number]
 
@@ -41,6 +46,12 @@ export type CompanyDraft = {
   industry: string
   country: string
   city: string
+  /** Priorité déjà décidée dans le fichier (A, B ou C). */
+  priority: Priority | null
+  /** Typologie (client, prospect, concurrent…) : le libellé d'un tag de l'équipe. */
+  tag: string
+  /** Historique avec l'entreprise (colonne « Commentaire » du fichier), texte libre. */
+  comment: string
 }
 
 export type ContactDraft = {
@@ -49,14 +60,22 @@ export type ContactDraft = {
   jobTitle: string
   email: string
   phone: string
+  linkedin: string
 }
 
-export type RowWarning = 'invalid_email' | 'invalid_url' | 'contact_incomplete'
+export type RowWarning =
+  | 'invalid_email'
+  | 'invalid_url'
+  | 'invalid_linkedin'
+  | 'contact_incomplete'
+  /** Plusieurs contacts dans la ligne, mais pas autant d'e-mails que de noms : l'alignement est à vérifier. */
+  | 'contacts_mismatch'
 
 export type CleanRow = {
   rowNumber: number
   company: CompanyDraft
-  contact: ContactDraft | null
+  /** Un ou plusieurs contacts (le premier est le contact clé). */
+  contacts: ContactDraft[]
   warnings: RowWarning[]
 }
 
@@ -74,6 +93,7 @@ export type KnownCompany = {
   industry: string | null
   country: string | null
   city: string | null
+  history: string | null
 }
 
 export type KnownContact = {
@@ -108,6 +128,7 @@ export type CompanyWrite = {
   industry: string | null
   country: string | null
   city: string | null
+  history: string | null
   isNew: boolean
   rowNumbers: number[]
 }
@@ -118,9 +139,13 @@ export type EventCompanyWrite = {
   event_id: string
   company_id: string
   stand_label: string | null
-  import_batch_id: string
+  priority: Priority | null
+  import_batch_id: string | null
   rowNumbers: number[]
 }
+
+/** Typologie à poser sur une société (au niveau de l'entreprise : elle suit d'un salon à l'autre). */
+export type CompanyTagWrite = { company_id: string; label: string; rowNumbers: number[] }
 
 export type ContactWrite = {
   id: string
@@ -131,6 +156,7 @@ export type ContactWrite = {
   job_title: string | null
   email: string | null
   phone: string | null
+  linkedin_url: string | null
   rowNumbers: number[]
 }
 
@@ -148,9 +174,10 @@ export type SkipReason = 'duplicate_skipped'
 export type PlanWarning = { rowNumber: number; code: 'domain_conflict' | RowWarning }
 
 export type ImportPlan = {
-  batchId: string
+  batchId: string | null
   companies: CompanyWrite[]
   eventCompanies: EventCompanyWrite[]
+  companyTags: CompanyTagWrite[]
   contacts: ContactWrite[]
   eventContacts: EventContactWrite[]
   skipped: { rowNumber: number; reason: SkipReason }[]

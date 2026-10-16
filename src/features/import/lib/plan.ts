@@ -1,5 +1,7 @@
+import type { Priority } from '@/db/schemas/prepare'
 import type {
   CleanRow,
+  CompanyTagWrite,
   CompanyWrite,
   ContactDraft,
   ContactWrite,
@@ -22,10 +24,23 @@ type Slot = {
   nameKey: string
   fields: Fields
   stand: string
+  priority: Priority | null
+  tag: string
+  /** Commentaires des lignes de cette société (sans répétition). */
+  comment: string
   rows: CleanRow[]
 }
 
 const FILL_FIELDS = ['domain', 'website', 'industry', 'country', 'city'] as const
+
+/** Ajoute un commentaire à l'historique existant sans le répéter ni l'écraser. */
+export function mergeHistory(existing: string | null | undefined, incoming: string): string {
+  const base = (existing ?? '').trim()
+  const add = incoming.trim()
+  if (!add) return base
+  if (!base) return add
+  return base.includes(add) ? base : `${base}\n${add}`
+}
 
 const nul = (s: string | null | undefined) => (s ? s : null)
 
@@ -42,7 +57,8 @@ export type PlanInput = {
   eventCompanyIds: Set<string>
   teamId: string
   eventId: string
-  batchId: string
+  /** `null` = saisie manuelle (aucun lot d'import). */
+  batchId: string | null
   newId: () => string
 }
 
@@ -66,6 +82,9 @@ export function buildPlan(input: PlanInput): ImportPlan {
       nameKey: row.company.nameKey,
       fields: { website: '', domain: '', industry: '', country: '', city: '' },
       stand: '',
+      priority: null,
+      tag: '',
+      comment: '',
       rows: [],
     }
     slots.set(key, s)
@@ -82,6 +101,9 @@ export function buildPlan(input: PlanInput): ImportPlan {
       nameKey: k.nameKey,
       fields: { website: '', domain: '', industry: '', country: '', city: '' },
       stand: '',
+      priority: null,
+      tag: '',
+      comment: '',
       rows: [],
     }
     slots.set(key, s)
@@ -106,11 +128,15 @@ export function buildPlan(input: PlanInput): ImportPlan {
     for (const f of FILL_FIELDS)
       if (!slot.fields[f] && row.company[f]) slot.fields[f] = row.company[f]
     if (!slot.stand && row.company.stand) slot.stand = row.company.stand
+    if (!slot.priority && row.company.priority) slot.priority = row.company.priority
+    if (!slot.tag && row.company.tag) slot.tag = row.company.tag
+    slot.comment = mergeHistory(slot.comment, row.company.comment)
     slot.rows.push(row)
   }
 
   const companies: CompanyWrite[] = []
   const eventCompanies: EventCompanyWrite[] = []
+  const companyTags: CompanyTagWrite[] = []
   const contacts: ContactWrite[] = []
   const eventContacts: EventContactWrite[] = []
   const warnings: PlanWarning[] = []
@@ -152,6 +178,7 @@ export function buildPlan(input: PlanInput): ImportPlan {
         industry: nul(slot.fields.industry),
         country: nul(slot.fields.country),
         city: nul(slot.fields.city),
+        history: nul(slot.comment),
         isNew: true,
         rowNumbers,
       })
@@ -165,7 +192,10 @@ export function buildPlan(input: PlanInput): ImportPlan {
           patch[f] = slot.fields[f]
         }
       }
-      if (Object.keys(patch).length > 0) {
+      // L'historique s'enrichit : un nouveau commentaire s'ajoute à l'existant, jamais ne le remplace.
+      const history = mergeHistory(k.history, slot.comment)
+      const historyChanged = history !== (k.history ?? '').trim()
+      if (Object.keys(patch).length > 0 || historyChanged) {
         if (patch.domain) usedDomains.add(patch.domain)
         companies.push({
           id: k.id,
@@ -177,6 +207,7 @@ export function buildPlan(input: PlanInput): ImportPlan {
           industry: nul(patch.industry ?? k.industry),
           country: nul(patch.country ?? k.country),
           city: nul(patch.city ?? k.city),
+          history: nul(history),
           isNew: false,
           rowNumbers,
         })
@@ -191,53 +222,56 @@ export function buildPlan(input: PlanInput): ImportPlan {
         event_id: input.eventId,
         company_id: companyId,
         stand_label: nul(slot.stand),
+        priority: slot.priority,
         import_batch_id: input.batchId,
         rowNumbers,
       })
     }
+    if (slot.tag) companyTags.push({ company_id: companyId, label: slot.tag, rowNumbers })
 
     const seen = new Set<string>()
     for (const row of slot.rows) {
       for (const w of row.warnings) warnings.push({ rowNumber: row.rowNumber, code: w })
-      const c = row.contact
-      if (!c) continue
-      const key = personKey(c)
-      if (seen.has(key)) continue
-      seen.add(key)
+      for (const c of row.contacts) {
+        const key = personKey(c)
+        if (seen.has(key)) continue
+        seen.add(key)
 
-      const existing =
-        (c.email ? contactsByEmail.get(c.email) : undefined) ??
-        contactsByName.get(
-          `${companyId}|${normalizeName(c.firstName)}|${normalizeName(c.lastName)}`,
-        )
-      let contactId: string
-      let contactCompany = companyId
-      if (existing) {
-        contactId = existing.id
-        contactCompany = existing.companyId ?? companyId
-        contactsLinked++
-      } else {
-        contactId = newId()
-        contacts.push({
-          id: contactId,
+        const existing =
+          (c.email ? contactsByEmail.get(c.email) : undefined) ??
+          contactsByName.get(
+            `${companyId}|${normalizeName(c.firstName)}|${normalizeName(c.lastName)}`,
+          )
+        let contactId: string
+        let contactCompany = companyId
+        if (existing) {
+          contactId = existing.id
+          contactCompany = existing.companyId ?? companyId
+          contactsLinked++
+        } else {
+          contactId = newId()
+          contacts.push({
+            id: contactId,
+            team_id: input.teamId,
+            company_id: companyId,
+            first_name: nul(c.firstName),
+            last_name: nul(c.lastName),
+            job_title: nul(c.jobTitle),
+            email: nul(c.email),
+            phone: nul(c.phone),
+            linkedin_url: nul(c.linkedin),
+            rowNumbers: [row.rowNumber],
+          })
+        }
+        eventContacts.push({
+          event_id: input.eventId,
+          contact_id: contactId,
+          company_id: contactCompany,
           team_id: input.teamId,
-          company_id: companyId,
-          first_name: nul(c.firstName),
-          last_name: nul(c.lastName),
-          job_title: nul(c.jobTitle),
-          email: nul(c.email),
-          phone: nul(c.phone),
+          expected: true,
           rowNumbers: [row.rowNumber],
         })
       }
-      eventContacts.push({
-        event_id: input.eventId,
-        contact_id: contactId,
-        company_id: contactCompany,
-        team_id: input.teamId,
-        expected: true,
-        rowNumbers: [row.rowNumber],
-      })
     }
   }
 
@@ -246,6 +280,7 @@ export function buildPlan(input: PlanInput): ImportPlan {
     batchId: input.batchId,
     companies,
     eventCompanies,
+    companyTags,
     contacts,
     eventContacts,
     skipped,

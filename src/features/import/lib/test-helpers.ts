@@ -10,6 +10,10 @@ type RowOpts = {
   first?: string
   last?: string
   job?: string
+  linkedin?: string
+  priority?: 'A' | 'B' | 'C'
+  tag?: string
+  comment?: string
 }
 
 /** Fabrique une ligne nettoyée pour les tests de déduplication et de plan. */
@@ -26,16 +30,22 @@ export function row(rowNumber: number, name: string, o: RowOpts = {}): CleanRow 
       industry: o.industry ?? '',
       country: '',
       city: '',
+      priority: o.priority ?? null,
+      tag: o.tag ?? '',
+      comment: o.comment ?? '',
     },
-    contact: hasContact
-      ? {
-          firstName: o.first ?? '',
-          lastName: o.last ?? '',
-          jobTitle: o.job ?? '',
-          email: o.email ?? '',
-          phone: '',
-        }
-      : null,
+    contacts: hasContact
+      ? [
+          {
+            firstName: o.first ?? '',
+            lastName: o.last ?? '',
+            jobTitle: o.job ?? '',
+            email: o.email ?? '',
+            phone: '',
+            linkedin: o.linkedin ?? '',
+          },
+        ]
+      : [],
     warnings: [],
   }
 }
@@ -50,6 +60,7 @@ export function known(id: string, name: string, o: Partial<KnownCompany> = {}): 
     industry: null,
     country: null,
     city: null,
+    history: null,
     ...o,
   }
 }

@@ -131,6 +131,33 @@ const SYNONYMS: Record<ImportField, string[]> = {
     'numero de telephone',
     'phone number',
   ],
+  contactLinkedin: [
+    'linkedin',
+    'linked in',
+    'lien linkedin',
+    'profil linkedin',
+    'linkedin url',
+    'url linkedin',
+    'linkedin contact',
+    'linkedin profile',
+  ],
+  priority: ['priorite', 'prio', 'priority', 'niveau de priorite', 'note de priorite'],
+  comment: [
+    'commentaire',
+    'commentaires',
+    'historique',
+    'historique des echanges',
+    'historique relation',
+    'remarque',
+    'remarques',
+    'observations',
+    'comment',
+    'comments',
+    'notes',
+    'note',
+    'history',
+  ],
+  tag: ['type', 'typologie', 'tag', 'tags', 'type de compte', 'type d entreprise', 'relation'],
 }
 
 /** Note de 0 à 1 : intitulé identique à un synonyme = 1 ; synonyme contenu dans l'intitulé = plus faible. */
@@ -171,6 +198,8 @@ function contentScore(sample: string[], field: ImportField): number {
       ? 0.7
       : 0
   }
+  if (field === 'contactLinkedin')
+    return fraction(sample, (v) => /linkedin\.com\//i.test(v)) >= 0.6 ? 1.05 : 0
   if (field === 'phone') {
     return fraction(
       sample,

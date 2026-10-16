@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { SelectField } from '@/components/ui/field'
@@ -7,6 +8,7 @@ import {
   type ImportField,
   type RawTable,
 } from '@/db/schemas/import'
+import { cleanRows } from './lib/clean'
 
 type Props = {
   table: RawTable
@@ -47,6 +49,20 @@ export function StepMapping({
 
   const preview = table.rows.slice(0, 5)
   const canContinue = mapping.companyName !== undefined
+  const hasContactColumns =
+    mapping.contactName !== undefined ||
+    mapping.contactFirstName !== undefined ||
+    mapping.contactLastName !== undefined ||
+    mapping.email !== undefined
+  // Lignes qui contiennent plusieurs contacts : à signaler avant l'import, avec les décalages éventuels.
+  const multi = useMemo(() => {
+    if (!canContinue || !hasContactColumns) return { many: 0, mismatch: 0 }
+    const rows = cleanRows(table, mapping).rows
+    return {
+      many: rows.filter((r) => r.contacts.length > 1).length,
+      mismatch: rows.filter((r) => r.warnings.includes('contacts_mismatch')).length,
+    }
+  }, [table, mapping, canContinue, hasContactColumns])
 
   return (
     <section className="flex flex-col gap-5" aria-labelledby="mapping-title">
@@ -96,6 +112,22 @@ export function StepMapping({
           </SelectField>
         ))}
       </div>
+
+      {hasContactColumns ? (
+        <div className="flex flex-col gap-2 text-sm">
+          <p className="text-slate-600">{t('mapping.multiContactsHint')}</p>
+          {multi.many > 0 ? (
+            <p role="status" className="bg-brand-50 text-brand-900 rounded-lg p-3">
+              {t('mapping.multiContactsFound', { count: multi.many })}
+            </p>
+          ) : null}
+          {multi.mismatch > 0 ? (
+            <p role="alert" className="rounded-lg bg-amber-100 p-3 text-amber-950">
+              {t('mapping.multiContactsMismatch', { count: multi.mismatch })}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div>
         <h3 className="mb-2 text-sm font-semibold">{t('mapping.preview')}</h3>

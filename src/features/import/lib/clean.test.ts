@@ -36,7 +36,7 @@ describe('cleanRows', () => {
         domain: 'carrefour.com',
         stand: 'B12',
       },
-      contact: { firstName: 'Jean', lastName: 'Martin', email: 'jean.martin@carrefour.com' },
+      contacts: [{ firstName: 'Jean', lastName: 'Martin', email: 'jean.martin@carrefour.com' }],
       warnings: [],
     })
   })
@@ -87,8 +87,8 @@ describe('cleanRows', () => {
     )
     expect(r.rows[0]!.warnings.sort()).toEqual(['invalid_email', 'invalid_url'])
     expect(r.rows[0]!.company.website).toBe('')
-    expect(r.rows[0]!.contact?.email).toBe('')
-    expect(r.rows[0]!.contact?.lastName).toBe('Martin')
+    expect(r.rows[0]!.contacts[0]?.email).toBe('')
+    expect(r.rows[0]!.contacts[0]?.lastName).toBe('Martin')
   })
 
   it('n’ajoute pas de contact sans nom ni e-mail', () => {
@@ -96,7 +96,7 @@ describe('cleanRows', () => {
       table([['Acme', '', '', '', '']], ['Société', 'Site', 'Stand', 'Poste', 'Email']),
       { companyName: 0, jobTitle: 3 },
     )
-    expect(r.rows[0]!.contact).toBeNull()
+    expect(r.rows[0]!.contacts).toEqual([])
   })
 
   it('préfère prénom/nom séparés au nom complet', () => {
@@ -104,13 +104,13 @@ describe('cleanRows', () => {
       table([['Acme', 'Anne', 'LAMY', 'ignoré Nom']], ['Société', 'Prénom', 'Nom', 'Contact']),
       { companyName: 0, contactFirstName: 1, contactLastName: 2, contactName: 3 },
     )
-    expect(r.rows[0]!.contact).toMatchObject({ firstName: 'Anne', lastName: 'Lamy' })
+    expect(r.rows[0]!.contacts[0]).toMatchObject({ firstName: 'Anne', lastName: 'Lamy' })
   })
 
   it('traite les valeurs « N/A » comme vides', () => {
     const r = cleanRows(table([['Acme', 'N/A', '-', 'n/a', '#N/A']]), mapping)
     expect(r.rows[0]!.company.website).toBe('')
-    expect(r.rows[0]!.contact).toBeNull()
+    expect(r.rows[0]!.contacts).toEqual([])
     expect(r.rows[0]!.warnings).toEqual([])
   })
 })

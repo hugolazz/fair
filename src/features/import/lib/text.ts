@@ -20,15 +20,24 @@ const PLACEHOLDERS = new Set([
 ])
 
 /** Trim, espaces insécables/zéro-largeur supprimés, espaces multiples réduits, valeurs « vides » (N/A, -, null…) neutralisées. */
-export function cleanCell(value: unknown): string {
+export function cleanCell(value: unknown, keepLines = false): string {
   if (value === null || value === undefined) return ''
-  const s = String(value)
+  const base = String(value)
     .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '')
     .replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  // `keepLines` : les retours \u00E0 la ligne s\u00E9parent parfois plusieurs contacts dans une m\u00EAme cellule.
+  const s = keepLines
+    ? base
+        .split(/\r\n|\r|\n/)
+        .map((line) => line.replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+        .join('\n')
+    : base.replace(/\s+/g, ' ').trim()
   return PLACEHOLDERS.has(s.toLowerCase()) ? '' : s
 }
+
+/** Cellule sur une seule ligne (les retours \u00E0 la ligne deviennent des espaces). */
+export const oneLine = (s: string) => s.replace(/\s*\n\s*/g, ' ')
 
 export { normalizeName, stripDiacritics }
 
@@ -93,6 +102,36 @@ export function normalizeUrl(raw: string): NormalizedUrl {
 const EMAIL_RE = /^[a-z0-9._%+'-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/
 
 /** Extrait une adresse valide de « Jean <JEAN@Acme.com> », « mailto:… » ou d'une liste ; invalid=true si rien d'exploitable. */
+/** Priorité d'un fichier : A / B / C, 1 / 2 / 3 ou haute / moyenne / basse (FR et EN). `null` si non reconnue. */
+export function normalizePriority(raw: string): 'A' | 'B' | 'C' | null {
+  const s = stripDiacritics(cleanCell(raw))
+    .toLowerCase()
+    .replace(/^priorite\s*/, '')
+  if (['a', '1', 'haute', 'high', 'forte', 'p1'].includes(s)) return 'A'
+  if (['b', '2', 'moyenne', 'medium', 'normale', 'p2'].includes(s)) return 'B'
+  if (['c', '3', 'basse', 'low', 'faible', 'p3'].includes(s)) return 'C'
+  return null
+}
+
+/** Profil LinkedIn : adresse complète en https, ou `invalid` si la cellule n'est pas un lien LinkedIn. */
+export function normalizeLinkedin(raw: string): { url: string; invalid: boolean } {
+  const s = cleanCell(raw)
+  if (!s) return { url: '', invalid: false }
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(s) ? s : `https://${s.replace(/^\/+/, '')}`
+  try {
+    const u = new URL(withScheme)
+    if (!/(^|\.)linkedin\.com$/i.test(u.hostname) || u.pathname.length < 2) {
+      return { url: '', invalid: true }
+    }
+    return {
+      url: `https://${u.hostname.toLowerCase()}${u.pathname.replace(/\/$/, '')}`,
+      invalid: false,
+    }
+  } catch {
+    return { url: '', invalid: true }
+  }
+}
+
 export function normalizeEmail(raw: string): { email: string; invalid: boolean } {
   const s = cleanCell(raw)
   if (!s) return { email: '', invalid: false }

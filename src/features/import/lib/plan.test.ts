@@ -233,7 +233,9 @@ describe('buildPlan — contacts', () => {
       [
         row(2, 'Acme', { first: 'A', last: 'B', email: 'a@acme.io' }),
         row(3, 'Acme', { first: 'A', last: 'B', email: 'A@ACME.io' }),
-      ].map((r, i) => (i === 1 ? { ...r, contact: { ...r.contact!, email: 'a@acme.io' } } : r)),
+      ].map((r, i) =>
+        i === 1 ? { ...r, contacts: [{ ...r.contacts[0]!, email: 'a@acme.io' }] } : r,
+      ),
     )
     expect(p.contacts).toHaveLength(1)
   })

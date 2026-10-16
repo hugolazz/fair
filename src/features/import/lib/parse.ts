@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import { IMPORT_LIMITS, ImportError, type RawTable } from '@/db/schemas/import'
-import { cleanCell } from './text'
+import { cleanCell, oneLine } from './text'
 
 /** Décode un fichier texte : UTF-8, sinon Windows-1252 (cas fréquent des CSV exportés par Excel). */
 export function decodeText(buffer: ArrayBuffer): string {
@@ -119,14 +119,14 @@ function columnLetter(i: number): string {
  */
 export function buildTable(grid: string[][], firstRowIsHeader: boolean): RawTable {
   const width = grid.reduce((w, r) => Math.max(w, r.length), 0)
-  const clean = grid.map((r) => Array.from({ length: width }, (_, i) => cleanCell(r[i])))
+  const clean = grid.map((r) => Array.from({ length: width }, (_, i) => cleanCell(r[i], true)))
   const firstData = clean.findIndex((r) => r.some((c) => c !== ''))
   if (firstData === -1 || width === 0) throw new ImportError('empty')
 
   let headers: string[]
   let start: number
   if (firstRowIsHeader) {
-    headers = clean[firstData]!
+    headers = clean[firstData]!.map(oneLine)
     start = firstData + 1
   } else {
     headers = []

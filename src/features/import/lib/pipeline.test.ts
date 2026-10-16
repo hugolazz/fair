@@ -48,13 +48,13 @@ describe('import du CSV très sale', () => {
       stand: 'B12',
       nameKey: 'carrefour',
     })
-    expect(byRow.get(2)!.contact).toMatchObject({
+    expect(byRow.get(2)!.contacts[0]).toMatchObject({
       firstName: 'Jean',
       lastName: 'Martin',
       email: 'jean.martin@carrefour.com',
     })
     expect(byRow.get(8)!.company.stand).toBe('hall 5 - C21')
-    expect(byRow.get(8)!.contact).toMatchObject({
+    expect(byRow.get(8)!.contacts[0]).toMatchObject({
       firstName: 'Claire',
       lastName: 'de la Roche',
       email: 'claire@dupont-fils.fr',
@@ -102,7 +102,7 @@ describe('autres formats', () => {
   it('CSV Windows-1252 avec prénom/nom/téléphone', async () => {
     const { analysis } = await run('participants-excel-fr-windows1252.csv')
     expect(analysis.errors).toEqual([])
-    expect(analysis.rows[0]!.contact).toMatchObject({
+    expect(analysis.rows[0]!.contacts[0]).toMatchObject({
       firstName: 'Éloïse',
       lastName: 'Garcia',
       phone: '+33 6 12 34 56 78',

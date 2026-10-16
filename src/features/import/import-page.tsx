@@ -1,8 +1,10 @@
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { Loading } from '@/components/page-states'
+import { Button } from '@/components/ui/button'
+import { AddCompanyDialog } from '@/features/manual-entry/add-company-dialog'
 import {
   executeImport,
   fetchEventCompanyIds,
@@ -41,6 +43,9 @@ const STEPS = ['source', 'mapping', 'review', 'report'] as const
 
 export default function ImportPage() {
   const { t } = useTranslation('import')
+  const { t: tm } = useTranslation('manual')
+  const [adding, setAdding] = useState(false)
+  const [manualNotice, setManualNotice] = useState<string>()
   const { eventId = '' } = useParams()
   const { membership } = useReadySession()
   const worker = useImportWorker()
@@ -218,7 +223,39 @@ export default function ImportPage() {
       </ol>
 
       {stage === 'source' ? (
-        <StepSource busy={busy} error={error} onSubmit={(i) => void onSource(i)} />
+        <>
+          <StepSource busy={busy} error={error} onSubmit={(i) => void onSource(i)} />
+          <section
+            aria-labelledby="manual-title"
+            className="flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-white p-5"
+          >
+            <h2 id="manual-title" className="text-base font-semibold">
+              {tm('company.orManual')}
+            </h2>
+            <p className="text-sm text-slate-700">{tm('company.body')}</p>
+            {manualNotice ? (
+              <p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-950">
+                {manualNotice}{' '}
+                <Link
+                  className="text-brand-700 font-medium underline"
+                  to={`/events/${eventId}/participants`}
+                >
+                  {tm('company.seeParticipants')}
+                </Link>
+              </p>
+            ) : null}
+            <Button variant="secondary" onClick={() => setAdding(true)}>
+              <Plus aria-hidden className="size-4" />
+              {tm('company.open')}
+            </Button>
+          </section>
+          <AddCompanyDialog
+            eventId={eventId}
+            open={adding}
+            onOpenChange={setAdding}
+            onAdded={(result, name) => setManualNotice(tm(`company.${result.status}`, { name }))}
+          />
+        </>
       ) : null}
       {stage === 'mapping' && table ? (
         <StepMapping
