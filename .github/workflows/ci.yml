@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: types, lint, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm test
+
+  e2e:
+    name: bout en bout (Playwright) et Lighthouse
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      # Faux Supabase (PGlite + vraies migrations) : aucun secret, aucun Docker.
+      - run: pnpm test:e2e
+      - name: Lighthouse mobile
+        run: |
+          pnpm exec vite preview --outDir dist-e2e --host 127.0.0.1 --port 4173 --strictPort &
+          npx --yes wait-on http://127.0.0.1:4173/login
+          CHROME_PATH="$(node -e "console.log(require('@playwright/test').chromium.executablePath())")" pnpm lighthouse
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rapports
+          path: |
+            playwright-report
+            test-results
+            lighthouse-report
+          if-no-files-found: ignore

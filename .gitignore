@@ -9,3 +9,7 @@ supabase/.temp
 *.log
 .DS_Store
 .claude/settings.local.json
+dist-e2e
+playwright-report
+test-results
+lighthouse-report

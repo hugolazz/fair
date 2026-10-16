@@ -1,14 +1,47 @@
 # fair
 
-fair aide les commerciaux à préparer leurs salons professionnels (participants, priorités, assignations, rendez-vous, plan du salon). Voir [CLAUDE.md](CLAUDE.md) pour les conventions et [docs/architecture.md](docs/architecture.md) pour l'architecture.
+fair aide les commerciaux qui se rendent sur des salons tech (Tech For Retail, NRF…) à **préparer** leurs rencontres et à
+**garder l'historique par entreprise** d'un salon à l'autre. Elle remplace le bloc-notes.
+
+Usage interne : l'appli est utilisée connectée (pas de mode hors-ligne ni de mode terrain).
+
+## Fonctionnalités
+
+- **Salons** : création, statut, dates, objectifs ; **duplication comme modèle** (configuration, mapping d'import et, au
+  choix, la liste des participants) pour préparer l'édition suivante.
+- **Import des participants** : CSV / Excel (jusqu'à 20 000 lignes), mapping des colonnes, nettoyage, détection des doublons,
+  rapport d'erreurs téléchargeable.
+- **Préparation** : priorités A/B/C, objectifs, tags, commentaires, assignations (alerte si deux commerciaux visent la même
+  entreprise), rendez-vous avec rappel et export `.ics`, **Ma liste** triée par priorité.
+- **Vue équipe** : qui a rencontré quelle entreprise, qui doit encore la voir, risque de doublon de relance.
+- **Plan du salon** : image ou PDF, pins de stands reliés aux entreprises, mode « Je suis ici ».
+- **Compte-rendu et notes** par rencontre, **historique** de l'entreprise sur les autres salons.
+- **Bilan et exports** : Excel, CSV pour CRM (HubSpot, Salesforce, personnalisé), PDF (global, par commercial, par rencontre,
+  bilan d'une page).
+- **Rôles** : admin d'équipe et commercial (voir ci-dessous).
+
+### Rôles
+
+| Rôle           | Peut                                                                                                     |
+| -------------- | -------------------------------------------------------------------------------------------------------- |
+| Admin d'équipe | tout : créer / dupliquer / supprimer des salons, importer, gérer tags et plan, assigner, gérer les rôles |
+| Commercial     | tout consulter, s'assigner, préparer ses cibles, planifier ses rendez-vous et rédiger ses comptes-rendus |
+
+Les droits sont **appliqués par la base** (RLS), pas seulement masqués dans l'interface : un commercial qui contournerait
+l'interface est refusé par Postgres. L'interface grise ou masque ce qui serait refusé.
+
+## Stack
+
+TypeScript strict · React + Vite + React Router (SPA) · Tailwind + shadcn/ui · Supabase (Postgres, Auth, Storage, Edge
+Functions, RLS) · zod · react-hook-form · react-i18next · Vitest, Testing Library, Playwright, axe, Lighthouse, PGlite.
 
 ## Démarrage
 
-Prérequis : Node.js LTS, pnpm, Docker (pour Supabase en local).
+Prérequis : Node.js 24, pnpm 12, et Docker **seulement** pour faire tourner Supabase en local.
 
 ```bash
 pnpm install
-pnpm supabase start        # affiche l'URL API et la clé anon
+pnpm supabase start        # Supabase local (Docker) : affiche l'URL API et la clé anon
 ```
 
 Créez `.env.local` à partir de `.env.example` (URL et clé anon affichées par la commande ci-dessus), puis :
@@ -17,32 +50,109 @@ Créez `.env.local` à partir de `.env.example` (URL et clé anon affichées par
 pnpm dev                   # http://localhost:5173
 ```
 
-Les e-mails d'auth et d'invitation arrivent dans la boîte locale Inbucket : http://127.0.0.1:54324.
+Sans Docker, pointez `.env.local` vers un projet Supabase hébergé (voir [docs/deploiement.md](docs/deploiement.md)).
+Les e-mails d'auth et d'invitation du Supabase local arrivent dans Inbucket : http://127.0.0.1:54324.
 
-Pour tester les invitations, servez l'Edge Function :
+Pour tester les invitations en local : `pnpm supabase functions serve invite-member --env-file supabase/.env.local`.
+
+### Premier login
+
+fair se connecte par **e-mail + mot de passe**.
+
+1. Créez un utilisateur dans Supabase (_Authentication → Users → Add user_, avec mot de passe).
+2. Connectez-vous sur `/login`. Au premier login, fair demande le nom de l'équipe : vous en devenez propriétaire (admin).
+3. _Réglages_ → invitez vos collègues (commerciaux par défaut) ; changez leur rôle dans la liste des membres.
+
+> Connexion automatique de développement : `VITE_DEV_EMAIL` et `VITE_DEV_PASSWORD` dans `.env.local` (jamais en production).
+
+### Dépannage
+
+- **« Failed to fetch » / `ERR_NAME_NOT_RESOLVED` à la connexion** : l'URL de `VITE_SUPABASE_URL` ne répond pas (projet supprimé,
+  en pause ou faute de frappe). Ouvrez `<URL>/auth/v1/health` dans le navigateur : il doit renvoyer du JSON.
+- **« Impossible de charger … »** : un refus de politique RLS ou une migration non appliquée. Comparez
+  `supabase/migrations/` avec ce qui est appliqué (`pnpm supabase migration list`).
+- **Un commercial ne voit pas un bouton** : normal, voir [Rôles](#rôles).
+
+## Commandes
 
 ```bash
-pnpm supabase functions serve invite-member
+pnpm dev               # serveur Vite
+pnpm build             # types + build de production (dist/)
+pnpm preview           # sert le build
+pnpm typecheck         # tsc --noEmit
+pnpm lint              # eslint
+pnpm format            # prettier --write
+pnpm test              # Vitest : unitaires, RLS (PGlite), exports (fichiers relus), marque, faux Supabase
+pnpm test:rls          # uniquement les tests RLS
+pnpm test:e2e          # Playwright : parcours complet, rôles, accessibilité (axe), mobile
+pnpm lighthouse        # audit Lighthouse mobile d'un build servi sur :4173 (voir plus bas)
+pnpm fixtures          # régénère les fichiers d'import d'exemple sales
+pnpm icons             # régénère les icônes PWA
 ```
-
-## Premier login
-
-1. Saisissez votre e-mail sur `/login`, ouvrez le lien magique reçu (Inbucket en local).
-2. Au premier login, fair vous demande le nom de votre équipe (sauf si un collègue vous a déjà invité : vous la rejoignez automatiquement).
-3. Réglages → Inviter un collègue.
-
-## Production (Supabase hébergé)
-
-- Appliquer les migrations : `pnpm supabase db push` (ou, sans CLI, coller dans le SQL Editor les fichiers de `supabase/migrations/` dans l'ordre, **y compris `20261002000005_field.sql`** (qui crée le bucket privé `attachments`, utilisé pour l'image du plan) et **`20261002000007_floorplans.sql`** : plan du salon, pins, clé de stand). **`20261002000009_exports.sql`** (logo d'équipe et bucket privé `exports` pour les exports générés côté serveur). `20261002000006_sync_conflicts.sql` ne sert plus à rien (reste d'un ancien mode hors-ligne) mais est inoffensive. Détails : [docs/plan.md](docs/plan.md).
-- Déployer la fonction : `pnpm supabase functions deploy invite-member` et définir le secret `SITE_URL` (URL publique de fair).
-- Déployer la génération d'exports côté serveur : `pnpm supabase functions deploy generate-export` (facultatif : sans elle, les exports se génèrent dans le navigateur). Voir [docs/exports.md](docs/exports.md).
-- Les modèles d'e-mails de `supabase/templates/` sont signés « fair » ; en hébergé, les reporter dans _Authentication → Email Templates_ (ou `supabase config push`).
-- Pour que l'expéditeur affiche « fair », configurer un SMTP personnalisé (nom d'expéditeur `fair`).
-- Ajouter l'URL de fair aux _Redirect URLs_ de l'authentification.
 
 ## Tests
 
+| Niveau        | Outil                        | Ce qui est vérifié                                                                                    |
+| ------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Unitaires     | Vitest, Testing Library      | logique pure (import, préparation, vue équipe, géométrie du plan), composants                         |
+| RLS           | Vitest + PGlite              | les **vraies migrations** rejouées dans Postgres (WASM) : isolation entre équipes, rôles, duplication |
+| Exports       | Vitest + ExcelJS / pdf.js    | les fichiers générés sont **relus** (onglets, colonnes, pieds de page, absence de débordement)        |
+| Bout en bout  | Playwright (Edge / Chromium) | parcours complet, rôles, vue équipe, duplication                                                      |
+| Accessibilité | axe-core dans Playwright     | WCAG 2.2 AA sur chaque écran + clavier (lien d'évitement, focus, fiche) + cibles tactiles ≥ 44 px     |
+| Performance   | Lighthouse                   | score mobile du build de production                                                                   |
+
+### Tests de bout en bout sans Docker
+
+`pnpm test:e2e` construit l'appli (`dist-e2e/`), la sert avec `vite preview` et la branche sur un **faux Supabase**
+(`tests/e2e/fake-supabase/`) : les migrations réelles tournent dans PGlite derrière une façade HTTP qui parle assez de
+PostgREST et de GoTrue pour `supabase-js`. Les politiques RLS s'y appliquent comme en production. Aucun secret, aucun réseau.
+
+Ce que ce faux serveur **ne couvre pas** : Storage (plans, logo), les Edge Functions (invitation, export serveur — les exports
+retombent sur la génération dans le navigateur), l'envoi d'e-mails. Ces parties se vérifient sur un vrai Supabase (voir la
+liste de contrôle de [docs/deploiement.md](docs/deploiement.md)).
+
+Parcours testé (`tests/e2e/journey.spec.ts`) : créer l'équipe → créer un salon → importer `exemples/participants-50.csv` →
+prioriser et s'assigner → planifier un rendez-vous, compte-rendu et note → recharger (tout est bien enregistré côté serveur)
+→ exporter en Excel et relire le fichier.
+
+Options utiles : `pnpm test:e2e --project=desktop`, `--headed`, `--ui`. Playwright utilise **Microsoft Edge** installé en
+local (rien à télécharger) et le Chromium de Playwright en CI.
+
+### Lighthouse
+
 ```bash
-pnpm test        # unitaires, RLS (PGlite, sans Docker) et règle de marque
-pnpm typecheck && pnpm lint
+pnpm exec vite build --outDir dist-e2e          # (ou pnpm test:e2e, qui le fait)
+pnpm exec vite preview --outDir dist-e2e --port 4173
+pnpm lighthouse                                  # rapport HTML dans lighthouse-report/
 ```
+
+Lighthouse 12+ n'a plus de catégorie « PWA » : on mesure Performance, Accessibilité, Bonnes pratiques et SEO. L'installabilité
+est vérifiée par `tests/manifest.test.ts` (manifest, icônes 192 / 512 / maskable). fair n'a volontairement **pas de service
+worker** (pas de mode hors-ligne) : l'écran de connexion est audité, les écrans suivants partagent le même code d'amorçage.
+
+## Structure
+
+```
+supabase/{migrations,functions,templates}   base, Edge Functions, e-mails
+src/
+  app/        routeur, gardes (connexion, équipe, admin), cadre
+  features/   un dossier par domaine : auth-team, events, import, companies, prepare, plan, exports, settings
+  db/         repositories (seul accès à Supabase) et schémas zod
+  components/ lib/ locales/fr/
+tests/{rls,exports,fixtures,e2e}
+docs/         architecture, plan, exports, déploiement
+```
+
+Règle : `features/*` → `db/repositories`, `components`, `lib` ; jamais l'inverse, et jamais d'appel Supabase depuis une feature
+(règle ESLint). Détails : [docs/architecture.md](docs/architecture.md).
+
+## Conventions
+
+- Le nom du produit est **fair**, toujours en minuscules (UI, PDF, e-mails, commits) ; `tests/brand.test.ts` le vérifie.
+- Interface en français via i18n (aucun texte en dur) ; code et identifiants en anglais.
+- Commits : Conventional Commits. Voir [CLAUDE.md](CLAUDE.md) pour le détail (accessibilité, RGPD, sécurité, tests).
+
+## Déploiement
+
+Guide complet : [docs/deploiement.md](docs/deploiement.md) (projet Supabase UE, migrations dans l'ordre, authentification,
+Edge Functions, hébergement statique, en-têtes de sécurité, vérifications, sauvegardes, mises à jour).

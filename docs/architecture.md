@@ -52,7 +52,29 @@ Onglets **Bilan** et **Exports** d'un salon : Excel, CSV pour CRM (modèles HubS
 fiches de rencontre, bilan d'une page). Code de génération partagé entre le navigateur et l'Edge Function `generate-export`
 (`supabase/functions/_shared/exports/`) ; compte-rendu des rencontres saisi dans la fiche d'une entreprise. Voir [exports.md](exports.md).
 
+## Rôles et vue équipe
+
+- **Deux rôles** : admin d'équipe (`owner` / `admin` en base) et commercial (`member`). Les droits sont dans la RLS
+  (`supabase/migrations/20261002000010_roles.sql`), l'interface ne fait que refléter : `useIsAdmin()`, `canPrepareTarget()`,
+  `canEditMeeting()` (`src/features/auth-team/roles.ts`) et la garde de route `RequireAdmin` (import).
+- Un commercial prépare (priorité, objectif, commentaire) les entreprises **qui lui sont assignées** et gère ses propres
+  rendez-vous / comptes-rendus ; il peut s'assigner lui-même mais pas assigner un collègue. Il ne crée ni salon, ni tag, ni plan.
+- Les dépôts traitent le « 0 ligne modifiée » de PostgREST comme un refus (voir `updateTargets`, `deleteMeeting`…).
+- **Vue équipe** (`/events/:id/team`) : une ligne par entreprise visée ou rencontrée ; « rencontrée » = rendez-vous en cours,
+  fait, à relancer ou sans suite. Risque de doublon = plusieurs commerciaux sur une entreprise déjà rencontrée. Logique pure
+  dans `prepare/lib/team-view.ts`.
+- **Duplication d'un salon** : RPC `duplicate_event` (admins), dialogue `duplicate-event-dialog.tsx`.
+
+## Qualité
+
+- **Accessibilité** : lien d'évitement, focus visible, cibles ≥ 44 px sur mobile ; audit axe WCAG 2.2 AA de chaque écran en
+  e2e (`a11y.spec.ts`, `mobile.spec.ts`).
+- **Performance** : routes chargées à la demande, export / PDF / lecture xlsx chargés à la demande ; Lighthouse mobile sur le
+  build de production (`pnpm lighthouse`).
+- **Bout en bout** : faux Supabase (PGlite + vraies migrations) — voir [README](../README.md#tests-de-bout-en-bout-sans-docker).
+- **Déploiement** : [deploiement.md](deploiement.md).
+
 ## Reste à faire (idées)
 
-Relances et e-mails, fusion de doublons, duplication de salon, OCR des numéros de stand sur le plan
-(structure prête, voir [plan.md](plan.md)), durcissement RGPD / a11y / perfs.
+Relances et e-mails, fusion de doublons, OCR des numéros de stand sur le plan (structure prête, voir [plan.md](plan.md)),
+« mot de passe oublié » / choix du mot de passe à l'invitation, écran RGPD (export / anonymisation d'un contact).
