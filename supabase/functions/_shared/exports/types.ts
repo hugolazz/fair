@@ -126,18 +126,3 @@ export type ExportData = {
   notes: NoteRec[]
   followUps: FollowUpRec[]
 }
-
-/** Filtres d'export. Une liste vide = pas de filtre sur ce critère. */
-export type ExportFilters = {
-  statuses: (MeetingStatus | 'none')[]
-  priorities: (Priority | 'none')[]
-  assigneeIds: string[]
-  tagIds: string[]
-}
-
-export const NO_FILTERS: ExportFilters = {
-  statuses: [],
-  priorities: [],
-  assigneeIds: [],
-  tagIds: [],
-}

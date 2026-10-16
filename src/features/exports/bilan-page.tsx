@@ -59,10 +59,7 @@ export default function BilanPage() {
     setFailed(false)
     try {
       const { generateExport } = await import('@shared/exports/service.ts')
-      const r = await generateExport(data!, {
-        kind: 'pdf-bilan',
-        filters: { statuses: [], priorities: [], assigneeIds: [], tagIds: [] },
-      })
+      const r = await generateExport(data!, 'pdf-bilan')
       downloadBytes(r.filename, r.mime, r.bytes)
     } catch {
       setFailed(true)

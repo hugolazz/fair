@@ -89,19 +89,17 @@ ou envoyer un lien de réinitialisation depuis ce même écran.
 
 Le dernier propriétaire d'une équipe ne peut ni être retiré ni être rétrogradé (déclencheur `protect_last_owner`).
 
-## 4. Edge Functions (facultatif mais recommandé)
+## 4. Edge Function d'invitation
 
 ```bash
 pnpm supabase functions deploy invite-member
 pnpm supabase secrets set SITE_URL=https://fair.example.com
-pnpm supabase functions deploy generate-export     # facultatif
 ```
 
 - `invite-member` : crée l'invitation et envoie l'e-mail. Sans elle, on ne peut pas inviter depuis Réglages.
-- `generate-export` : génère les gros exports côté serveur. Sans elle, fair génère les fichiers dans le navigateur (aucune
-  perte de fonctionnalité, seulement plus lent sur de très gros volumes). Voir [exports.md](exports.md).
+- Les exports (Excel, CSV, PDF) sont générés dans le navigateur : rien à déployer. Voir [exports.md](exports.md).
 
-Les fonctions utilisent la clé `service_role` **fournie par Supabase dans l'environnement de la fonction** : ne l'ajoutez
+La fonction utilise la clé `service_role` **fournie par Supabase dans l'environnement de la fonction** : ne l'ajoutez
 jamais à `.env.local` ni au build.
 
 ## 5. Build et hébergement du front

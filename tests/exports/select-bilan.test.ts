@@ -1,80 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { computeBilan } from '@shared/exports/bilan.ts'
-import { applyFilters } from '@shared/exports/select.ts'
-import { NO_FILTERS } from '@shared/exports/types.ts'
 import { sampleData } from './fixtures'
-
-const ids = (xs: { id: string }[]) => xs.map((x) => x.id).sort()
-
-describe('filtres d’export', () => {
-  const data = sampleData()
-
-  it('sans filtre : tout est gardé', () => {
-    const r = applyFilters(data, NO_FILTERS)
-    expect(r.targets).toHaveLength(6)
-    expect(r.meetings).toHaveLength(8)
-    expect(r.notes).toHaveLength(3)
-  })
-
-  it('priorité : ne garde que les entreprises concernées, et leurs contacts / rencontres / notes', () => {
-    const r = applyFilters(data, { ...NO_FILTERS, priorities: ['A'] })
-    expect(ids(r.targets)).toEqual(['ec1', 'ec5'])
-    expect(ids(r.meetings)).toEqual(['m1', 'm2', 'm6'])
-    expect(ids(r.contacts)).toEqual(['c1', 'c2'])
-    expect(ids(r.notes)).toEqual(['n1', 'n3']) // n3 : note posée sur l'entreprise, sans rencontre
-    expect(r.followUps.map((f) => f.id)).toEqual(['f1'])
-  })
-
-  it('« none » = entreprises sans priorité', () => {
-    expect(ids(applyFilters(data, { ...NO_FILTERS, priorities: ['none'] }).targets)).toEqual([
-      'ec4',
-    ])
-  })
-
-  it('statut : garde les rencontres de ce statut et les entreprises qui en ont', () => {
-    const r = applyFilters(data, { ...NO_FILTERS, statuses: ['follow_up'] })
-    expect(ids(r.meetings)).toEqual(['m2', 'm8'])
-    expect(ids(r.targets)).toEqual(['ec1', 'ec2'])
-  })
-
-  it('statut « none » : entreprises sans aucune rencontre', () => {
-    const d = { ...data, targets: [...data.targets] }
-    d.targets.push({ ...data.targets[0]!, id: 'ec9', companyId: 'co-ec9', name: 'Sans rencontre' })
-    const r = applyFilters(d, { ...NO_FILTERS, statuses: ['none'] })
-    expect(ids(r.targets)).toEqual(['ec9'])
-    expect(r.meetings).toHaveLength(0)
-  })
-
-  it('commercial : entreprises assignées OU avec une de ses rencontres ; seules ses rencontres', () => {
-    const r = applyFilters(data, { ...NO_FILTERS, assigneeIds: ['u2'] })
-    // Marie : assignée à Carrefour et Décathlon, a une rencontre imprévue chez Leroy Merlin.
-    expect(ids(r.targets)).toEqual(['ec1', 'ec2', 'ec6'])
-    expect(ids(r.meetings)).toEqual(['m2', 'm3', 'm7', 'm8'])
-  })
-
-  it('tags : au moins un des tags demandés', () => {
-    expect(ids(applyFilters(data, { ...NO_FILTERS, tagIds: ['t2'] }).targets)).toEqual([
-      'ec2',
-      'ec3',
-    ])
-  })
-
-  it('critères combinés (ET entre critères, OU dans un critère)', () => {
-    const r = applyFilters(data, {
-      statuses: ['done'],
-      priorities: ['A', 'B'],
-      assigneeIds: ['u1', 'u2'],
-      tagIds: [],
-    })
-    expect(ids(r.meetings)).toEqual(['m1', 'm3', 'm7'])
-    expect(ids(r.targets)).toEqual(['ec1', 'ec2', 'ec6'])
-  })
-
-  it('ne modifie pas les données d’origine', () => {
-    applyFilters(data, { ...NO_FILTERS, priorities: ['C'] })
-    expect(data.targets).toHaveLength(6)
-  })
-})
 
 describe('bilan du salon', () => {
   const b = computeBilan(sampleData())
@@ -161,11 +87,5 @@ describe('bilan du salon', () => {
     })
     expect(empty.meetings.rate).toBeNull()
     expect(empty.topOpportunities).toEqual([])
-  })
-
-  it('suit les filtres : bilan d’un seul commercial', () => {
-    const mine = computeBilan(applyFilters(sampleData(), { ...NO_FILTERS, assigneeIds: ['u3'] }))
-    expect(mine.meetings.planned).toBe(2) // Fnac (à voir) et Amazon (pas intéressé)
-    expect(mine.meetings.held).toBe(1)
   })
 })

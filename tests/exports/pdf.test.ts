@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildBilanPdf } from '@shared/exports/pdf-bilan.ts'
-import {
-  buildEventReportPdf,
-  buildMeetingSheetsPdf,
-  buildRepReportPdfs,
-} from '@shared/exports/pdf-reports.ts'
+import { buildEventReportPdf } from '@shared/exports/pdf-reports.ts'
 import { PdfWriter } from '@shared/exports/pdf-writer.ts'
-import { applyFilters } from '@shared/exports/select.ts'
-import { NO_FILTERS } from '@shared/exports/types.ts'
 import { bigData, sampleData } from './fixtures'
 import { readPdf, readPdfBoxes, type TextBox } from './pdf-text'
 
@@ -110,14 +104,6 @@ describe('PDF global du salon', () => {
     pdf.pages.forEach((p, i) => expect(p).toContain(`page ${i + 1} / ${pdf.pages.length}`))
   })
 
-  it('respecte les filtres', async () => {
-    const data = applyFilters(sampleData(), { ...NO_FILTERS, priorities: ['A'] })
-    const pdf = await readPdf(await buildEventReportPdf(data))
-    const companies = pdf.pages[3]!
-    expect(companies).toContain('Carrefour')
-    expect(companies).not.toContain('Zalando')
-  })
-
   it('écrit proprement les caractères hors de la police standard (pas d’erreur)', async () => {
     const d = sampleData()
     d.notes[0]!.body = 'Émoji 🎉, japonais 日本語, tiret – et guillemets « » ’ “ ”, espace fine !'
@@ -125,92 +111,6 @@ describe('PDF global du salon', () => {
     const notes = pdf.pages[5]!
     expect(notes).toContain('Émoji')
     expect(notes).toContain('tiret – et guillemets « »')
-  })
-})
-
-describe('PDF par commercial', () => {
-  it('produit un PDF par commercial actif, avec ses seules entreprises', async () => {
-    const pdfs = await buildRepReportPdfs(sampleData())
-    expect(pdfs.map((p) => p.name)).toEqual(['Hugo', 'Marie', 'Paul'])
-    expect(pdfs.map((p) => p.filename)).toEqual([
-      'fair-tech-for-retail-2027-hugo.pdf',
-      'fair-tech-for-retail-2027-marie.pdf',
-      'fair-tech-for-retail-2027-paul.pdf',
-    ])
-    const paul = await readPdf(pdfs[2]!.bytes)
-    expect(paul.pages[0]).toContain('Commercial : Paul')
-    const companies = paul.pages[3]!
-    expect(companies).toContain('Amazon France')
-    expect(companies).toContain('Fnac Darty')
-    expect(companies).not.toContain('Carrefour')
-    for (const [i, t] of paul.pages.entries()) {
-      expect(t).toContain('généré avec fair')
-      expect(t).toContain(`page ${i + 1} / ${paul.pages.length}`)
-    }
-  })
-
-  it('ignore les commerciaux sans activité', async () => {
-    const d = sampleData()
-    d.members.push({ userId: 'u9', name: 'Inactif' })
-    expect((await buildRepReportPdfs(d)).map((p) => p.name)).not.toContain('Inactif')
-  })
-})
-
-describe('fiches de rencontre', () => {
-  it('une page par rencontre, avec entreprise, contact, qualification et notes', async () => {
-    const bytes = await buildMeetingSheetsPdf(sampleData())
-    const pdf = await readPdf(bytes)
-    expect(pdf.pages.length).toBe(8) // 8 rencontres
-    // Triées par date : la première est Carrefour (m1), le 12/05 à 10 h 30.
-    const first = pdf.pages[0]!
-    expect(first).toContain('Fiche de rencontre')
-    expect(first).toContain('Carrefour')
-    expect(first).toContain('Priorité A')
-    expect(first).toContain('Stand B12')
-    expect(first).toContain('12/05/2027 10:30')
-    expect(first).toContain('Hugo')
-    expect(first).toContain('5 / 5')
-    expect(first).toContain('Jean Martin')
-    expect(first).toContain('Directeur innovation')
-    expect(first).toContain('jean.martin@carrefour.com')
-    expect(first).toContain('Caisse mobile')
-    expect(first).toContain('50 k€')
-    expect(first).toContain('Envoyer le devis')
-    expect(first).toContain('Décideur présent, budget validé T3')
-    // Une page par rencontre, dans l'ordre chronologique (la rencontre imprévue, sans date, en dernier).
-    const order = [
-      'Carrefour',
-      'Décathlon',
-      'Zalando',
-      'Amazon France',
-      'Décathlon',
-      'Fnac Darty',
-      'Carrefour',
-      'Leroy Merlin',
-    ]
-    order.forEach((name, i) => expect(pdf.pages[i]).toContain(name))
-  })
-
-  it('porte le pied de page sur chaque fiche, et le logo', async () => {
-    const pdf = await readPdf(await buildMeetingSheetsPdf(sampleData()))
-    pdf.pages.forEach((p, i) => {
-      expect(p).toContain('généré avec fair')
-      expect(p).toContain(`page ${i + 1} / 8`)
-    })
-    expect(pdf.images).toBe(8)
-  })
-
-  it('la rencontre imprévue est signalée', async () => {
-    const pdf = await readPdf(await buildMeetingSheetsPdf(sampleData()))
-    expect(pdf.pages.some((p) => p.includes('Leroy Merlin') && p.includes('(imprévue)'))).toBe(true)
-  })
-
-  it('sans rencontre : un PDF explicite plutôt qu’une erreur', async () => {
-    const pdf = await readPdf(
-      await buildMeetingSheetsPdf({ ...sampleData(), meetings: [], notes: [] }),
-    )
-    expect(pdf.pages).toHaveLength(1)
-    expect(pdf.pages[0]).toContain('Aucune rencontre')
   })
 })
 
@@ -302,8 +202,6 @@ describe('mise en page : rien ne dépasse, rien ne se chevauche', () => {
   it('PDF global', async () => check(await readPdfBoxes(await buildEventReportPdf(sampleData()))))
   it('PDF global, gros volume', async () =>
     check((await readPdfBoxes(await buildEventReportPdf(bigData()))).slice(0, 8)))
-  it('fiches de rencontre', async () =>
-    check(await readPdfBoxes(await buildMeetingSheetsPdf(sampleData()))))
   it('bilan', async () => check(await readPdfBoxes(await buildBilanPdf(sampleData()))))
   it('bilan, gros volume', async () => check(await readPdfBoxes(await buildBilanPdf(bigData()))))
 })
