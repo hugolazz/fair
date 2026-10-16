@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { login, logout, resetBackend, seedEvent, sql, USERS } from './support'
+import { login, logout, openEdit, resetBackend, seedEvent, sql, USERS } from './support'
 
 async function userId(email: string): Promise<string> {
   const [u] = await sql<{ id: string }>('select id from auth.users where email = $1', [email])
@@ -50,22 +50,43 @@ test.describe.serial('rôles : admin d’équipe et commercial', () => {
     await openEvent(page, 'Salon rôles')
     await page.getByRole('link', { name: 'Participants', exact: true }).click()
     await page.getByRole('button', { name: 'Acme' }).first().click()
-    const sheet = page.getByRole('dialog')
+    const edit = await openEdit(page)
 
-    await expect(sheet.getByText(/ne vous est pas assignée/)).toBeVisible()
-    await expect(sheet.getByRole('radio', { name: 'A', exact: true })).toBeDisabled()
-    await expect(sheet.getByLabel('Commentaire de préparation')).toBeDisabled()
+    await expect(edit.getByText(/ne vous est pas assignée/)).toBeVisible()
+    await expect(edit.getByRole('radio', { name: 'A', exact: true })).toBeDisabled()
+    // Mais l'historique de l'entreprise, partagé par l'équipe, reste modifiable.
+    await edit.getByLabel("Historique avec l'entreprise").fill('Déjà contacté le 19 janvier 2026.')
+    await edit.getByRole('button', { name: 'Enregistrer la fiche' }).click()
+    await expect(edit.getByText('Fiche enregistrée.')).toBeVisible()
     // Il ne peut s'assigner que lui-même.
-    const options = await sheet
+    const options = await edit
       .getByLabel('Ajouter un commercial…')
       .locator('option')
       .allTextContents()
     expect(options).toEqual(['Ajouter un commercial…', 'moi'])
 
-    await sheet.getByLabel('Ajouter un commercial…').selectOption({ label: 'moi' })
-    await expect(sheet.getByRole('radio', { name: 'A', exact: true })).toBeEnabled()
-    await sheet.getByRole('radio', { name: 'A', exact: true }).check({ force: true })
-    await expect(sheet.getByRole('radio', { name: 'A', exact: true })).toBeChecked()
+    await edit.getByLabel('Ajouter un commercial…').selectOption({ label: 'moi' })
+    await expect(edit.getByRole('radio', { name: 'A', exact: true })).toBeEnabled()
+    await edit.locator('label', { hasText: /^A$/ }).click()
+    await expect(edit.getByRole('radio', { name: 'A', exact: true })).toBeChecked()
+  })
+
+  test('un commercial ajoute à la main une entreprise rencontrée sur le salon', async ({
+    page,
+  }) => {
+    await login(page, USERS.marie)
+    await openEvent(page, 'Salon rôles')
+    await page.getByRole('link', { name: 'Participants', exact: true }).click()
+    await page.getByRole('button', { name: 'Ajouter une entreprise' }).click()
+    const dialog = page.getByRole('dialog')
+    await dialog.getByLabel('Entreprise', { exact: true }).fill('Visite Imprévue')
+    await dialog.getByRole('button', { name: "Ajouter l'entreprise" }).click()
+
+    const sheet = page.getByRole('dialog')
+    await expect(sheet.getByRole('heading', { name: 'Visite Imprévue' })).toBeVisible()
+    // Elle lui est assignée : il peut la préparer.
+    const edit = await openEdit(page)
+    await expect(edit.getByRole('radio', { name: 'A', exact: true })).toBeEnabled()
   })
 
   test('un commercial ne règle pas les rôles de l’équipe', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 export const API = 'http://127.0.0.1:54399'
 export const PASSWORD = 'e2e-password-1'
@@ -34,6 +34,14 @@ export async function login(page: Page, email: string): Promise<void> {
   await page.getByLabel('Adresse e-mail').fill(email)
   await page.getByLabel('Mot de passe').fill(PASSWORD)
   await page.getByRole('button', { name: 'Se connecter' }).click()
+}
+
+/** Ouvre « Modifier la fiche » depuis la fiche d'une entreprise et renvoie son dialogue. */
+export async function openEdit(page: Page): Promise<Locator> {
+  await page.getByRole('button', { name: 'Modifier la fiche' }).click()
+  const edit = page.getByRole('dialog', { name: /^Modifier la fiche/ })
+  await expect(edit).toBeVisible()
+  return edit
 }
 
 export async function logout(page: Page): Promise<void> {

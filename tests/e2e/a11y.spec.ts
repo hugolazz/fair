@@ -81,6 +81,21 @@ test.describe.serial('accessibilité', () => {
     await page.getByRole('button', { name: 'Acme' }).first().click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await audit(page, 'fiche entreprise')
+    await page.getByRole('button', { name: 'Ajouter un contact' }).click()
+    await expect(page.getByRole('form', { name: 'Nouveau contact' })).toBeVisible()
+    await audit(page, 'ajout d’un contact dans la prise de notes')
+    await page.getByRole('button', { name: 'Annuler' }).click()
+
+    await page.getByRole('button', { name: 'Modifier la fiche' }).click()
+    await expect(page.getByRole('dialog', { name: /^Modifier la fiche/ })).toBeVisible()
+    await audit(page, 'modifier la fiche')
+    await page.keyboard.press('Escape')
+    await page.keyboard.press('Escape')
+
+    await page.goto(`/events/${eventId}/participants`)
+    await page.getByRole('button', { name: 'Ajouter une entreprise' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await audit(page, 'ajout manuel d’une entreprise')
     await page.keyboard.press('Escape')
 
     await page.goto('/events')
@@ -101,9 +116,13 @@ test.describe.serial('accessibilité', () => {
     await page.getByRole('main').waitFor()
 
     // Premier Tab : le lien d'évitement apparaît et mène au contenu.
-    await page.keyboard.press('Tab')
     const skip = page.getByRole('link', { name: 'Aller au contenu' })
-    await expect(skip).toBeFocused()
+    // Le focus peut encore être ailleurs tant que la page charge : on repart du début du document à chaque essai.
+    await expect(async () => {
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+      await page.keyboard.press('Tab')
+      await expect(skip).toBeFocused({ timeout: 1_000 })
+    }).toPass({ timeout: 15_000 })
     await expect(skip).toBeVisible()
     await page.keyboard.press('Enter')
     await expect(page.getByRole('main')).toBeFocused()

@@ -9,3 +9,4 @@ pnpm-lock.yaml
 supabase/templates
 .claude
 .env*
+dist-demo

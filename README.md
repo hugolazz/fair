@@ -10,7 +10,15 @@ Usage interne : l'appli est utilisée connectée (pas de mode hors-ligne ni de m
 - **Salons** : création, statut, dates, objectifs ; **duplication comme modèle** (configuration, mapping d'import et, au
   choix, la liste des participants) pour préparer l'édition suivante.
 - **Import des participants** : CSV / Excel (jusqu'à 20 000 lignes), mapping des colonnes, nettoyage, détection des doublons,
-  rapport d'erreurs téléchargeable.
+  rapport d'erreurs téléchargeable. Colonnes reconnues : société, site, stand, secteur, pays, ville, contact (nom complet ou
+  prénom / nom), poste, e-mail, téléphone, **LinkedIn**, **priorité** (A/B/C) et **type** (client, prospect… = tag).
+  Plusieurs contacts pour une même entreprise : sur des lignes distinctes (l'entreprise est fusionnée) ou dans une même
+  cellule séparés par « ; » ou un retour à la ligne (nom 1 ; nom 2 — e-mail 1 ; e-mail 2) ; le premier est le contact clé.
+- **Ajout manuel** : « Ajouter une entreprise » (page Participants et page d'import) sans passer par un fichier, avec son
+  contact clé ; l'entreprise est rapprochée de celles déjà connues de l'équipe (jamais dupliquée, son historique suit).
+- **Prise de notes sur le salon** : ouvrez une entreprise → historique, contact clé, grand champ de notes, ajout d'un
+  contact (prénom, nom, poste, e-mail, téléphone, LinkedIn dans des cases séparées) et case **« À recontacter après le
+  salon »** (Oui / Non), reprise dans les exports Excel, CSV et PDF.
 - **Préparation** : priorités A/B/C, objectifs, tags, commentaires, assignations (alerte si deux commerciaux visent la même
   entreprise), rendez-vous avec rappel et export `.ics`, **Ma liste** triée par priorité.
 - **Vue équipe** : qui a rencontré quelle entreprise, qui doit encore la voir, risque de doublon de relance.
