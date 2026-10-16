@@ -90,22 +90,49 @@ describe('le commercial lit tout, mais ne structure rien', () => {
     ])
   })
 
-  it('ne peut pas importer (entreprises, participants, lots d’import, contacts du salon)', async () => {
+  it('peut ajouter à la main une entreprise, sa participation au salon et ses contacts', async () => {
     const c = randomUUID()
+    const ec = randomUUID()
+    await rows(
+      amy,
+      `insert into companies (id, team_id, name, name_normalized) values ($1, $2, 'Nouvelle', 'nouvelle')`,
+      [c, team],
+    )
+    await rows(
+      amy,
+      `insert into event_companies (id, team_id, event_id, company_id, priority) values ($1, $2, $3, $4, 'B')`,
+      [ec, team, event, c],
+    )
+    const ct = randomUUID()
+    await rows(
+      amy,
+      `insert into contacts (id, team_id, company_id, first_name, linkedin_url) values ($1, $2, $3, 'Ada', 'https://www.linkedin.com/in/ada')`,
+      [ct, team, c],
+    )
+    await rows(
+      amy,
+      `insert into event_contacts (event_id, contact_id, company_id, team_id) values ($1, $2, $3, $4)`,
+      [event, ct, c, team],
+    )
+    expect(await rows(admin, 'select 1 from event_companies where id = $1', [ec])).toHaveLength(1)
+  })
+
+  it('ne peut pas ajouter dans une autre équipe', async () => {
+    const otherTeam = (
+      await db.query<{ team_id: string }>('select team_id from team_members where user_id = $1', [
+        outsider.id,
+      ])
+    ).rows[0]!.team_id
     await expect(
       rows(
         amy,
         `insert into companies (id, team_id, name, name_normalized) values ($1, $2, 'N', 'n')`,
-        [c, team],
+        [randomUUID(), otherTeam],
       ),
     ).rejects.toThrow(RLS)
-    await expect(
-      rows(
-        amy,
-        `insert into event_companies (id, team_id, event_id, company_id) values ($1, $2, $3, $4)`,
-        [randomUUID(), team, event, company1],
-      ),
-    ).rejects.toThrow(RLS)
+  })
+
+  it('ne peut pas importer un fichier (lots d’import)', async () => {
     await expect(
       rows(amy, `insert into import_batches (id, team_id, event_id) values ($1, $2, $3)`, [
         randomUUID(),
@@ -113,17 +140,28 @@ describe('le commercial lit tout, mais ne structure rien', () => {
         event,
       ]),
     ).rejects.toThrow(RLS)
-    await expect(
-      rows(
-        amy,
-        `insert into event_contacts (event_id, contact_id, company_id, team_id) values ($1, $2, $3, $4)`,
-        [event, contact, company1, team],
-      ),
-    ).rejects.toThrow(RLS)
+  })
+
+  it('peut modifier la fiche d’une entreprise (historique compris), mais pas celle d’une autre équipe ni la supprimer', async () => {
     expect(
-      await rows(amy, `update companies set name = 'Piraté' where id = $1 returning id`, [
+      await rows(
+        amy,
+        `update companies set history = 'Déjà contacté le 19 janvier 2026', city = 'Lyon' where id = $1 returning id`,
+        [company1],
+      ),
+    ).toHaveLength(1)
+    expect(
+      await rows(admin, 'select history, city from companies where id = $1', [company1]),
+    ).toEqual([{ history: 'Déjà contacté le 19 janvier 2026', city: 'Lyon' }])
+    // Hors de son équipe : aucune ligne visible, donc rien de modifié.
+    expect(
+      await rows(outsider, `update companies set history = 'x' where id = $1 returning id`, [
         company1,
       ]),
+    ).toHaveLength(0)
+    // La suppression définitive reste réservée aux admins.
+    expect(
+      await rows(amy, 'delete from companies where id = $1 returning id', [company2]),
     ).toHaveLength(0)
   })
 
