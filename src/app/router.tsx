@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { Loading } from '@/components/page-states'
 import { AppLayout } from './app-layout'
-import { RedirectIfSignedIn, RequireReady, RequireSignedIn } from './guards'
+import { RedirectIfSignedIn, RequireAdmin, RequireReady, RequireSignedIn } from './guards'
 
 const LoginPage = lazy(() => import('@/features/auth-team/login-page'))
 const OnboardingPage = lazy(() => import('@/features/auth-team/onboarding-page'))
@@ -10,6 +10,7 @@ const EventsPage = lazy(() => import('@/features/events/events-page'))
 const EventLayout = lazy(() => import('@/features/events/event-layout'))
 const EventDetailPage = lazy(() => import('@/features/events/event-detail-page'))
 const PreparePage = lazy(() => import('@/features/prepare/prepare-page'))
+const TeamPage = lazy(() => import('@/features/prepare/team-page'))
 const PlanPage = lazy(() => import('@/features/plan/plan-page'))
 const BilanPage = lazy(() => import('@/features/exports/bilan-page'))
 const ExportsPage = lazy(() => import('@/features/exports/exports-page'))
@@ -36,7 +37,14 @@ const router = createBrowserRouter([
         children: [
           { path: '/', element: <Navigate to="/events" replace /> },
           { path: '/events', element: <EventsPage /> },
-          { path: '/events/:eventId/import', element: <ImportPage /> },
+          {
+            path: '/events/:eventId/import',
+            element: (
+              <RequireAdmin>
+                <ImportPage />
+              </RequireAdmin>
+            ),
+          },
           {
             path: '/events/:eventId',
             element: <EventLayout />,
@@ -44,6 +52,7 @@ const router = createBrowserRouter([
               { index: true, element: <EventDetailPage /> },
               { path: 'participants', element: <PreparePage /> },
               { path: 'my-list', element: <MyListPage /> },
+              { path: 'team', element: <TeamPage /> },
               { path: 'plan', element: <PlanPage /> },
               { path: 'bilan', element: <BilanPage /> },
               { path: 'exports', element: <ExportsPage /> },

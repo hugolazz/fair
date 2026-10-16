@@ -53,11 +53,37 @@ export async function updateEvent(id: string, values: EventFormValues): Promise<
   return eventRowSchema.parse(data)
 }
 
-/** Soft delete : la ligne reste pour que la sync propage la suppression. */
+/** Suppression logique : la ligne reste en base (réservé aux admins : un refus RLS ne renvoie aucune ligne). */
 export async function deleteEvent(id: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('events')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
+    .select('id')
   if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
+}
+
+export type DuplicateOptions = {
+  name: string
+  startsOn: string
+  endsOn: string
+  /** Copier la liste des participants (priorité, objectif, commentaire ; ni stands ni assignations). */
+  copyParticipants: boolean
+  /** Copier le mapping du dernier import. */
+  copyMapping: boolean
+}
+
+/** Duplique un salon comme modèle (fonction SQL `duplicate_event`, réservée aux admins). Renvoie le nouveau salon. */
+export async function duplicateEvent(id: string, o: DuplicateOptions): Promise<string> {
+  const { data, error } = await supabase.rpc('duplicate_event', {
+    p_event: id,
+    p_name: o.name,
+    p_starts_on: o.startsOn || null,
+    p_ends_on: o.endsOn || null,
+    p_copy_participants: o.copyParticipants,
+    p_copy_mapping: o.copyMapping,
+  })
+  if (error) throw error
+  return data as string
 }

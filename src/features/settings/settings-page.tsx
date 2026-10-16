@@ -11,8 +11,11 @@ import {
   inviteMember,
   listInvitations,
   listMembers,
+  removeMember,
   renameTeam,
+  updateMemberRole,
 } from '@/db/repositories/teams'
+import { isAdminRole } from '@/features/auth-team/roles'
 import { useReadySession } from '@/features/auth-team/session'
 import { useAsync } from '@/lib/use-async'
 import { TeamLogo } from './team-logo'
@@ -30,7 +33,7 @@ export default function SettingsPage() {
   const { t } = useTranslation('settings')
   const { t: tAuth } = useTranslation('auth')
   const { session, membership, refreshMembership } = useReadySession()
-  const isAdmin = membership.role === 'owner' || membership.role === 'admin'
+  const isAdmin = isAdminRole(membership.role)
   const { teamId } = membership
 
   const members = useAsync(() => listMembers(teamId), [teamId])
@@ -45,6 +48,17 @@ export default function SettingsPage() {
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member')
   const [inviteMsg, setInviteMsg] = useState<{ kind: 'ok' | 'error'; text: string }>()
   const [inviting, setInviting] = useState(false)
+
+  const [memberError, setMemberError] = useState(false)
+  async function changeMember(run: () => Promise<void>) {
+    setMemberError(false)
+    try {
+      await run()
+    } catch {
+      setMemberError(true)
+    }
+    members.reload()
+  }
 
   async function onRename(e: FormEvent) {
     e.preventDefault()
@@ -117,18 +131,61 @@ export default function SettingsPage() {
         <h3 className="mt-2 font-medium">{t('team.members')}</h3>
         {members.loading && !members.data ? <Loading /> : null}
         {members.error ? <ErrorState onRetry={members.reload} /> : null}
+        <p className="text-sm text-slate-700">{t('team.rolesHelp')}</p>
+        {memberError ? (
+          <p role="alert" className="text-sm text-red-700">
+            {t('team.memberError')}
+          </p>
+        ) : null}
         <ul className="divide-y divide-slate-100">
-          {members.data?.map((m) => (
-            <li key={m.userId} className="flex min-h-11 items-center justify-between gap-3 py-2">
-              <span>
-                {m.displayName}
-                {m.userId === session.user.id ? (
-                  <span className="text-slate-600"> ({t('team.you')})</span>
-                ) : null}
-              </span>
-              <span className="text-sm text-slate-600">{t(`team.roles.${m.role}`)}</span>
-            </li>
-          ))}
+          {members.data?.map((m) => {
+            // Le propriétaire ne se gère pas ici ; on ne se retire pas soi-même.
+            const manageable = isAdmin && m.role !== 'owner' && m.userId !== session.user.id
+            const name = m.displayName || '?'
+            return (
+              <li
+                key={m.userId}
+                className="flex min-h-11 flex-wrap items-center justify-between gap-3 py-2"
+              >
+                <span>
+                  {name}
+                  {m.userId === session.user.id ? (
+                    <span className="text-slate-600"> ({t('team.you')})</span>
+                  ) : null}
+                </span>
+                {manageable ? (
+                  <span className="flex items-center gap-2">
+                    <select
+                      aria-label={t('team.changeRole', { name })}
+                      value={m.role}
+                      onChange={(e) =>
+                        void changeMember(() =>
+                          updateMemberRole(teamId, m.userId, e.target.value as 'admin' | 'member'),
+                        )
+                      }
+                      className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-sm"
+                    >
+                      <option value="member">{t('team.roles.member')}</option>
+                      <option value="admin">{t('team.roles.admin')}</option>
+                    </select>
+                    <Button
+                      variant="ghost"
+                      aria-label={t('team.removeLabel', { name })}
+                      onClick={() => {
+                        if (window.confirm(t('team.removeConfirm', { name }))) {
+                          void changeMember(() => removeMember(teamId, m.userId))
+                        }
+                      }}
+                    >
+                      {t('team.remove')}
+                    </Button>
+                  </span>
+                ) : (
+                  <span className="text-sm text-slate-700">{t(`team.roles.${m.role}`)}</span>
+                )}
+              </li>
+            )
+          })}
         </ul>
 
         {isAdmin && invitations.data && invitations.data.length > 0 ? (

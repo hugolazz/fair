@@ -98,13 +98,14 @@ describe('isolation entre équipes', () => {
 })
 
 describe('rôles dans une équipe', () => {
-  it('permet à un membre de lire et d’écrire les données de son équipe', async () => {
-    await expect(insertEvent(amy, teamA, 'Salon de amy')).resolves.toBeTruthy()
+  it('un commercial lit les salons de son équipe mais n’en crée pas : c’est réservé aux admins', async () => {
+    await expect(insertEvent(amy, teamA, 'Salon de amy')).rejects.toThrow(RLS)
+    await expect(insertEvent(adam, teamA, 'Salon de l’admin')).resolves.toBeTruthy()
     expect((await as(db, amy).query('select id from events')).length).toBeGreaterThanOrEqual(2)
   })
 
   it('réserve la suppression physique aux admins', async () => {
-    const id = await insertEvent(amy, teamA, 'à supprimer')
+    const id = await insertEvent(adam, teamA, 'à supprimer')
     expect(
       await as(db, amy).query('delete from events where id = $1 returning id', [id]),
     ).toHaveLength(0)

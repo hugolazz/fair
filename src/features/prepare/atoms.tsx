@@ -49,9 +49,11 @@ export function PriorityBadge({
 export function PriorityPicker({
   value,
   onChange,
+  disabled = false,
 }: {
   value: Priority | null
   onChange: (p: Priority | null) => void
+  disabled?: boolean
 }) {
   const { t } = useTranslation('prepare')
   const options: (Priority | null)[] = [...PRIORITIES, null]
@@ -62,6 +64,7 @@ export function PriorityPicker({
           key={p ?? 'none'}
           className={cn(
             'flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg border px-3 text-sm font-semibold has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2',
+            disabled && 'cursor-not-allowed opacity-60',
             value === p
               ? 'border-brand-600 bg-brand-50 text-brand-900 ring-brand-600 ring-1'
               : 'border-slate-300 bg-white',
@@ -71,6 +74,7 @@ export function PriorityPicker({
             type="radio"
             className="sr-only"
             name="priority"
+            disabled={disabled}
             checked={value === p}
             onChange={() => onChange(p)}
           />

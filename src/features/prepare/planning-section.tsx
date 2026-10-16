@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { InputField, SelectField } from '@/components/ui/field'
 import type { Target, TargetMeeting, TeamMember } from '@/db/schemas/prepare'
+import { canEditMeeting, useIsAdmin } from '@/features/auth-team/roles'
 import { buildIcs } from './lib/ics'
 import { formatSlot, fromLocalInputs, toLocalInputs } from './lib/format'
 import { MeetingReport } from './meeting-report'
@@ -42,6 +43,7 @@ export function PlanningSection({
   defaultDate,
 }: Props) {
   const { t } = useTranslation('prepare')
+  const admin = useIsAdmin()
   const [editing, setEditing] = useState<TargetMeeting | 'new' | null>(null)
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
@@ -58,7 +60,7 @@ export function PlanningSection({
       setTime('')
       setDuration(15)
       setOwner(
-        target.assigneeIds.includes(meId) || target.assigneeIds.length === 0
+        !admin || target.assigneeIds.includes(meId) || target.assigneeIds.length === 0
           ? meId
           : target.assigneeIds[0]!,
       )
@@ -116,7 +118,10 @@ export function PlanningSection({
     )
   }
 
-  const ownerOptions = members.length ? members : [{ userId: meId, name: nameOf(meId) }]
+  // Un commercial ne planifie que ses propres rendez-vous (RLS) ; l'admin peut les attribuer à n'importe qui.
+  const ownerOptions = (members.length ? members : [{ userId: meId, name: nameOf(meId) }]).filter(
+    (m) => admin || m.userId === meId,
+  )
 
   return (
     <section aria-labelledby="planning-title" className="flex flex-col gap-3">
@@ -137,10 +142,12 @@ export function PlanningSection({
                 : t('planning.reminderBefore', { count: m.reminderMin })}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Button variant="secondary" className="min-h-9" onClick={() => open(m)}>
-                <Pencil aria-hidden className="size-4" />
-                {t('planning.edit')}
-              </Button>
+              {canEditMeeting(admin, m.ownerId, meId) ? (
+                <Button variant="secondary" className="min-h-9" onClick={() => open(m)}>
+                  <Pencil aria-hidden className="size-4" />
+                  {t('planning.edit')}
+                </Button>
+              ) : null}
               <Button
                 variant="secondary"
                 className="min-h-9"
@@ -150,16 +157,24 @@ export function PlanningSection({
                 <Download aria-hidden className="size-4" />
                 {t('planning.ics')}
               </Button>
-              <Button
-                variant="ghost"
-                className="min-h-9"
-                onClick={() => void api.actions.deleteMeeting(target.id, m.id)}
-              >
-                <Trash2 aria-hidden className="size-4" />
-                {t('planning.remove')}
-              </Button>
+              {canEditMeeting(admin, m.ownerId, meId) ? (
+                <Button
+                  variant="ghost"
+                  className="min-h-9"
+                  onClick={() => void api.actions.deleteMeeting(target.id, m.id)}
+                >
+                  <Trash2 aria-hidden className="size-4" />
+                  {t('planning.remove')}
+                </Button>
+              ) : null}
             </div>
-            <MeetingReport target={target} meeting={m} api={api} nameOf={nameOf} />
+            <MeetingReport
+              target={target}
+              meeting={m}
+              api={api}
+              nameOf={nameOf}
+              readOnly={!canEditMeeting(admin, m.ownerId, meId)}
+            />
           </li>
         ))}
       </ul>

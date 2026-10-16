@@ -141,7 +141,7 @@ describe('assignations', () => {
 describe('tags', () => {
   it('interdit deux tags de même libellé (casse ignorée) dans une équipe, mais pas entre équipes', async () => {
     await expect(
-      as(db, amy).query(
+      as(db, alice).query(
         `insert into tags (id, team_id, label, scope) values ($1, $2, 'CLIENT', 'company')`,
         [randomUUID(), teamA],
       ),

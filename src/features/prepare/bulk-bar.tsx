@@ -9,6 +9,7 @@ import {
   type Tag,
   type TeamMember,
 } from '@/db/schemas/prepare'
+import { useIsAdmin } from '@/features/auth-team/roles'
 
 type Props = {
   count: number
@@ -29,6 +30,7 @@ const selectCls =
 /** Barre d'actions en masse : chaque liste applique son choix tout de suite à la sélection. */
 export function BulkBar(p: Props) {
   const { t } = useTranslation('prepare')
+  const admin = useIsAdmin()
 
   /** Applique la valeur choisie puis remet la liste sur son libellé. */
   const pick = (apply: (value: string) => void) => (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -40,7 +42,8 @@ export function BulkBar(p: Props) {
     <option key="me" value={p.meId}>
       {t('assign.me')}
     </option>,
-    ...p.members
+    // Un commercial ne s'assigne que lui-même (RLS) ; l'admin d'équipe répartit sur toute l'équipe.
+    ...(admin ? p.members : [])
       .filter((m) => m.userId !== p.meId)
       .map((m) => (
         <option key={m.userId} value={m.userId}>

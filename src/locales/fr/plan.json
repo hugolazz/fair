@@ -4,6 +4,7 @@
   "defaultName": "Plan du salon",
   "empty": {
     "title": "Aucun plan pour ce salon",
+    "bodyReadOnly": "Un admin d'équipe n'a pas encore ajouté le plan de ce salon.",
     "bodyEdit": "Ajoutez le plan du salon pour placer les stands et retrouver chaque entreprise sur le plan."
   },
   "upload": {

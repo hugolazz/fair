@@ -108,6 +108,7 @@
     }
   },
   "sheet": {
+    "prepReadOnly": "Cette entreprise ne vous est pas assignée : seuls un admin d'équipe et le commercial assigné peuvent modifier sa préparation. Assignez-vous-la pour la préparer.",
     "seeOnPlan": "Voir sur le plan du salon",
     "close": "Fermer la fiche",
     "prep": "Préparation",
@@ -186,6 +187,33 @@
     "count": "{{count}} cibles",
     "reminder": "Rappel : {{name}} à {{time}}",
     "nextMeeting": "RDV {{when}}"
+  },
+  "team": {
+    "title": "Vue équipe",
+    "subtitle": "Qui a rencontré quelle entreprise, pour ne pas relancer deux fois la même.",
+    "search": "Rechercher une entreprise",
+    "person": "Commercial",
+    "everyone": "Toute l'équipe",
+    "filter": {
+      "all": "Toutes",
+      "met": "Rencontrées",
+      "notMet": "Pas encore rencontrées",
+      "toFollowUp": "À relancer",
+      "duplicateRisk": "Risque de doublon"
+    },
+    "col": {
+      "company": "Entreprise",
+      "metBy": "Rencontrée par",
+      "pending": "À voir par",
+      "interest": "Intérêt",
+      "nextStep": "Prochaine étape"
+    },
+    "nobody": "Personne",
+    "duplicate": "Risque de doublon : plusieurs commerciaux sont sur cette entreprise.",
+    "duplicateShort": "Doublon possible",
+    "count": "{{count}} entreprises",
+    "empty": "Aucune entreprise ne correspond.",
+    "emptyAll": "Aucun commercial n'a encore de cible ni de rendez-vous sur ce salon."
   },
   "errors": {
     "load": "Impossible de charger les participants.",

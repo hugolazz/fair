@@ -19,13 +19,15 @@ type Props = {
   meeting: TargetMeeting
   api: TargetsApi
   nameOf: (userId: string) => string
+  /** Lecture seule : le compte-rendu appartient au commercial du rendez-vous (ou à un admin). */
+  readOnly?: boolean
 }
 
 /**
  * Compte-rendu d'une rencontre : statut, intérêt (1 à 5), prochaine étape et notes. C'est ce qui alimente le bilan
  * du salon et les exports ; chaque modification est enregistrée tout de suite.
  */
-export function MeetingReport({ target, meeting, api, nameOf }: Props) {
+export function MeetingReport({ target, meeting, api, nameOf, readOnly = false }: Props) {
   const { t } = useTranslation('prepare')
   const { session, membership } = useReadySession()
   const notes = useAsync(() => fetchMeetingNotes(meeting.id), [meeting.id])
@@ -63,6 +65,7 @@ export function MeetingReport({ target, meeting, api, nameOf }: Props) {
           <SelectField
             label={t('report.statusLabel')}
             value={meeting.status}
+            disabled={readOnly}
             onChange={(e) => save({ status: e.target.value as MeetingStatus })}
           >
             {MEETING_STATUSES.map((s) => (
@@ -74,6 +77,7 @@ export function MeetingReport({ target, meeting, api, nameOf }: Props) {
           <SelectField
             label={t('report.interest')}
             value={meeting.interest ?? ''}
+            disabled={readOnly}
             onChange={(e) =>
               save({ interest: e.target.value === '' ? null : Number(e.target.value) })
             }
@@ -89,6 +93,7 @@ export function MeetingReport({ target, meeting, api, nameOf }: Props) {
         <InputField
           label={t('report.nextStep')}
           value={nextStep}
+          disabled={readOnly}
           onChange={(e) => setNextStep(e.target.value)}
           onBlur={() => nextStep !== meeting.nextStep && save({ nextStep })}
           maxLength={300}
@@ -109,26 +114,30 @@ export function MeetingReport({ target, meeting, api, nameOf }: Props) {
               </li>
             ))}
           </ul>
-          <TextareaField
-            label={t('report.newNote')}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={3}
-          />
-          {noteError ? (
-            <p role="alert" className="text-sm text-red-700">
-              {t('report.noteError')}
-            </p>
-          ) : null}
-          <div>
-            <Button
-              variant="secondary"
-              disabled={adding || !draft.trim()}
-              onClick={() => void addNote()}
-            >
-              {t('report.addNote')}
-            </Button>
-          </div>
+          {readOnly ? null : (
+            <>
+              <TextareaField
+                label={t('report.newNote')}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                rows={3}
+              />
+              {noteError ? (
+                <p role="alert" className="text-sm text-red-700">
+                  {t('report.noteError')}
+                </p>
+              ) : null}
+              <div>
+                <Button
+                  variant="secondary"
+                  disabled={adding || !draft.trim()}
+                  onClick={() => void addNote()}
+                >
+                  {t('report.addNote')}
+                </Button>
+              </div>
+            </>
+          )}
         </section>
       </div>
     </details>

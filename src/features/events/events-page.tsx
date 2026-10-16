@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { EmptyState, ErrorState, Loading, PageHeader } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
 import { createEvent, listEvents } from '@/db/repositories/events'
+import { useIsAdmin } from '@/features/auth-team/roles'
 import { useReadySession } from '@/features/auth-team/session'
 import { useAsync } from '@/lib/use-async'
 import { EventFormDialog } from './event-form-dialog'
@@ -17,12 +18,14 @@ export default function EventsPage() {
   const { data: events, error, loading, reload } = useAsync(listEvents, [])
   const [creating, setCreating] = useState(false)
 
-  const newButton = (
+  const admin = useIsAdmin()
+  // Créer un salon est réservé aux admins d'équipe : un commercial n'a pas ce bouton.
+  const newButton = admin ? (
     <Button onClick={() => setCreating(true)}>
       <Plus aria-hidden className="size-5" />
       {t('new')}
     </Button>
-  )
+  ) : undefined
 
   return (
     <>
@@ -34,7 +37,7 @@ export default function EventsPage() {
         <EmptyState
           icon={<CalendarDays className="size-10" />}
           title={t('empty.title')}
-          body={t('empty.body')}
+          body={admin ? t('empty.body') : t('empty.bodyMember')}
           action={newButton}
         />
       ) : null}

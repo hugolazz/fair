@@ -7,6 +7,7 @@ import { SelectField, TextareaField } from '@/components/ui/field'
 import { Sheet } from '@/components/ui/sheet'
 import { fetchContacts } from '@/db/repositories/targets'
 import { GOALS, type Goal, type Target } from '@/db/schemas/prepare'
+import { canPrepareTarget, useIsAdmin } from '@/features/auth-team/roles'
 import { cn } from '@/lib/cn'
 import { useAsync } from '@/lib/use-async'
 import { PriorityPicker } from './atoms'
@@ -107,7 +108,12 @@ function Body({
     [setPrepComment, targetId],
   )
   const tags = api.tags
-  const available = api.members.filter((m) => !target.assigneeIds.includes(m.userId))
+  const admin = useIsAdmin()
+  const canPrepare = canPrepareTarget(admin, target.assigneeIds, meId)
+  // Un commercial ne s'assigne que lui-même ; un admin assigne n'importe qui.
+  const available = api.members.filter(
+    (m) => !target.assigneeIds.includes(m.userId) && (admin || m.userId === meId),
+  )
   const location = [target.city, target.country].filter(Boolean).join(', ')
 
   return (
@@ -147,13 +153,20 @@ function Body({
       </div>
 
       <Section title={t('sheet.prep')}>
+        {!canPrepare ? (
+          <p role="note" className="rounded-lg bg-slate-100 p-3 text-sm text-slate-800">
+            {t('sheet.prepReadOnly')}
+          </p>
+        ) : null}
         <PriorityPicker
           value={target.priority}
+          disabled={!canPrepare}
           onChange={(p) => void api.actions.setPriority([target.id], p)}
         />
         <SelectField
           label={t('goal.label')}
           value={target.goal ?? ''}
+          disabled={!canPrepare}
           onChange={(e) =>
             void api.actions.setGoal([target.id], (e.target.value || null) as Goal | null)
           }
@@ -169,6 +182,7 @@ function Body({
           label={t('sheet.comment')}
           placeholder={t('sheet.commentPlaceholder')}
           value={comment}
+          disabled={!canPrepare}
           onChange={(e) => setComment(e.target.value)}
           onBlur={() => {
             if (comment !== savedComment) {
@@ -182,10 +196,12 @@ function Body({
       <Section
         title={t('sheet.tags')}
         action={
-          <Button variant="ghost" className="min-h-9" onClick={() => setManagingTags(true)}>
-            <Settings2 aria-hidden className="size-4" />
-            {t('sheet.manageTags')}
-          </Button>
+          admin ? (
+            <Button variant="ghost" className="min-h-9" onClick={() => setManagingTags(true)}>
+              <Settings2 aria-hidden className="size-4" />
+              {t('sheet.manageTags')}
+            </Button>
+          ) : undefined
         }
       >
         <div role="group" aria-label={t('sheet.tags')} className="flex flex-wrap gap-2">
@@ -235,14 +251,18 @@ function Body({
               className="inline-flex min-h-11 items-center gap-1 rounded-full bg-slate-100 pr-1 pl-3 text-sm md:min-h-9"
             >
               {u === meId ? t('assign.me') : api.memberName(u)}
-              <button
-                type="button"
-                aria-label={t('sheet.removeAssignee', { name: api.memberName(u) })}
-                onClick={() => void api.actions.unassign([target.id], u)}
-                className="inline-flex size-9 items-center justify-center rounded-full hover:bg-slate-200 md:size-7"
-              >
-                <X aria-hidden className="size-4" />
-              </button>
+              {admin || u === meId ? (
+                <button
+                  type="button"
+                  aria-label={t('sheet.removeAssignee', { name: api.memberName(u) })}
+                  onClick={() => void api.actions.unassign([target.id], u)}
+                  className="inline-flex size-9 items-center justify-center rounded-full hover:bg-slate-200 md:size-7"
+                >
+                  <X aria-hidden className="size-4" />
+                </button>
+              ) : (
+                <span className="w-3" />
+              )}
             </li>
           ))}
           {target.assigneeIds.length === 0 ? (

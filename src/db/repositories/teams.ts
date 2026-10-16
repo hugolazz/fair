@@ -104,6 +104,33 @@ export async function listMembers(teamId: string): Promise<Member[]> {
   }))
 }
 
+/** Change le rôle d'un membre (admin d'équipe ou commercial). Réservé aux admins ; le propriétaire ne change pas ici. */
+export async function updateMemberRole(
+  teamId: string,
+  userId: string,
+  role: 'admin' | 'member',
+): Promise<void> {
+  const { data, error } = await supabase
+    .from('team_members')
+    .update({ role })
+    .eq('team_id', teamId)
+    .eq('user_id', userId)
+    .select('user_id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
+}
+
+export async function removeMember(teamId: string, userId: string): Promise<void> {
+  const { data, error } = await supabase
+    .from('team_members')
+    .delete()
+    .eq('team_id', teamId)
+    .eq('user_id', userId)
+    .select('user_id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
+}
+
 export async function listInvitations(teamId: string): Promise<Invitation[]> {
   const { data, error } = await supabase
     .from('team_invitations')

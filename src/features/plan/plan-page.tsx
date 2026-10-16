@@ -17,6 +17,7 @@ import {
 } from '@/db/repositories/plans'
 import { listTargets } from '@/db/repositories/targets'
 import type { PlanPin } from '@/db/schemas/plan'
+import { useIsAdmin } from '@/features/auth-team/roles'
 import { useReadySession } from '@/features/auth-team/session'
 import { useAsync } from '@/lib/use-async'
 import { buildPinViews, placedTargetIds, type PinView } from './lib/pins'
@@ -44,6 +45,7 @@ export default function PlanPage() {
   const [params] = useSearchParams()
   const focusId = params.get('target')
   const { membership } = useReadySession()
+  const admin = useIsAdmin()
   const ctx = useMemo<PlanCtx>(
     () => ({ teamId: membership.teamId, eventId }),
     [membership.teamId, eventId],
@@ -93,6 +95,14 @@ export default function PlanPage() {
   if (plans.error) return <ErrorState message={t('errors.load')} onRetry={plans.reload} />
   if (!plans.data || (targets.loading && !targets.data)) return <Loading />
   if (!plan) {
+    if (!admin) {
+      return (
+        <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
+          <h2 className="text-lg font-semibold">{t('empty.title')}</h2>
+          <p className="mt-1 text-slate-700">{t('empty.bodyReadOnly')}</p>
+        </div>
+      )
+    }
     return (
       <PlanUploader
         ctx={ctx}
@@ -139,6 +149,10 @@ export default function PlanPage() {
 
   const onTap = (p: Point) => {
     if (hereMode.handleTap(p)) return
+    if (!admin) {
+      setSelectedId(null)
+      return
+    }
     if (moving) {
       const id = moving
       setMoving(null)
@@ -169,6 +183,7 @@ export default function PlanPage() {
       }
       return
     }
+    if (!admin) return
     setDraft(null)
     setSelectedId(null)
     setArmedId(armedId === row.id ? null : row.id)
@@ -219,7 +234,7 @@ export default function PlanPage() {
         <span className="text-sm text-slate-700">
           {t('edit.progress', { placed: placed.size, total: rows.length })}
         </span>
-        <div className="ml-auto flex flex-wrap items-start gap-2">
+        <div className={admin ? 'ml-auto flex flex-wrap items-start gap-2' : 'hidden'}>
           <PlanUploader
             ctx={ctx}
             variant="button"
@@ -374,6 +389,7 @@ export default function PlanPage() {
               }}
               onClose={() => setSelectedId(null)}
               onChanged={pins.reload}
+              readOnly={!admin}
             />
           ) : (
             <section className="flex min-h-0 flex-1 flex-col gap-2">
@@ -381,7 +397,7 @@ export default function PlanPage() {
                 <MapPin aria-hidden className="size-4" />
                 {t('edit.companies')}
               </h2>
-              <p className="text-sm text-slate-700">{t('edit.help')}</p>
+              {admin ? <p className="text-sm text-slate-700">{t('edit.help')}</p> : null}
               <TargetList
                 className="flex-1"
                 rows={rows}

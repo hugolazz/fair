@@ -9,6 +9,7 @@ import {
   type Tag,
   type Target,
 } from '@/db/schemas/prepare'
+import { canPrepareTarget, useIsAdmin } from '@/features/auth-team/roles'
 import { cn } from '@/lib/cn'
 import { Assignees, PriorityBadge, TagChip } from './atoms'
 import { formatSlot } from './lib/format'
@@ -57,6 +58,7 @@ const COLUMNS: { key: SortKey | null; label: string; className?: string }[] = [
 /** Tableau dense (desktop) : tri par colonne, sélection (Maj pour une plage), édition rapide de la priorité et de l'objectif. */
 export function TargetsTable(p: Props) {
   const { t } = useTranslation('prepare')
+  const admin = useIsAdmin()
   const { ref, onScroll, start, end, totalHeight, offsetTop } = useVirtualRows(
     p.rows.length,
     ROW_HEIGHT,
@@ -162,8 +164,9 @@ export function TargetsTable(p: Props) {
                 <div role="cell" className="px-2">
                   <button
                     type="button"
+                    disabled={!canPrepareTarget(admin, row.assigneeIds, p.meId)}
                     onClick={() => p.onPriority(row.id, nextPriority(row.priority))}
-                    className="rounded-md"
+                    className="rounded-md disabled:cursor-not-allowed"
                     aria-label={t('priority.set', { p: row.priority ?? t('priority.none') })}
                   >
                     <PriorityBadge priority={row.priority} />
@@ -196,6 +199,7 @@ export function TargetsTable(p: Props) {
                 <div role="cell" className="px-1">
                   <select
                     value={row.goal ?? ''}
+                    disabled={!canPrepareTarget(admin, row.assigneeIds, p.meId)}
                     onChange={(e) => p.onGoal(row.id, (e.target.value || null) as Goal | null)}
                     aria-label={`${t('goal.label')} — ${row.name}`}
                     className="h-8 w-full rounded border border-transparent bg-transparent px-1 text-sm hover:border-slate-300"

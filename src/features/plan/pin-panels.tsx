@@ -81,6 +81,8 @@ type DetailsProps = {
   onClose: () => void
   /** Appelé après une modification enregistrée (rechargement des pins). */
   onChanged: () => void
+  /** Commercial : le plan est tenu par les admins d'équipe, on le consulte seulement. */
+  readOnly?: boolean
 }
 
 /** Pin sélectionné : numéro de stand, entreprise reliée (relier / délier), déplacer, supprimer. */
@@ -93,6 +95,7 @@ export function PinDetails({
   onRemove,
   onClose,
   onChanged,
+  readOnly = false,
 }: DetailsProps) {
   const { t } = useTranslation('plan')
   const standId = useId()
@@ -129,6 +132,7 @@ export function PinDetails({
         <input
           id={standId}
           value={stand}
+          readOnly={readOnly}
           onChange={(e) => setStand(e.target.value)}
           onBlur={saveStand}
           onKeyDown={(e) => {
@@ -146,7 +150,11 @@ export function PinDetails({
         </p>
       ) : null}
 
-      {relinking ? (
+      {readOnly ? (
+        <Button variant="ghost" className="self-start" onClick={onClose}>
+          {t('edit.close')}
+        </Button>
+      ) : relinking ? (
         <TargetList
           autoFocus
           className="flex-1"

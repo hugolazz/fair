@@ -165,29 +165,31 @@ describe('plans (floorplans)', () => {
 describe('pins (plan_pins)', () => {
   it('un membre pose un pin relié à une entreprise, ou un simple numéro de stand', async () => {
     await expect(
-      insertPin(amy, teamA, eventA, planA, { event_company_id: ecA, x: 0.5, y: 0.5 }),
+      insertPin(alice, teamA, eventA, planA, { event_company_id: ecA, x: 0.5, y: 0.5 }),
     ).resolves.toBeTruthy()
     await expect(
-      insertPin(amy, teamA, eventA, planA, { stand_label: 'C7', x: 0, y: 1 }),
+      insertPin(alice, teamA, eventA, planA, { stand_label: 'C7', x: 0, y: 1 }),
     ).resolves.toBeTruthy()
   })
 
   it('refuse un pin sans entreprise ni numéro de stand', async () => {
-    await expect(insertPin(amy, teamA, eventA, planA, { x: 0.1, y: 0.1 })).rejects.toThrow(/check/i)
+    await expect(insertPin(alice, teamA, eventA, planA, { x: 0.1, y: 0.1 })).rejects.toThrow(
+      /check/i,
+    )
   })
 
   it('refuse des coordonnées hors du plan', async () => {
     await expect(
-      insertPin(amy, teamA, eventA, planA, { stand_label: 'D1', x: 1.2, y: 0.5 }),
+      insertPin(alice, teamA, eventA, planA, { stand_label: 'D1', x: 1.2, y: 0.5 }),
     ).rejects.toThrow()
     await expect(
-      insertPin(amy, teamA, eventA, planA, { stand_label: 'D1', x: 0.5, y: -0.1 }),
+      insertPin(alice, teamA, eventA, planA, { stand_label: 'D1', x: 0.5, y: -0.1 }),
     ).rejects.toThrow()
   })
 
   it('prévoit l’OCR : source, confiance, rectangle et texte lu, à confirmer', async () => {
     await expect(
-      insertPin(amy, teamA, eventA, planA, {
+      insertPin(alice, teamA, eventA, planA, {
         stand_label: 'E9',
         x: 0.4,
         y: 0.6,
@@ -199,10 +201,15 @@ describe('pins (plan_pins)', () => {
       }),
     ).resolves.toBeTruthy()
     await expect(
-      insertPin(amy, teamA, eventA, planA, { stand_label: 'E9', x: 0.4, y: 0.6, source: 'gps' }),
+      insertPin(alice, teamA, eventA, planA, { stand_label: 'E9', x: 0.4, y: 0.6, source: 'gps' }),
     ).rejects.toThrow()
     await expect(
-      insertPin(amy, teamA, eventA, planA, { stand_label: 'E9', x: 0.4, y: 0.6, confidence: 1.5 }),
+      insertPin(alice, teamA, eventA, planA, {
+        stand_label: 'E9',
+        x: 0.4,
+        y: 0.6,
+        confidence: 1.5,
+      }),
     ).rejects.toThrow()
   })
 
@@ -232,13 +239,13 @@ describe('pins (plan_pins)', () => {
   })
 
   it('suppression logique par un membre ; suppression physique réservée aux admins', async () => {
-    const id = await insertPin(amy, teamA, eventA, planA, { stand_label: 'F2', x: 0.3, y: 0.3 })
-    const before = await as(db, amy).query<{ server_seq: string }>(
+    const id = await insertPin(alice, teamA, eventA, planA, { stand_label: 'F2', x: 0.3, y: 0.3 })
+    const before = await as(db, alice).query<{ server_seq: string }>(
       'select server_seq from plan_pins where id = $1',
       [id],
     )
-    await as(db, amy).query('update plan_pins set deleted_at = now() where id = $1', [id])
-    const after = await as(db, amy).query<{ server_seq: string; deleted_at: string | null }>(
+    await as(db, alice).query('update plan_pins set deleted_at = now() where id = $1', [id])
+    const after = await as(db, alice).query<{ server_seq: string; deleted_at: string | null }>(
       'select server_seq, deleted_at from plan_pins where id = $1',
       [id],
     )

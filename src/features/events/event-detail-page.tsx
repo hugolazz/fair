@@ -1,4 +1,4 @@
-import { ClipboardList, Pencil, Trash2, Upload } from 'lucide-react'
+import { ClipboardList, Copy, Pencil, Trash2, Upload } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { deleteEvent, updateEvent } from '@/db/repositories/events'
 import { eventToForm } from '@/db/schemas/event'
+import { useIsAdmin } from '@/features/auth-team/roles'
+import { DuplicateEventDialog } from './duplicate-event-dialog'
 import { useEvent } from './event-context'
 import { EventFormDialog } from './event-form-dialog'
 import { formatEventDates } from './event-format'
@@ -16,7 +18,9 @@ export default function EventDetailPage() {
   const { t: tc } = useTranslation()
   const { event, reload } = useEvent()
   const navigate = useNavigate()
+  const admin = useIsAdmin()
   const [editing, setEditing] = useState(false)
+  const [duplicating, setDuplicating] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [deleteError, setDeleteError] = useState(false)
   const initialValues = useMemo(() => eventToForm(event), [event])
@@ -33,20 +37,28 @@ export default function EventDetailPage() {
             {t('detail.prepare')}
           </Link>
         </Button>
-        <Button asChild variant="secondary">
-          <Link to="import">
-            <Upload aria-hidden className="size-4" />
-            {t('detail.import')}
-          </Link>
-        </Button>
-        <Button variant="secondary" onClick={() => setEditing(true)}>
-          <Pencil aria-hidden className="size-4" />
-          {tc('actions.edit')}
-        </Button>
-        <Button variant="ghost" onClick={() => setConfirming(true)}>
-          <Trash2 aria-hidden className="size-4" />
-          {tc('actions.delete')}
-        </Button>
+        {admin ? (
+          <>
+            <Button asChild variant="secondary">
+              <Link to="import">
+                <Upload aria-hidden className="size-4" />
+                {t('detail.import')}
+              </Link>
+            </Button>
+            <Button variant="secondary" onClick={() => setEditing(true)}>
+              <Pencil aria-hidden className="size-4" />
+              {tc('actions.edit')}
+            </Button>
+            <Button variant="secondary" onClick={() => setDuplicating(true)}>
+              <Copy aria-hidden className="size-4" />
+              {t('detail.duplicate')}
+            </Button>
+            <Button variant="ghost" onClick={() => setConfirming(true)}>
+              <Trash2 aria-hidden className="size-4" />
+              {tc('actions.delete')}
+            </Button>
+          </>
+        ) : null}
       </div>
 
       <dl className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-2">
@@ -63,6 +75,8 @@ export default function EventDetailPage() {
           <dd className="whitespace-pre-wrap">{event.goals?.text || t('detail.noGoals')}</dd>
         </div>
       </dl>
+
+      <DuplicateEventDialog event={event} open={duplicating} onOpenChange={setDuplicating} />
 
       <EventFormDialog
         open={editing}

@@ -64,7 +64,8 @@ export async function ensureDefaultTags(teamId: string): Promise<Tag[]> {
     })),
   )
   // 23505 : un collègue vient de les créer en même temps — rien à faire.
-  if (error && error.code !== '23505') throw error
+  // 42501 : un commercial ne crée pas de tags (réservé aux admins) ; il attend que l'équipe en ait.
+  if (error && error.code !== '23505' && error.code !== '42501') throw error
   return fetchTags()
 }
 
@@ -151,11 +152,22 @@ export type TargetPatch = {
   prep_comment?: string
 }
 
+/**
+ * Modifie la préparation d'entreprises. Un commercial n'a le droit de modifier que celles qui lui sont assignées :
+ * PostgREST ne signale pas une mise à jour refusée par la RLS (0 ligne), on le détecte donc ici.
+ */
 export async function updateTargets(ids: string[], patch: TargetPatch): Promise<void> {
+  let updated = 0
   for (const part of chunks(ids, IN_CHUNK)) {
-    const { error } = await supabase.from('event_companies').update(patch).in('id', part)
+    const { data, error } = await supabase
+      .from('event_companies')
+      .update(patch)
+      .in('id', part)
+      .select('id')
     if (error) throw error
+    updated += data?.length ?? 0
   }
+  if (updated < ids.length) throw new Error('not allowed or not found')
 }
 
 // --- Tags -------------------------------------------------------------------------------------------------------------
@@ -308,8 +320,9 @@ export async function updateMeetingReport(id: string, patch: MeetingReportPatch)
   if (patch.interest !== undefined) columns.interest = patch.interest
   if (patch.nextStep !== undefined)
     columns.next_step = patch.nextStep.trim() === '' ? null : patch.nextStep
-  const { error } = await supabase.from('meetings').update(columns).eq('id', id)
+  const { data, error } = await supabase.from('meetings').update(columns).eq('id', id).select('id')
   if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found') // la rencontre d'un collègue n'est pas modifiable
 }
 
 export type MeetingNote = { id: string; body: string; authorId: string; capturedAt: string }
@@ -351,9 +364,11 @@ export async function addMeetingNote(
 }
 
 export async function deleteMeeting(id: string): Promise<void> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('meetings')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
+    .select('id')
   if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
 }

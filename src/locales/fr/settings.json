@@ -20,7 +20,13 @@
     "rename": "Renommer",
     "renamed": "Équipe renommée.",
     "members": "Membres",
-    "roles": { "owner": "Propriétaire", "admin": "Administrateur", "member": "Membre" },
+    "roles": { "owner": "Propriétaire", "admin": "Admin d'équipe", "member": "Commercial" },
+    "rolesHelp": "Admin d'équipe : gère les salons, l'import, les tags, le plan, les assignations et l'équipe. Commercial : consulte tout, prépare les entreprises qui lui sont assignées et tient ses rencontres et ses notes.",
+    "changeRole": "Rôle de {{name}}",
+    "remove": "Retirer",
+    "removeLabel": "Retirer {{name}} de l'équipe",
+    "removeConfirm": "Retirer {{name}} de l'équipe ? Ses rencontres et ses notes restent dans fair.",
+    "memberError": "Impossible de modifier ce membre.",
     "you": "vous",
     "pending": "Invitations en attente",
     "cancelInvite": "Annuler l'invitation"
@@ -33,6 +39,6 @@
     "sending": "Envoi…",
     "sent": "Invitation envoyée à {{email}}.",
     "error": "Impossible d'envoyer l'invitation.",
-    "adminOnly": "Seuls les administrateurs peuvent inviter des collègues."
+    "adminOnly": "Seuls les admins d'équipe peuvent inviter des collègues."
   }
 }

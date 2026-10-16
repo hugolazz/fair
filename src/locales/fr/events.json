@@ -3,7 +3,8 @@
   "new": "Nouveau salon",
   "empty": {
     "title": "Aucun salon pour l'instant",
-    "body": "Créez votre premier salon pour préparer vos rencontres."
+    "body": "Créez votre premier salon pour préparer vos rencontres.",
+    "bodyMember": "Un admin d'équipe doit créer le premier salon pour que vous puissiez y préparer vos rencontres."
   },
   "status": {
     "draft": "Brouillon",
@@ -28,6 +29,19 @@
     "createTitle": "Nouveau salon",
     "editTitle": "Modifier le salon"
   },
+  "duplicate": {
+    "title": "Dupliquer ce salon comme modèle",
+    "body": "Préparez la prochaine édition de « {{name}} » à partir de sa configuration.",
+    "defaultName": "{{name}} (copie)",
+    "name": "Nom du nouveau salon",
+    "always": "Copiés dans tous les cas : le lieu, la ville, le pays, le fuseau et les objectifs. Les tags sont partagés par toute l'équipe : ils sont déjà disponibles. Rien d'autre n'est copié (stands, assignations, rencontres, notes, plan).",
+    "copyMapping": "Copier le mapping d'import",
+    "copyMappingHint": "Les colonnes du dernier fichier importé : le prochain import se pré-remplit.",
+    "copyParticipants": "Copier la liste des participants",
+    "copyParticipantsHint": "Les entreprises ciblées avec leur priorité, leur objectif et leur commentaire de préparation (sans stand ni assignation).",
+    "submit": "Dupliquer le salon",
+    "error": "Impossible de dupliquer le salon."
+  },
   "errors": {
     "nameRequired": "Le nom du salon est obligatoire.",
     "datesOrder": "La fin ne peut pas précéder le début.",
@@ -40,6 +54,7 @@
     "goals": "Objectifs",
     "noGoals": "Aucun objectif défini.",
     "import": "Importer des participants",
+    "duplicate": "Dupliquer comme modèle",
     "prepare": "Préparer les rencontres",
     "notFound": "Ce salon n'existe pas ou a été supprimé.",
     "placeholder": "Les participants, le plan et les rencontres de ce salon arriveront dans les prochaines étapes.",
@@ -52,6 +67,7 @@
     "overview": "Aperçu",
     "participants": "Participants",
     "myList": "Ma liste",
+    "team": "Équipe",
     "plan": "Plan du salon",
     "bilan": "Bilan",
     "exports": "Exports"

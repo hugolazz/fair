@@ -13,6 +13,7 @@ const TABS = [
   { to: '', end: true, key: 'overview' },
   { to: 'participants', end: false, key: 'participants' },
   { to: 'my-list', end: false, key: 'myList' },
+  { to: 'team', end: false, key: 'team' },
   { to: 'plan', end: false, key: 'plan' },
   { to: 'bilan', end: false, key: 'bilan' },
   { to: 'exports', end: false, key: 'exports' },
