@@ -15,6 +15,17 @@ export function AppLayout() {
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
+      {/* Lien d'évitement : visible seulement au focus clavier, il saute la navigation. */}
+      <a
+        href="#contenu"
+        onClick={(e) => {
+          e.preventDefault()
+          document.getElementById('contenu')?.focus()
+        }}
+        className="focus:bg-brand-700 sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:px-4 focus:py-3 focus:text-sm focus:font-medium focus:text-white"
+      >
+        {t('a11y.skipToContent')}
+      </a>
       {/* Sidebar desktop */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
         <div className="px-6 py-5">
@@ -47,7 +58,11 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pb-28 md:px-8 md:py-8 md:pb-8">
+        <main
+          id="contenu"
+          tabIndex={-1}
+          className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pb-28 outline-none md:px-8 md:py-8 md:pb-8"
+        >
           <Outlet />
         </main>
       </div>

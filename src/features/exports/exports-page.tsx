@@ -198,7 +198,10 @@ export default function ExportsPage() {
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 text-sm font-semibold">{t('pdf.legend')}</legend>
             {(['pdf-global', 'pdf-reps', 'pdf-meetings'] as PdfKind[]).map((k) => (
-              <label key={k} className="flex min-h-9 cursor-pointer items-start gap-2 text-sm">
+              <label
+                key={k}
+                className="flex min-h-11 cursor-pointer items-start gap-2 text-sm md:min-h-9"
+              >
                 <input
                   type="radio"
                   name="pdfKind"
@@ -345,7 +348,7 @@ export default function ExportsPage() {
                 <div className="flex gap-2">
                   <Button
                     variant="ghost"
-                    className="min-h-9"
+                    className="min-h-11 md:min-h-9"
                     onClick={() =>
                       set({ columns: { ...state.columns, [id]: COLUMNS[id].map((c) => c.key) } })
                     }
@@ -354,7 +357,7 @@ export default function ExportsPage() {
                   </Button>
                   <Button
                     variant="ghost"
-                    className="min-h-9"
+                    className="min-h-11 md:min-h-9"
                     onClick={() => set({ columns: { ...state.columns, [id]: [] } })}
                   >
                     {t('columns.none')}
@@ -370,7 +373,10 @@ export default function ExportsPage() {
         <fieldset className="flex flex-col gap-1">
           <legend className="mb-1 text-sm font-semibold">{t('generate.where')}</legend>
           {(['auto', 'local', 'server'] as ModePref[]).map((p) => (
-            <label key={p} className="flex min-h-9 cursor-pointer items-start gap-2 text-sm">
+            <label
+              key={p}
+              className="flex min-h-11 cursor-pointer items-start gap-2 text-sm md:min-h-9"
+            >
               <input
                 type="radio"
                 name="mode"
@@ -420,7 +426,7 @@ export default function ExportsPage() {
               {outcome.where === 'fallback' ? <p>{t('result.fallback')}</p> : null}
               <Button
                 variant="secondary"
-                className="mt-2 min-h-9"
+                className="mt-2 min-h-11 md:min-h-9"
                 onClick={() =>
                   downloadBytes(outcome.result.filename, outcome.result.mime, outcome.result.bytes)
                 }

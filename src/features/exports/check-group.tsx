@@ -23,7 +23,10 @@ export function CheckGroup<T extends string>({
         {options.map((o) => {
           const on = selected.includes(o.value)
           return (
-            <label key={o.value} className="flex min-h-9 cursor-pointer items-center gap-2 text-sm">
+            <label
+              key={o.value}
+              className="flex min-h-11 min-w-11 cursor-pointer items-center gap-2 text-sm md:min-h-9"
+            >
               <input
                 type="checkbox"
                 checked={on}

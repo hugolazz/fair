@@ -99,7 +99,10 @@ export function CsvTemplateEditor({ template, builtin, onChange, onDuplicate, on
                 ['excludeOptOut', 'csv.excludeOptOut'],
               ] as const
             ).map(([key, label]) => (
-              <label key={key} className="flex min-h-9 cursor-pointer items-center gap-2 text-sm">
+              <label
+                key={key}
+                className="flex min-h-11 cursor-pointer items-center gap-2 text-sm md:min-h-9"
+              >
                 <input
                   type="checkbox"
                   checked={template[key]}
