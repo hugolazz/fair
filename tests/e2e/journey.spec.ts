@@ -13,6 +13,8 @@ test.describe.serial('parcours complet', () => {
 
   test('créer l’équipe puis un salon', async ({ page }) => {
     await login(page, USERS.newcomer)
+    await expect(page.getByRole('heading', { name: 'Rejoignez une équipe' })).toBeVisible()
+    await page.getByRole('button', { name: 'Créer une équipe' }).click()
     await expect(page.getByRole('heading', { name: 'Créez votre équipe' })).toBeVisible()
     await page.getByLabel("Nom de l'équipe").fill('Équipe parcours')
     await page.getByRole('button', { name: "Créer l'équipe" }).click()
@@ -119,10 +121,17 @@ test.describe.serial('parcours complet', () => {
     // Prise de note pendant la rencontre : un champ, un bouton.
     await sheet.getByLabel('Note de la rencontre').fill('Très intéressée par le retail media.')
     await sheet.getByRole('button', { name: 'Enregistrer la note' }).click()
-    await expect(sheet.getByText('Très intéressée par le retail media.').first()).toBeVisible()
-    await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue('')
-    await sheet.getByRole('button', { name: 'Rencontre terminée' }).click()
-    await expect(sheet.getByText('Rencontre marquée comme terminée.')).toBeVisible()
+    // La note reste dans le champ, enregistrée, et se modifie ; écrire une note marque l'entreprise comme rencontrée.
+    await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+    await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue(
+      'Très intéressée par le retail media.',
+    )
+    await sheet.getByLabel('Note de la rencontre').fill('Très intéressée, veut une démo.')
+    await sheet.getByRole('button', { name: 'Enregistrer la note' }).click()
+    await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+    await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue(
+      'Très intéressée, veut une démo.',
+    )
   })
 
   test('une note prise sans rendez-vous planifié crée la rencontre toute seule', async ({
@@ -138,7 +147,10 @@ test.describe.serial('parcours complet', () => {
     const sheet = page.getByRole('dialog')
     await sheet.getByLabel('Note de la rencontre').fill('Passé au stand, revenir demain.')
     await sheet.getByRole('button', { name: 'Enregistrer la note' }).click()
-    await expect(sheet.getByText('Passé au stand, revenir demain.')).toBeVisible()
+    await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+    await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue(
+      'Passé au stand, revenir demain.',
+    )
   })
 
   test('plusieurs contacts dans une ligne : contact clé puis autres contacts', async ({ page }) => {
@@ -252,7 +264,9 @@ test.describe.serial('parcours complet', () => {
       .first()
       .click()
     const sheet = page.getByRole('dialog', { name: 'Carrefour' })
-    await expect(sheet.getByText('Très intéressée par le retail media.').first()).toBeVisible()
+    await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue(
+      'Très intéressée, veut une démo.',
+    )
     await expect(sheet.getByText(/Parler retail media/)).toBeVisible()
     const edit = await openEdit(page)
     await edit
@@ -325,7 +339,7 @@ test.describe.serial('parcours complet', () => {
     expect(cell(carrefour, 'Statut de la rencontre')).toBe('Vu')
     expect(cell(carrefour, 'Intérêt (1-5)')).toBe('4')
     expect(cell(carrefour, 'Prochaine étape')).toBe('Envoyer la démo')
-    expect(cell(carrefour, 'Notes du salon')).toContain('Très intéressée par le retail media.')
+    expect(cell(carrefour, 'Notes du salon')).toContain('Très intéressée, veut une démo.')
 
     // Entreprise et contact saisis à la main : chaque info dans sa colonne, « à recontacter » compris.
     const grace = find((r) => cell(r, 'E-mail') === 'grace@manuelle.example')

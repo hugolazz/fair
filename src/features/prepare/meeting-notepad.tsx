@@ -1,8 +1,13 @@
 import { CheckCircle2, NotebookPen, UserPlus } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import { addMeetingNote, fetchMeetingNotes, updateMeetingReport } from '@/db/repositories/targets'
+import {
+  addMeetingNote,
+  fetchMeetingNotes,
+  updateMeetingNote,
+  updateMeetingReport,
+} from '@/db/repositories/targets'
 import type { Target, TargetContact } from '@/db/schemas/prepare'
 import { useReadySession } from '@/features/auth-team/session'
 import { AddContactForm } from '@/features/manual-entry/add-contact-form'
@@ -37,34 +42,61 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
     () => (meeting ? fetchMeetingNotes(meeting.id) : Promise.resolve([])),
     [meeting?.id],
   )
+  // Mon texte : une seule note par rencontre, qui reste affichée (et modifiable) après l'enregistrement.
+  const mine = [...(notes.data ?? [])].reverse().find((n) => n.authorId === meId)
   const [draft, setDraft] = useState('')
+  const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(false)
   const [addingContact, setAddingContact] = useState(false)
   const [metWith, setMetWith] = useState<string>()
+  // Case « à recontacter » : l'état local répond tout de suite, sans attendre la création de la rencontre.
+  const [recontactLocal, setRecontactLocal] = useState<boolean>()
+  const creating = useRef<Promise<string>>(undefined)
+  const seededFor = useRef<string>(undefined)
+  const typed = useRef(false) // le chargement des notes n'écrase jamais un texte déjà tapé
+
+  // Le champ est rempli une fois avec ma note existante ; la rencontre créée par nos soins ne l'efface pas.
+  useEffect(() => {
+    if (!notes.data) return
+    const key = meeting?.id ?? 'none'
+    if (seededFor.current === key) return
+    seededFor.current = key
+    if (!typed.current) setDraft(mine?.body ?? '')
+  }, [notes.data, meeting?.id, mine?.body])
 
   /** La rencontre en cours, créée à la volée (sans planification) si elle n'existe pas encore. */
-  async function ensureMeeting(): Promise<string> {
-    if (meeting) return meeting.id
-    const id = newId()
-    const ok = await api.actions.saveMeeting({
-      id,
-      targetId: target.id,
-      ownerId: meId,
-      plannedAt: new Date().toISOString(),
-      durationMin: 15,
-      reminderMin: null,
-    })
-    if (!ok) throw new Error('meeting')
-    return id
+  function ensureMeeting(): Promise<string> {
+    if (meeting) return Promise.resolve(meeting.id)
+    // Deux actions rapprochées ne doivent créer qu'une seule rencontre.
+    creating.current ??= (async () => {
+      const id = newId()
+      seededFor.current = id
+      const ok = await api.actions.saveMeeting({
+        id,
+        targetId: target.id,
+        ownerId: meId,
+        plannedAt: new Date().toISOString(),
+        durationMin: 15,
+        reminderMin: null,
+      })
+      if (!ok) {
+        creating.current = undefined
+        throw new Error('meeting')
+      }
+      return id
+    })()
+    return creating.current
   }
 
   async function setRecontact(on: boolean) {
     setError(false)
+    setRecontactLocal(on)
     try {
       const id = await ensureMeeting()
       await api.actions.updateMeetingReport(target.id, id, { recontact: on })
     } catch {
+      setRecontactLocal(undefined)
       setError(true)
     }
   }
@@ -86,13 +118,16 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
     if (!body) return
     setBusy(true)
     setError(false)
+    setSaved(false)
     try {
       const meetingId = await ensureMeeting()
-      if (!meeting || meeting.status === 'to_see') {
-        await api.actions.updateMeetingReport(target.id, meetingId, { status: 'in_progress' })
+      // Écrire une note = avoir rencontré l'entreprise.
+      if (!meeting || meeting.status !== 'done') {
+        await api.actions.updateMeetingReport(target.id, meetingId, { status: 'done' })
       }
-      await addMeetingNote(membership.teamId, meetingId, meId, body)
-      setDraft('')
+      if (mine) await updateMeetingNote(mine.id, body)
+      else await addMeetingNote(membership.teamId, meetingId, meId, body)
+      setSaved(true)
       notes.reload()
     } catch {
       setError(true)
@@ -102,7 +137,9 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   }
 
   const done = meeting?.status === 'done'
-  const list = [...(notes.data ?? [])].reverse()
+  // Les notes de mes collègues restent listées sous la mienne.
+  const list = [...(notes.data ?? [])].reverse().filter((n) => n.id !== mine?.id)
+  const recontact = recontactLocal ?? meeting?.recontact ?? false
 
   return (
     <section aria-labelledby="notepad-title" className="flex flex-col gap-3">
@@ -114,7 +151,11 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
         <span className="sr-only">{t('notepad.label')}</span>
         <textarea
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            typed.current = true
+            setDraft(e.target.value)
+            setSaved(false)
+          }}
           placeholder={t('notepad.placeholder')}
           rows={4}
           className="focus-visible:outline-brand-600 min-h-28 w-full rounded-xl border border-slate-300 bg-white p-3 text-base"
@@ -128,7 +169,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
       <div className="flex flex-wrap gap-2">
         <Button
           className="min-h-12 flex-1"
-          disabled={busy || !draft.trim()}
+          disabled={busy || !draft.trim() || draft.trim() === mine?.body}
           onClick={() => void save()}
         >
           {t('notepad.save')}
@@ -146,7 +187,12 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
           </Button>
         ) : null}
       </div>
-      {done ? (
+      {saved ? (
+        <p role="status" className="text-sm font-medium text-emerald-800">
+          {t('notepad.saved')}
+        </p>
+      ) : null}
+      {done && !saved ? (
         <p role="status" className="flex items-center gap-1.5 text-sm font-medium text-emerald-800">
           <CheckCircle2 aria-hidden className="size-4" />
           {t('notepad.finished')}
@@ -157,12 +203,12 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
         <input
           type="checkbox"
           className="size-6"
-          checked={meeting?.recontact ?? false}
+          checked={recontact}
           onChange={(e) => void setRecontact(e.target.checked)}
         />
         <span className="flex-1 text-base font-medium">{t('notepad.recontact')}</span>
         <span className="text-sm font-semibold" aria-hidden>
-          {meeting?.recontact ? t('notepad.yes') : t('notepad.no')}
+          {recontact ? t('notepad.yes') : t('notepad.no')}
         </span>
       </label>
 

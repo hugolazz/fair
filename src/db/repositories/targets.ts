@@ -461,6 +461,17 @@ export async function addMeetingNote(
   return { id: note.id, body: note.body, authorId, capturedAt: note.captured_at }
 }
 
+/** Modifie le texte d'une note (seul son auteur le peut : sinon la RLS ne renvoie aucune ligne). */
+export async function updateMeetingNote(id: string, body: string): Promise<void> {
+  const { data, error } = await supabase
+    .from('notes')
+    .update({ body: body.trim() })
+    .eq('id', id)
+    .select('id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
+}
+
 export async function deleteMeeting(id: string): Promise<void> {
   const { data, error } = await supabase
     .from('meetings')
