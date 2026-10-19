@@ -61,18 +61,21 @@ export function useTargets(eventId: string, teamId: string) {
 
   const reload = useCallback(() => setTick((t) => t + 1), [])
 
-  /** Applique `local` immédiatement, puis `remote` ; annule `local` si `remote` échoue. */
+  /**
+   * Applique `local` immédiatement, puis `remote`. `local` s'applique à l'état le plus récent (forme fonctionnelle) :
+   * une copie prise avant un rendu écraserait les changements voisins (une rencontre créée juste avant disparaîtrait).
+   * Si `remote` échoue, on recharge depuis le serveur plutôt que de restaurer une copie périmée.
+   */
   const run = useCallback(async (local: (d: Data) => Data, remote: () => Promise<unknown>) => {
-    const snapshot = dataRef.current
-    if (!snapshot) return false
-    setData(local(snapshot))
+    if (!dataRef.current) return false
+    setData((d) => d && local(d))
     setActionError(false)
     try {
       await remote()
       return true
     } catch {
-      setData(snapshot)
       setActionError(true)
+      setTick((t) => t + 1)
       return false
     }
   }, [])
