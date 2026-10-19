@@ -1,5 +1,5 @@
 import { CalendarDays, Settings, type LucideIcon } from 'lucide-react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useMatch } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Wordmark } from '@/components/wordmark'
 import { useReadySession } from '@/features/auth-team/session'
@@ -15,6 +15,8 @@ const NAV: { to: string; labelKey: string; icon: LucideIcon }[] = [
 export function AppLayout() {
   const { t } = useTranslation()
   const { session, displayName } = useReadySession()
+  // Le tableau des participants occupe toute la largeur de la page ; les autres écrans restent à une largeur de lecture.
+  const wide = useMatch('/events/:eventId/participants') !== null
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -67,7 +69,10 @@ export function AppLayout() {
       <main
         id="contenu"
         tabIndex={-1}
-        className="animate-rise mx-auto w-full max-w-[1040px] flex-1 px-4 pt-4 pb-28 outline-none md:px-10 md:pt-6 md:pb-20"
+        className={cn(
+          'animate-rise mx-auto w-full flex-1 px-4 pt-4 pb-28 outline-none md:px-10 md:pt-6 md:pb-20',
+          wide ? 'max-w-[1680px]' : 'max-w-[1040px]',
+        )}
       >
         <Outlet />
       </main>
