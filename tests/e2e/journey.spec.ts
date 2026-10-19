@@ -41,6 +41,14 @@ test.describe.serial('parcours complet', () => {
       .getByRole('link', { name: /Tech For Retail 2027/ })
       .first()
       .click()
+    // Liste encore vide : le modèle est aussi proposé là, à côté de « Importer ».
+    await page.getByRole('link', { name: 'Participants', exact: true }).click()
+    const [emptyStateDownload] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Télécharger un modèle (.xlsx)' }).click(),
+    ])
+    expect(emptyStateDownload.suggestedFilename()).toBe('fair-modele-import.xlsx')
+    await page.getByRole('link', { name: 'Aperçu', exact: true }).click()
     await page.getByRole('link', { name: 'Importer des participants' }).click()
 
     // Modèle vide à télécharger avant l'import : un .xlsx avec seulement les intitulés de colonnes.

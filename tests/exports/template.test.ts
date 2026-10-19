@@ -7,6 +7,10 @@ import { detectMapping } from '@/features/import/lib/mapping'
 
 // Le modèle d'import : un classeur sans données, avec seulement les intitulés de colonnes que fair reconnaît.
 
+const TEMPLATE_LABELS = IMPORT_COLUMNS.map((c) =>
+  c.key === 'priority' ? 'Priorité (A, B, C)' : c.label,
+)
+
 async function readTemplate() {
   const { filename, mime, bytes } = await buildImportTemplate('2027-01-01T00:00:00.000Z')
   const wb = new ExcelJS.Workbook()
@@ -26,15 +30,23 @@ describe('modèle d’import (.xlsx)', () => {
     expect(wb.worksheets.map((w) => w.name)).toEqual(['Participants'])
     const ws = wb.worksheets[0]!
     expect(ws.actualRowCount).toBe(1)
-    expect(ws.getRow(1).values).toEqual([undefined, ...IMPORT_COLUMNS.map((c) => c.label)])
+    expect(ws.getRow(1).values).toEqual([undefined, ...TEMPLATE_LABELS])
   })
 
-  it('a les 14 colonnes du fichier d’import, la ligne d’intitulés figée et filtrable', async () => {
+  it('appelle la colonne de priorité « Priorité (A, B, C) »', async () => {
+    const { wb } = await readTemplate()
+    const labels = (wb.worksheets[0]!.getRow(1).values as (string | undefined)[]).slice(1)
+    expect(labels).toContain('Priorité (A, B, C)')
+    expect(labels).not.toContain('Priorité')
+  })
+
+  it('a les 14 colonnes du fichier d’import et une ligne d’intitulés figée, sans flèches de filtre', async () => {
     const { wb } = await readTemplate()
     const ws = wb.worksheets[0]!
     expect(IMPORT_COLUMNS).toHaveLength(14)
     expect(ws.views[0]).toMatchObject({ state: 'frozen', ySplit: 1 })
-    expect(ws.autoFilter).toBeTruthy()
+    // Les intitulés sont des titres : pas de liste déroulante de filtre dessus.
+    expect(ws.autoFilter).toBeFalsy()
   })
 
   it('est reconnu tel quel par l’import : chaque colonne se rattache à un champ de fair', async () => {

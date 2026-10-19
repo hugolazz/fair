@@ -23,7 +23,13 @@ export function columnWidth(col: Column, values: string[]): number {
   return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, col.label.length + 4, wanted))
 }
 
-export type WorkbookOptions = { title: string; creator?: string; generatedAt: string }
+export type WorkbookOptions = {
+  title: string
+  creator?: string
+  generatedAt: string
+  /** Flèches de filtre sur la ligne d'intitulés (par défaut oui ; non pour un modèle à remplir). */
+  filters?: boolean
+}
 
 export async function buildWorkbook(tables: Table[], opts: WorkbookOptions): Promise<Uint8Array> {
   const wb = new ExcelJS.Workbook()
@@ -71,7 +77,7 @@ export async function buildWorkbook(tables: Table[], opts: WorkbookOptions): Pro
       }
     })
 
-    if (table.columns.length > 0) {
+    if (table.columns.length > 0 && opts.filters !== false) {
       ws.autoFilter = {
         from: { row: 1, column: 1 },
         to: { row: 1, column: table.columns.length },
