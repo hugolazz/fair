@@ -152,37 +152,47 @@ export default function PreparePage() {
         </p>
       ) : null}
 
-      <div className="flex justify-end">
-        <Button variant="secondary" onClick={() => setAdding(true)}>
-          <Plus aria-hidden className="size-4" />
-          {tm('company.open')}
-        </Button>
-      </div>
-
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <FilterBar
-            filters={filters}
-            onChange={setFilters}
-            tags={api.tags}
-            members={api.members}
-            meId={meId}
-            total={total}
-            shown={rows.length}
-            collapsible={!isDesktop}
-          />
+      {isDesktop ? (
+        <div className="flex justify-end">
+          <Button variant="secondary" onClick={() => setAdding(true)}>
+            <Plus aria-hidden className="size-4" />
+            {tm('company.open')}
+          </Button>
         </div>
-        {!isDesktop ? (
+      ) : null}
+
+      {/* Mobile : une seule rangée de boutons-icônes (ajouter, rechercher, filtres, sélectionner). */}
+      <FilterBar
+        filters={filters}
+        onChange={setFilters}
+        tags={api.tags}
+        members={api.members}
+        meId={meId}
+        total={total}
+        shown={rows.length}
+        collapsible={!isDesktop}
+        before={
+          <Button
+            variant="secondary"
+            className="size-11 shrink-0 px-0"
+            aria-label={tm('company.open')}
+            onClick={() => setAdding(true)}
+          >
+            <Plus aria-hidden className="size-5" />
+          </Button>
+        }
+        after={
           <Button
             variant={selectMode ? 'primary' : 'secondary'}
+            className="size-11 shrink-0 px-0"
             aria-pressed={selectMode}
+            aria-label={selectMode ? t('select.done') : t('select.mode')}
             onClick={() => (selectMode ? clear() : setSelectMode(true))}
           >
-            <CheckSquare aria-hidden className="size-4" />
-            {selectMode ? t('select.done') : t('select.mode')}
+            <CheckSquare aria-hidden className="size-5" />
           </Button>
-        ) : null}
-      </div>
+        }
+      />
 
       {rows.length === 0 ? (
         <p

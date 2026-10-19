@@ -14,9 +14,15 @@ type Props = {
   meId: string
   total: number
   shown: number
-  /** Sur mobile, les filtres sont repliés derrière un bouton. */
+  /** Sur mobile, une seule rangée de boutons-icônes ; recherche et filtres s'ouvrent dessous. */
   collapsible: boolean
+  /** Boutons-icônes placés avant / après recherche et filtres sur la rangée mobile. */
+  before?: React.ReactNode
+  after?: React.ReactNode
 }
+
+const iconBtn =
+  'relative inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-colors duration-200'
 
 function Toggle({
   pressed,
@@ -54,9 +60,12 @@ export function FilterBar({
   total,
   shown,
   collapsible,
+  before,
+  after,
 }: Props) {
   const { t } = useTranslation('prepare')
   const [open, setOpen] = useState(false)
+  const [searching, setSearching] = useState(false)
   const active = countActiveFilters(filters)
   const set = (patch: Partial<Filters>) => onChange({ ...filters, ...patch })
   const togglePriority = (p: Priority | 'none') =>
@@ -133,10 +142,73 @@ export function FilterBar({
     </div>
   )
 
+  if (collapsible) {
+    const searchOpen = searching || filters.search !== ''
+    return (
+      <div className="flex flex-col gap-2" role="search">
+        <div className="flex items-center gap-2">
+          {before}
+          <button
+            type="button"
+            aria-label={t('filters.searchToggle')}
+            aria-expanded={searchOpen}
+            onClick={() => setSearching((s) => !s)}
+            className={cn(
+              iconBtn,
+              filters.search !== '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-900',
+            )}
+          >
+            <Search aria-hidden className="size-5" />
+          </button>
+          <button
+            type="button"
+            aria-label={
+              active > 0 ? t('filters.toggleActive', { count: active }) : t('filters.toggle')
+            }
+            aria-expanded={open}
+            onClick={() => setOpen((o) => !o)}
+            className={cn(
+              iconBtn,
+              active > 0 ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-900',
+            )}
+          >
+            <SlidersHorizontal aria-hidden className="size-5" />
+          </button>
+          {after}
+          <p role="status" className="ml-auto text-[13px] whitespace-nowrap text-slate-600">
+            {t('filters.count', { count: shown, total })}
+          </p>
+        </div>
+        {searchOpen ? (
+          <label className="relative block">
+            <span className="sr-only">{t('filters.search')}</span>
+            <Search
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-500"
+            />
+            <input
+              type="search"
+              autoFocus={filters.search === ''}
+              value={filters.search}
+              onChange={(e) => set({ search: e.target.value })}
+              placeholder={t('filters.search')}
+              className="min-h-11 w-full rounded-full border-0 bg-slate-100 pr-4 pl-10 text-base placeholder:text-slate-500"
+            />
+          </label>
+        ) : null}
+        {open ? (
+          <div className="rounded-3xl bg-white p-4 shadow-[0_0_0_1px_var(--color-slate-200)]">
+            {panel}
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-3" role="search">
       <div className="flex items-center gap-2">
-        <label className="relative flex-1 md:max-w-md">
+        <label className="relative max-w-md flex-1">
           <span className="sr-only">{t('filters.search')}</span>
           <Search
             aria-hidden
@@ -147,34 +219,14 @@ export function FilterBar({
             value={filters.search}
             onChange={(e) => set({ search: e.target.value })}
             placeholder={t('filters.search')}
-            className="min-h-11 w-full rounded-full border-0 bg-slate-100 pr-4 pl-10 text-base placeholder:text-slate-500 md:min-h-9 md:text-[13px]"
+            className="min-h-9 w-full rounded-full border-0 bg-slate-100 pr-4 pl-10 text-[13px] placeholder:text-slate-500"
           />
         </label>
-        {collapsible ? (
-          <Button variant="secondary" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-            <SlidersHorizontal aria-hidden className="size-4" />
-            {active > 0 ? t('filters.toggleActive', { count: active }) : t('filters.toggle')}
-          </Button>
-        ) : null}
-        <p
-          role="status"
-          className="ml-auto hidden text-[13px] whitespace-nowrap text-slate-600 md:block"
-        >
+        <p role="status" className="ml-auto text-[13px] whitespace-nowrap text-slate-600">
           {t('filters.count', { count: shown, total })}
         </p>
       </div>
-      {collapsible ? (
-        open ? (
-          <div className="rounded-3xl bg-white p-4 shadow-[0_0_0_1px_var(--color-slate-200)]">
-            {panel}
-          </div>
-        ) : null
-      ) : (
-        panel
-      )}
-      <p role="status" className="text-sm text-slate-600 md:hidden">
-        {t('filters.count', { count: shown, total })}
-      </p>
+      {panel}
     </div>
   )
 }
