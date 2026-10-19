@@ -142,7 +142,9 @@ export default function PreparePage() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    // Sur bureau, filtres et tableau débordent de la largeur de lecture, centrés sur la page : le bandeau du salon
+    // (retour, statut, titre, onglets) garde ainsi la même place d'un onglet à l'autre.
+    <div className="flex flex-col gap-3 md:relative md:left-1/2 md:w-[min(calc(100vw-5rem),1680px)] md:-translate-x-1/2">
       {api.actionError ? (
         <p
           role="alert"
