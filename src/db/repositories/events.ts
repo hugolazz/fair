@@ -35,7 +35,7 @@ export async function getEvent(id: string): Promise<EventRow | null> {
 export async function createEvent(teamId: string, values: EventFormValues): Promise<EventRow> {
   const { data, error } = await supabase
     .from('events')
-    .insert({ id: newId(), team_id: teamId, ...formToColumns(values) })
+    .insert({ id: newId(), team_id: teamId, status: 'preparing', ...formToColumns(values) })
     .select(COLUMNS)
     .single()
   if (error) throw error

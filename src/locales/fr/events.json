@@ -9,11 +9,9 @@
     "bodyMember": "Un admin d'équipe doit créer le premier salon pour que vous puissiez y préparer vos rencontres."
   },
   "status": {
-    "draft": "Brouillon",
     "preparing": "En préparation",
     "live": "En cours",
-    "done": "Terminé",
-    "archived": "Archivé"
+    "done": "Passé"
   },
   "fields": {
     "name": "Nom du salon",
@@ -23,7 +21,6 @@
     "venue": "Lieu",
     "venuePlaceholder": "Ex. Paris Expo Porte de Versailles",
     "city": "Ville",
-    "status": "Statut",
     "goals": "Objectifs",
     "goalsPlaceholder": "Ex. Rencontrer 20 retailers, signer 3 démos…"
   },

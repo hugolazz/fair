@@ -4,13 +4,8 @@ import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
-import { InputField, SelectField, TextareaField } from '@/components/ui/field'
-import {
-  emptyEventForm,
-  eventFormSchema,
-  EVENT_STATUSES,
-  type EventFormValues,
-} from '@/db/schemas/event'
+import { InputField, TextareaField } from '@/components/ui/field'
+import { emptyEventForm, eventFormSchema, type EventFormValues } from '@/db/schemas/event'
 
 type Props = {
   open: boolean
@@ -98,13 +93,6 @@ function EventForm({ initialValues, onClose, onSubmit }: FormProps) {
           {...register('venue')}
         />
         <InputField label={t('fields.city')} {...register('city')} />
-        <SelectField label={t('fields.status')} {...register('status')}>
-          {EVENT_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {t(`status.${s}`)}
-            </option>
-          ))}
-        </SelectField>
         <TextareaField
           label={t('fields.goals')}
           placeholder={t('fields.goalsPlaceholder')}

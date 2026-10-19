@@ -7,6 +7,7 @@ import { getEvent } from '@/db/repositories/events'
 import { cn } from '@/lib/cn'
 import { useAsync } from '@/lib/use-async'
 import type { EventOutletContext } from './event-context'
+import { eventStatus } from './lib/status'
 import { StatusBadge } from './status-badge'
 
 const TABS = [
@@ -54,7 +55,7 @@ export default function EventLayout() {
           <ArrowLeft aria-hidden className="size-4" />
           {t('back')}
         </Link>
-        <StatusBadge status={event.status} className="mb-3 flex" />
+        <StatusBadge status={eventStatus(event)} className="mb-3 flex" />
         <h1 className="text-4xl leading-[1.05] font-medium tracking-[-0.03em] break-words md:text-5xl">
           {event.name}
         </h1>

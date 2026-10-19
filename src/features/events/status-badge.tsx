@@ -1,17 +1,15 @@
 import { useTranslation } from 'react-i18next'
-import type { EventStatus } from '@/db/schemas/event'
 import { cn } from '@/lib/cn'
+import type { SalonStatus } from './lib/status'
 
-const STYLES: Record<EventStatus, { text: string; dot: string }> = {
-  draft: { text: 'text-slate-600', dot: 'bg-[#cfcbbf]' },
+const STYLES: Record<SalonStatus, { text: string; dot: string }> = {
   preparing: { text: 'text-gold-700', dot: 'bg-gold-500' },
   live: { text: 'text-brand-600', dot: 'bg-brand-600 animate-pulse-dot' },
   done: { text: 'text-slate-600', dot: 'bg-[#a9c9c3]' },
-  archived: { text: 'text-slate-600', dot: 'bg-[#cfcbbf]' },
 }
 
 /** Statut = point + texte (jamais la couleur seule). « En cours » : le point pulse. */
-export function StatusBadge({ status, className }: { status: EventStatus; className?: string }) {
+export function StatusBadge({ status, className }: { status: SalonStatus; className?: string }) {
   const { t } = useTranslation('events')
   const s = STYLES[status]
   return (

@@ -27,7 +27,6 @@ export const eventFormSchema = z
     endsOn: optionalDate,
     venue: z.string().trim(),
     city: z.string().trim(),
-    status: z.enum(EVENT_STATUSES),
     goals: z.string().trim(),
   })
   .refine((v) => !v.startsOn || !v.endsOn || v.endsOn >= v.startsOn, {
@@ -42,7 +41,6 @@ export const emptyEventForm: EventFormValues = {
   endsOn: '',
   venue: '',
   city: '',
-  status: 'draft',
   goals: '',
 }
 
@@ -53,12 +51,11 @@ export function eventToForm(e: EventRow): EventFormValues {
     endsOn: e.ends_on ?? '',
     venue: e.venue ?? '',
     city: e.city ?? '',
-    status: e.status,
     goals: e.goals?.text ?? '',
   }
 }
 
-/** Valeurs de formulaire → colonnes SQL (chaîne vide = null). */
+/** Valeurs de formulaire → colonnes SQL (chaîne vide = null). Le statut n'est jamais saisi : voir eventStatus. */
 export function formToColumns(v: EventFormValues) {
   return {
     name: v.name,
@@ -66,7 +63,6 @@ export function formToColumns(v: EventFormValues) {
     ends_on: v.endsOn || null,
     venue: v.venue || null,
     city: v.city || null,
-    status: v.status,
     goals: v.goals ? { text: v.goals } : {},
   }
 }

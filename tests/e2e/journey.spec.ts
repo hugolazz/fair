@@ -31,6 +31,8 @@ test.describe.serial('parcours complet', () => {
     await page.getByLabel('Fin').fill('2027-03-11')
     await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Tech For Retail 2027' })).toBeVisible()
+    // Pas de choix de statut : un salon à venir est « En préparation » tout seul.
+    await expect(page.getByText('En préparation')).toBeVisible()
   })
 
   test('importer les participants depuis un CSV', async ({ page }) => {
@@ -84,6 +86,20 @@ test.describe.serial('parcours complet', () => {
     // L'historique complété s'affiche sur la fiche, à la suite du commentaire de l'import.
     await expect(sheet.getByText(/Parler retail media/)).toBeVisible()
     await expect(sheet.getByText(/On a déjà contacté Claire Dubois/)).toBeVisible()
+  })
+
+  test('assigner directement depuis le « + » de la colonne « Assigné à »', async ({ page }) => {
+    await login(page, USERS.newcomer)
+    await page
+      .getByRole('link', { name: /Tech For Retail 2027/ })
+      .first()
+      .click()
+    await page.getByRole('link', { name: 'Participants', exact: true }).click()
+    await page.getByRole('searchbox').fill('Sephora')
+    const row = page.getByRole('row', { name: /Sephora/ })
+    await row.getByLabel('Assigner Sephora à un commercial').selectOption({ label: 'moi' })
+    await expect(row.getByLabel('Assigner Sephora à un commercial')).toHaveCount(0)
+    await expect(row.getByText('moi')).toBeAttached()
   })
 
   test('planifier un rendez-vous, rédiger le compte-rendu et ses notes', async ({ page }) => {

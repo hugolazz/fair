@@ -11,6 +11,7 @@ import { firstNameOf } from '@/lib/person'
 import { useAsync } from '@/lib/use-async'
 import { EventFormDialog } from './event-form-dialog'
 import { formatEventDates } from './event-format'
+import { eventStatus } from './lib/status'
 import { StatusBadge } from './status-badge'
 
 export default function EventsPage() {
@@ -60,7 +61,7 @@ export default function EventsPage() {
                   className="flex h-full flex-col gap-7 rounded-3xl bg-white p-7 shadow-[0_0_0_1px_var(--color-slate-200)] transition-[transform,box-shadow] duration-[250ms] ease-out hover:-translate-y-[3px] hover:shadow-[0_0_0_1px_#d7e6e2,0_16px_32px_-20px_rgb(15_118_110/0.35)]"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <StatusBadge status={e.status} />
+                    <StatusBadge status={eventStatus(e)} />
                     <ArrowUpRight aria-hidden className="size-5 text-[#bdb9ad]" />
                   </div>
                   <div>

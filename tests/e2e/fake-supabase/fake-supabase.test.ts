@@ -46,7 +46,6 @@ describe('faux Supabase', () => {
       endsOn: '2026-11-11',
       venue: '',
       city: 'Paris',
-      status: 'draft',
       goals: '',
     })
     expect((await events.listEvents()).map((e) => e.name)).toEqual(['Tech For Retail'])
@@ -82,7 +81,6 @@ describe('faux Supabase', () => {
         endsOn: '',
         venue: '',
         city: '',
-        status: 'draft',
         goals: '',
       }),
     ).rejects.toMatchObject({ code: '42501' })
