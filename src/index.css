@@ -68,7 +68,9 @@
   --radius-xl: 1.5rem;
   --radius-2xl: 1.5rem;
 
-  --animate-rise: rise 0.5s ease both;
+  /* `backwards` et non `both` : une fois l'animation finie, plus aucun `transform` ne reste sur l'élément. Sinon il devient
+     le repère des éléments `position: fixed` qu'il contient (barre d'actions, etc.), qui se retrouvent en bas de la page. */
+  --animate-rise: rise 0.5s ease backwards;
   --animate-pulse-dot: pulse-dot 1.8s ease-out infinite;
 
   @keyframes rise {
