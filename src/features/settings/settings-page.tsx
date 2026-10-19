@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { ErrorState, Loading, PageHeader } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
-import { InputField, SelectField } from '@/components/ui/field'
+import { InputField } from '@/components/ui/field'
 import { signOut } from '@/db/repositories/auth'
 import { updateMyDisplayName } from '@/db/repositories/profile'
 import {
@@ -47,7 +47,6 @@ export default function SettingsPage() {
   const [teamName, setTeamName] = useState(membership.teamName)
   const [renameMsg, setRenameMsg] = useState<string>()
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member')
   const [inviteMsg, setInviteMsg] = useState<{ kind: 'ok' | 'error'; text: string }>()
   const [inviting, setInviting] = useState(false)
 
@@ -103,7 +102,7 @@ export default function SettingsPage() {
     setInviting(true)
     setInviteMsg(undefined)
     try {
-      await inviteMember(teamId, email.data, inviteRole)
+      await inviteMember(teamId, email.data, 'member') // on invite comme commercial ; le rôle se change ensuite dans la liste de l'équipe
       setInviteMsg({ kind: 'ok', text: t('invite.sent', { email: email.data }) })
       setInviteEmail('')
       invitations.reload()
@@ -279,14 +278,6 @@ export default function SettingsPage() {
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
             />
-            <SelectField
-              label={t('invite.role')}
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as 'member' | 'admin')}
-            >
-              <option value="member">{t('team.roles.member')}</option>
-              <option value="admin">{t('team.roles.admin')}</option>
-            </SelectField>
             <div>
               <Button type="submit" disabled={inviting}>
                 {inviting ? t('invite.sending') : t('invite.submit')}

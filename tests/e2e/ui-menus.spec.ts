@@ -52,14 +52,14 @@ test.describe.serial('menus et calendriers', () => {
     // Le salon n'a plus de champ « Statut » : il est « En préparation » à la création, puis suit les dates.
     await expect(dialog.getByText('Statut')).toHaveCount(0)
 
-    // Liste déroulante aux couleurs de l'appli (Réglages → inviter un collègue).
+    // Liste déroulante aux couleurs de l'appli (Réglages → rôle d'un membre).
     await page.keyboard.press('Escape')
     await page.goto('/settings')
-    const role = page.getByRole('button', { name: /^Rôle Commercial/ })
+    const role = page.getByRole('button', { name: /^Rôle de paul Commercial/ })
     await role.click()
     await page.getByRole('option', { name: "Admin d'équipe" }).click()
     await expect(page.getByRole('listbox')).toHaveCount(0)
-    await expect(page.getByRole('button', { name: /^Rôle Admin d'équipe/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /^Rôle de paul Admin d'équipe/ })).toBeVisible()
   })
 
   test('accessibilité : calendrier et liste ouverts (axe)', async ({ page }) => {
@@ -81,7 +81,7 @@ test.describe.serial('menus et calendriers', () => {
     await expect(page.getByRole('dialog', { name: /Début/ })).toHaveCount(0)
     await page.keyboard.press('Escape')
     await page.goto('/settings')
-    await page.getByRole('button', { name: /^Rôle Commercial/ }).click()
+    await page.getByRole('button', { name: /^Rôle de marie Commercial/ }).click()
     await expect(page.getByRole('listbox')).toBeVisible()
     await audit('liste ouverte')
   })

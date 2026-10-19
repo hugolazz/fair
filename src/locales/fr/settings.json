@@ -43,7 +43,6 @@
   "invite": {
     "title": "Inviter un collègue",
     "email": "Adresse e-mail du collègue",
-    "role": "Rôle",
     "submit": "Envoyer l'invitation",
     "sending": "Envoi…",
     "sent": "Invitation envoyée à {{email}}.",
