@@ -1,4 +1,5 @@
 import { LogOut } from 'lucide-react'
+import { Select } from '@/components/ui/select'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
@@ -211,7 +212,7 @@ export default function SettingsPage() {
                 </span>
                 {manageable ? (
                   <span className="flex items-center gap-2">
-                    <select
+                    <Select
                       aria-label={t('team.changeRole', { name })}
                       value={m.role}
                       onChange={(e) =>
@@ -223,7 +224,7 @@ export default function SettingsPage() {
                     >
                       <option value="member">{t('team.roles.member')}</option>
                       <option value="admin">{t('team.roles.admin')}</option>
-                    </select>
+                    </Select>
                     <Button
                       variant="ghost"
                       aria-label={t('team.removeLabel', { name })}

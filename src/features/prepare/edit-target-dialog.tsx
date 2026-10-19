@@ -1,4 +1,5 @@
 import { Settings2, X } from 'lucide-react'
+import { Select } from '@/components/ui/select'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -306,7 +307,7 @@ function EditBody({
         {available.length > 0 ? (
           <label>
             <span className="sr-only">{t('sheet.addAssignee')}</span>
-            <select
+            <Select
               className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-2 text-base md:text-sm"
               value=""
               onChange={(e) => e.target.value && request([target.id], e.target.value)}
@@ -317,7 +318,7 @@ function EditBody({
                   {m.userId === meId ? t('assign.me') : m.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         ) : null}
       </Section>

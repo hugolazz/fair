@@ -92,7 +92,7 @@ test.describe.serial('rôles : admin d’équipe et commercial', () => {
   test('un commercial ne règle pas les rôles de l’équipe', async ({ page }) => {
     await login(page, USERS.marie)
     await page.goto('/settings')
-    await expect(page.getByRole('combobox', { name: /Rôle de/ })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /Rôle de/ })).toHaveCount(0)
   })
 
   test('la vue équipe montre qui a rencontré quelle entreprise et le risque de doublon', async ({
@@ -131,11 +131,25 @@ test.describe.serial('rôles : admin d’équipe et commercial', () => {
   test('un admin peut changer le rôle d’un membre', async ({ page }) => {
     await login(page, USERS.admin)
     await page.goto('/settings')
-    const select = page.getByRole('combobox', { name: /Rôle de paul/i })
-    await select.selectOption('admin')
-    await expect(select).toHaveValue('admin')
+    // Menu déroulant aux couleurs de l'appli : on l'ouvre, on choisit, au clic comme au clavier.
+    const select = page.getByRole('button', { name: /Rôle de paul/i })
+    await select.click()
+    await expect(page.getByRole('listbox')).toBeVisible()
+    await page.getByRole('option', { name: "Admin d'équipe" }).click()
+    await expect(page.getByRole('listbox')).toHaveCount(0)
+    await expect(select).toContainText("Admin d'équipe")
     await page.reload()
-    await expect(page.getByRole('combobox', { name: /Rôle de paul/i })).toHaveValue('admin')
+    await expect(page.getByRole('button', { name: /Rôle de paul/i })).toContainText(
+      "Admin d'équipe",
+    )
+
+    const again = page.getByRole('button', { name: /Rôle de paul/i })
+    await again.focus()
+    await page.keyboard.press('ArrowDown')
+    await expect(page.getByRole('listbox')).toBeVisible()
+    await page.keyboard.press('ArrowUp') // Admin d'équipe → Commercial
+    await page.keyboard.press('Enter')
+    await expect(again).toContainText('Commercial')
     await logout(page)
   })
 

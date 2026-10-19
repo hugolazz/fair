@@ -7,6 +7,8 @@ import {
   type TextareaHTMLAttributes,
 } from 'react'
 import { cn } from '@/lib/cn'
+import { DateInput } from './date-input'
+import { Select } from './select'
 
 // Champs « sans cadre » : libellé atténué au-dessus, simple soulignement qui passe au brand au focus.
 const underline =
@@ -44,21 +46,33 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 }
 
 export const InputField = forwardRef<HTMLInputElement, InputProps>(function InputField(
-  { label, error, className, ...props },
+  { label, error, className, type, ...props },
   ref,
 ) {
   return (
     <FieldShell label={label} error={error}>
-      {({ id, describedBy }) => (
-        <input
-          ref={ref}
-          id={id}
-          aria-invalid={!!error}
-          aria-describedby={describedBy}
-          className={cn(underline, className)}
-          {...props}
-        />
-      )}
+      {({ id, describedBy }) =>
+        type === 'date' ? (
+          <DateInput
+            ref={ref}
+            id={id}
+            aria-invalid={!!error}
+            aria-describedby={describedBy}
+            className={cn(underline, className)}
+            {...props}
+          />
+        ) : (
+          <input
+            ref={ref}
+            id={id}
+            type={type}
+            aria-invalid={!!error}
+            aria-describedby={describedBy}
+            className={cn(underline, className)}
+            {...props}
+          />
+        )
+      }
     </FieldShell>
   )
 })
@@ -101,7 +115,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectProps>(function S
   return (
     <FieldShell label={label} error={error}>
       {({ id, describedBy }) => (
-        <select
+        <Select
           ref={ref}
           id={id}
           aria-invalid={!!error}
@@ -110,7 +124,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectProps>(function S
           {...props}
         >
           {children}
-        </select>
+        </Select>
       )}
     </FieldShell>
   )

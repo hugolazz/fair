@@ -1,4 +1,5 @@
 import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { Select } from '@/components/ui/select'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -116,7 +117,7 @@ export function FilterBar({
       </div>
       <label className="flex items-center gap-2 text-sm">
         <span className="text-slate-700">{t('filters.assignee')}</span>
-        <select
+        <Select
           className={selectCls}
           value={filters.assignee}
           onChange={(e) => set({ assignee: e.target.value })}
@@ -131,7 +132,7 @@ export function FilterBar({
                 {m.name}
               </option>
             ))}
-        </select>
+        </Select>
       </label>
       {active > 0 ? (
         <Button variant="ghost" className="min-h-9" onClick={() => onChange(emptyFilters)}>

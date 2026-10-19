@@ -1,6 +1,14 @@
 {
   "appName": "fair",
   "tagline": "Vos salons, préparés et suivis, d'une édition à l'autre.",
+  "calendar": {
+    "choose": "Choisir une date",
+    "placeholder": "Choisir une date",
+    "previous": "Mois précédent",
+    "next": "Mois suivant",
+    "today": "Aujourd'hui",
+    "clear": "Effacer"
+  },
   "a11y": {
     "skipToContent": "Aller au contenu"
   },

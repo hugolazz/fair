@@ -1,4 +1,5 @@
 import { MapPin, Trash2 } from 'lucide-react'
+import { Select } from '@/components/ui/select'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useSearchParams } from 'react-router-dom'
@@ -212,7 +213,7 @@ export default function PlanPage() {
         {plans.data.length > 1 ? (
           <label className="flex items-center gap-2 text-sm font-medium">
             {t('select')}
-            <select
+            <Select
               value={plan.id}
               onChange={(e) => {
                 setChosen(e.target.value)
@@ -226,7 +227,7 @@ export default function PlanPage() {
                   {p.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
         ) : (
           <h2 className="text-lg font-semibold">{plan.name}</h2>

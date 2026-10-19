@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { Select } from '@/components/ui/select'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { PRIORITIES, type Priority, type Tag, type TeamMember } from '@/db/schemas/prepare'
@@ -53,7 +54,7 @@ export function BulkBar(p: Props) {
       <p role="status" className="mr-1 text-sm font-semibold">
         {t('select.count', { count: p.count })}
       </p>
-      <select
+      <Select
         aria-label={t('bulk.priority')}
         className={selectCls}
         defaultValue=""
@@ -66,8 +67,8 @@ export function BulkBar(p: Props) {
           </option>
         ))}
         <option value="none">{t('priority.none')}</option>
-      </select>
-      <select
+      </Select>
+      <Select
         aria-label={t('bulk.addTag')}
         className={selectCls}
         defaultValue=""
@@ -79,8 +80,8 @@ export function BulkBar(p: Props) {
             {tag.label}
           </option>
         ))}
-      </select>
-      <select
+      </Select>
+      <Select
         aria-label={t('bulk.removeTag')}
         className={selectCls}
         defaultValue=""
@@ -92,8 +93,8 @@ export function BulkBar(p: Props) {
             {tag.label}
           </option>
         ))}
-      </select>
-      <select
+      </Select>
+      <Select
         aria-label={t('bulk.assign')}
         className={selectCls}
         defaultValue=""
@@ -101,8 +102,8 @@ export function BulkBar(p: Props) {
       >
         <option value="">{t('bulk.assign')}</option>
         {memberOptions}
-      </select>
-      <select
+      </Select>
+      <Select
         aria-label={t('bulk.unassign')}
         className={selectCls}
         defaultValue=""
@@ -110,7 +111,7 @@ export function BulkBar(p: Props) {
       >
         <option value="">{t('bulk.unassign')}</option>
         {memberOptions}
-      </select>
+      </Select>
       <Button variant="ghost" className="ml-auto min-h-9" onClick={p.onClear}>
         <X aria-hidden className="size-4" />
         {t('select.clear')}

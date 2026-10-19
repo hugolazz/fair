@@ -1,4 +1,5 @@
 import { AlertTriangle, Users } from 'lucide-react'
+import { Select } from '@/components/ui/select'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { EmptyState, ErrorState, Loading } from '@/components/page-states'
@@ -56,7 +57,7 @@ export default function TeamPage() {
             </label>
             <label className="flex flex-col gap-1 text-sm font-medium">
               {t('team.person')}
-              <select
+              <Select
                 value={person}
                 onChange={(e) => setPerson(e.target.value)}
                 className="min-h-11 rounded-lg border border-slate-300 bg-white px-2 text-base md:text-sm"
@@ -67,7 +68,7 @@ export default function TeamPage() {
                     {name(m.userId)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           </div>
 
