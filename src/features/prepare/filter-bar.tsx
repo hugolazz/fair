@@ -73,18 +73,26 @@ export function FilterBar({
   const [searching, setSearching] = useState(false)
   const active = countActiveFilters(filters)
   const set = (patch: Partial<Filters>) => onChange({ ...filters, ...patch })
+  const toggleIn = <T extends string>(list: readonly T[], x: T) =>
+    list.includes(x) ? list.filter((y) => y !== x) : [...list, x]
   const togglePriority = (p: Priority | 'none') =>
-    set({
-      priorities: filters.priorities.includes(p)
-        ? filters.priorities.filter((x) => x !== p)
-        : [...filters.priorities, p],
-    })
-  const toggleTag = (id: string) =>
-    set({
-      tagIds: filters.tagIds.includes(id)
-        ? filters.tagIds.filter((x) => x !== id)
-        : [...filters.tagIds, id],
-    })
+    set({ priorities: toggleIn(filters.priorities, p) })
+  const toggleTag = (id: string) => set({ tagIds: toggleIn(filters.tagIds, id) })
+  // Les mêmes choix d'assignation sur mobile (panneau) et sur bureau (bouton).
+  const assigneeOptions = (
+    <>
+      <option value="any">{t('filters.any')}</option>
+      <option value={meId}>{t('filters.mine')}</option>
+      <option value="none">{t('filters.unassigned')}</option>
+      {members
+        .filter((m) => m.userId !== meId)
+        .map((m) => (
+          <option key={m.userId} value={m.userId}>
+            {m.name}
+          </option>
+        ))}
+    </>
+  )
 
   const panel = (
     <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
@@ -126,16 +134,7 @@ export function FilterBar({
           value={filters.assignee}
           onChange={(e) => set({ assignee: e.target.value })}
         >
-          <option value="any">{t('filters.any')}</option>
-          <option value={meId}>{t('filters.mine')}</option>
-          <option value="none">{t('filters.unassigned')}</option>
-          {members
-            .filter((m) => m.userId !== meId)
-            .map((m) => (
-              <option key={m.userId} value={m.userId}>
-                {m.name}
-              </option>
-            ))}
+          {assigneeOptions}
         </Select>
       </label>
       {active > 0 ? (
@@ -218,7 +217,6 @@ export function FilterBar({
         : filters.assignee === meId
           ? t('filters.mine')
           : (members.find((m) => m.userId === filters.assignee)?.name ?? t('filters.any'))
-  const withTags = (f: Partial<Filters>) => onChange({ ...filters, ...f })
 
   // Bureau : une seule rangée. Recherche, puis les filtres repliés en boutons, puis le compteur et l'action de page.
   return (
@@ -248,7 +246,7 @@ export function FilterBar({
         ]}
         selected={filters.priorities}
         onToggle={(key) => togglePriority(key as Priority | 'none')}
-        onClear={() => withTags({ priorities: [] })}
+        onClear={() => set({ priorities: [] })}
       />
       {tags.length > 0 ? (
         <FilterMenu
@@ -256,7 +254,7 @@ export function FilterBar({
           options={tags.map((tag) => ({ key: tag.id, label: tag.label, color: tag.color }))}
           selected={filters.tagIds}
           onToggle={toggleTag}
-          onClear={() => withTags({ tagIds: [] })}
+          onClear={() => set({ tagIds: [] })}
         />
       ) : null}
       <Select
@@ -278,16 +276,7 @@ export function FilterBar({
             : 'bg-slate-900 text-white',
         )}
       >
-        <option value="any">{t('filters.any')}</option>
-        <option value={meId}>{t('filters.mine')}</option>
-        <option value="none">{t('filters.unassigned')}</option>
-        {members
-          .filter((m) => m.userId !== meId)
-          .map((m) => (
-            <option key={m.userId} value={m.userId}>
-              {m.name}
-            </option>
-          ))}
+        {assigneeOptions}
       </Select>
       {active > 0 ? (
         <Button variant="ghost" className="min-h-9 px-3" onClick={() => onChange(emptyFilters)}>

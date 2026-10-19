@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
-import type { MouseEvent } from 'react'
+import { useMemo, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   PRIORITIES,
@@ -62,6 +62,7 @@ const COLUMNS: { key: SortKey | null; label: string; className?: string }[] = [
 export function TargetsTable(p: Props) {
   const { t } = useTranslation('prepare')
   const admin = useIsAdmin()
+  const tagById = useMemo(() => new Map(p.tags.map((tag) => [tag.id, tag])), [p.tags])
   const { ref, onScroll, start, end, totalHeight, offsetTop } = useVirtualRows(
     p.rows.length,
     ROW_HEIGHT,
@@ -203,6 +204,7 @@ export function TargetsTable(p: Props) {
                   <TagPicker
                     target={row}
                     tags={p.tags}
+                    tagById={tagById}
                     onToggle={(tagId, on) => p.onToggleTag(row.id, tagId, on)}
                   />
                 </div>

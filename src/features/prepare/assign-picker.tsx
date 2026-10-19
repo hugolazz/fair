@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { Select } from '@/components/ui/select'
 import type { TeamMember } from '@/db/schemas/prepare'
+import { cn } from '@/lib/cn'
+import { ADD_DOT } from './atoms'
 
 type Props = {
   /** Entreprise concernée (pour le libellé lu par les lecteurs d'écran). */
@@ -23,7 +25,10 @@ export function AssignPicker({ companyName, members, meId, admin, onPick }: Prop
       value=""
       onChange={(e) => e.target.value && onPick(e.target.value)}
       display={<span aria-hidden>+</span>}
-      className="hover:border-brand-600 hover:text-brand-600 focus-visible:outline-brand-600 inline-flex size-7 items-center justify-center rounded-full border border-dashed border-[#cfcbbf] text-[11px] font-semibold text-slate-500 focus-visible:outline-2 focus-visible:outline-offset-2"
+      className={cn(
+        ADD_DOT,
+        'hover:border-brand-600 hover:text-brand-600 focus-visible:outline-brand-600 focus-visible:outline-2 focus-visible:outline-offset-2',
+      )}
     >
       <option value="">{t('assign.pickPlaceholder')}</option>
       {choices.map((m) => (

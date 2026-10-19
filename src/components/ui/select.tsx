@@ -13,7 +13,9 @@ import {
   type SelectHTMLAttributes,
 } from 'react'
 import { cn } from '@/lib/cn'
-import { useCoarsePointer } from '@/lib/use-coarse-pointer'
+import { labelTextOf, setNativeValue } from '@/lib/native-control'
+import { useMediaQuery } from '@/lib/use-media-query'
+import { PopoverPanel } from './popover-panel'
 
 type Opt = { value: string; label: string; disabled: boolean }
 type Snapshot = { value: string; options: Opt[] }
@@ -40,22 +42,9 @@ const same = (a: Snapshot, b: Snapshot) =>
     return o.value === p.value && o.label === p.label && o.disabled === p.disabled
   })
 
-/** Texte du libellé associé au champ, sans le champ lui-même (le libellé peut l'envelopper). */
-function labelTextOf(select: HTMLSelectElement, exclude: (Node | null)[]): string {
-  const label = select.labels?.[0]
-  if (!label) return ''
-  return Array.from(label.childNodes)
-    .filter((n) => !exclude.some((x) => x && (n === x || n.contains(x))))
-    .map((n) => n.textContent ?? '')
-    .join(' ')
-    .trim()
-}
-
 type Props = SelectHTMLAttributes<HTMLSelectElement> & {
-  /** Contenu du bouton à la place de l'option choisie (par exemple un « + »). */
+  /** Contenu du bouton à la place de l'option choisie (par exemple un « + »), sans flèche. */
   display?: ReactNode
-  /** Sans flèche : le bouton se suffit à lui-même. */
-  bare?: boolean
 }
 
 /**
@@ -64,10 +53,10 @@ type Props = SelectHTMLAttributes<HTMLSelectElement> & {
  * Sur écran tactile, on garde le sélecteur natif du système.
  */
 export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
-  { children, className, display, bare = false, ...props },
+  { children, className, display, ...props },
   forwardedRef,
 ) {
-  const coarse = useCoarsePointer()
+  const coarse = useMediaQuery('(pointer: coarse)')
   const uid = useId()
   const selectRef = useRef<HTMLSelectElement | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -124,13 +113,8 @@ export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
   }
 
   function pick(value: string) {
-    const el = selectRef.current
     setOpen(false)
-    if (el && el.value !== value) {
-      // Même chemin qu'un choix natif : React, react-hook-form et les tests voient un vrai événement « change ».
-      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(el, value)
-      el.dispatchEvent(new Event('change', { bubbles: true }))
-    }
+    if (selectRef.current) setNativeValue(selectRef.current, value)
     triggerRef.current?.focus()
   }
 
@@ -221,62 +205,57 @@ export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
             {display !== undefined ? (
               display
             ) : (
-              <span className="min-w-0 flex-1 truncate">{current?.label ?? ''}</span>
-            )}
-            {bare || display !== undefined ? null : (
-              <ChevronDown aria-hidden className="size-4 shrink-0 text-slate-500" />
+              <>
+                <span className="min-w-0 flex-1 truncate">{current?.label ?? ''}</span>
+                <ChevronDown aria-hidden className="size-4 shrink-0 text-slate-500" />
+              </>
             )}
           </button>
         </Popover.Trigger>
-        <Popover.Portal>
-          <Popover.Content
-            align="start"
-            sideOffset={6}
-            collisionPadding={12}
-            onOpenAutoFocus={(e) => {
-              e.preventDefault()
-              listRef.current?.focus()
-            }}
-            className="animate-rise z-[80] max-h-[min(20rem,var(--radix-popover-content-available-height))] min-w-[max(var(--radix-popover-trigger-width),10rem)] overflow-auto rounded-2xl bg-white p-1.5 shadow-[0_12px_32px_-8px_rgba(19,26,24,0.22)] ring-1 ring-slate-200"
+        <PopoverPanel
+          className="min-w-[max(var(--radix-popover-trigger-width),10rem)]"
+          onOpenAutoFocus={(e) => {
+            e.preventDefault()
+            listRef.current?.focus()
+          }}
+        >
+          <div
+            ref={listRef}
+            id={`${uid}-list`}
+            role="listbox"
+            tabIndex={-1}
+            aria-label={name || undefined}
+            aria-activedescendant={`${uid}-opt-${active}`}
+            onKeyDown={onListKeyDown}
+            className="flex flex-col outline-none"
           >
-            <div
-              ref={listRef}
-              id={`${uid}-list`}
-              role="listbox"
-              tabIndex={-1}
-              aria-label={name || undefined}
-              aria-activedescendant={`${uid}-opt-${active}`}
-              onKeyDown={onListKeyDown}
-              className="flex flex-col outline-none"
-            >
-              {snap.options.map((o, i) => {
-                const selected = i === selectedIndex
-                return (
-                  <div
-                    key={`${o.value}-${i}`}
-                    id={`${uid}-opt-${i}`}
-                    role="option"
-                    aria-selected={selected}
-                    aria-disabled={o.disabled || undefined}
-                    onPointerMove={() => !o.disabled && setActive(i)}
-                    onClick={() => !o.disabled && pick(o.value)}
-                    className={cn(
-                      'flex min-h-10 cursor-pointer items-center justify-between gap-3 rounded-xl px-3 text-sm text-slate-900',
-                      i === active && 'bg-slate-100',
-                      selected && 'font-medium',
-                      o.disabled && 'cursor-not-allowed opacity-50',
-                    )}
-                  >
-                    <span className="truncate">{o.label}</span>
-                    {selected ? (
-                      <Check aria-hidden className="text-brand-600 size-4 shrink-0" />
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          </Popover.Content>
-        </Popover.Portal>
+            {snap.options.map((o, i) => {
+              const selected = i === selectedIndex
+              return (
+                <div
+                  key={`${o.value}-${i}`}
+                  id={`${uid}-opt-${i}`}
+                  role="option"
+                  aria-selected={selected}
+                  aria-disabled={o.disabled || undefined}
+                  onPointerMove={() => !o.disabled && setActive(i)}
+                  onClick={() => !o.disabled && pick(o.value)}
+                  className={cn(
+                    'flex min-h-10 cursor-pointer items-center justify-between gap-3 rounded-xl px-3 text-sm text-slate-900',
+                    i === active && 'bg-slate-100',
+                    selected && 'font-medium',
+                    o.disabled && 'cursor-not-allowed opacity-50',
+                  )}
+                >
+                  <span className="truncate">{o.label}</span>
+                  {selected ? (
+                    <Check aria-hidden className="text-brand-600 size-4 shrink-0" />
+                  ) : null}
+                </div>
+              )
+            })}
+          </div>
+        </PopoverPanel>
       </Popover.Root>
     </>
   )

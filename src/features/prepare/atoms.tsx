@@ -4,6 +4,10 @@ import { PRIORITIES, type Priority, type Tag, type Target } from '@/db/schemas/p
 import { cn } from '@/lib/cn'
 import { initialsOfName } from '@/lib/person'
 
+/** Le « + » en pointillés : emplacement vide à remplir (assignation, tags). */
+export const ADD_DOT =
+  'inline-flex size-7 items-center justify-center rounded-full border border-dashed border-[#cfcbbf] text-[11px] font-semibold text-slate-500'
+
 const PRIORITY_STYLE: Record<Priority, string> = {
   A: 'bg-[#fbe9e6] text-[#a8352a]',
   B: 'bg-[#fbf0d9] text-gold-700',
@@ -110,7 +114,7 @@ export function Assignees({
   const { t } = useTranslation('prepare')
   if (target.assigneeIds.length === 0) {
     return compact ? (
-      <span className="inline-flex size-7 items-center justify-center rounded-full border border-dashed border-[#cfcbbf] text-[11px] font-semibold text-slate-500">
+      <span className={ADD_DOT}>
         <span aria-hidden>+</span>
         <span className="sr-only">{t('assign.unassigned')}</span>
       </span>

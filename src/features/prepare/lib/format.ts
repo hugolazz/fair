@@ -1,3 +1,5 @@
+import { toIso } from '@/lib/calendar'
+
 const slot = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'short',
   day: 'numeric',
@@ -19,7 +21,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
 export function toLocalInputs(iso: string): { date: string; time: string } {
   const d = new Date(iso)
   return {
-    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    date: toIso(d),
     time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
   }
 }

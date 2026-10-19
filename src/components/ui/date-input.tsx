@@ -5,7 +5,6 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   type InputHTMLAttributes,
@@ -14,9 +13,36 @@ import {
 import { useTranslation } from 'react-i18next'
 import { addDays, addMonths, monthWeeks, parseIso, todayIso } from '@/lib/calendar'
 import { cn } from '@/lib/cn'
-import { useCoarsePointer } from '@/lib/use-coarse-pointer'
+import { labelTextOf, setNativeValue } from '@/lib/native-control'
+import { useMediaQuery } from '@/lib/use-media-query'
+import { PopoverPanel } from './popover-panel'
 
 type Props = Omit<InputHTMLAttributes<HTMLInputElement>, 'type'>
+
+// Les formateurs Intl coûtent cher à construire : un jeu par langue, partagé par tous les champs date.
+const formatsByLocale = new Map<
+  string,
+  {
+    dayName: Intl.DateTimeFormat
+    long: Intl.DateTimeFormat
+    monthTitle: Intl.DateTimeFormat
+    weekdays: string[]
+  }
+>()
+function calendarFormats(locale: string) {
+  let f = formatsByLocale.get(locale)
+  if (!f) {
+    const weekday = new Intl.DateTimeFormat(locale, { weekday: 'short' })
+    f = {
+      dayName: new Intl.DateTimeFormat(locale, { dateStyle: 'full' }),
+      long: new Intl.DateTimeFormat(locale, { dateStyle: 'long' }),
+      monthTitle: new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }),
+      weekdays: Array.from({ length: 7 }, (_, i) => weekday.format(new Date(2024, 0, 1 + i))), // 1er janv. 2024 = lundi
+    }
+    formatsByLocale.set(locale, f)
+  }
+  return f
+}
 
 const NAV =
   'inline-flex size-10 items-center justify-center rounded-full text-slate-700 transition-colors duration-200 hover:bg-slate-100'
@@ -30,7 +56,7 @@ export const DateInput = forwardRef<HTMLInputElement, Props>(function DateInput(
   { className, ...props },
   forwardedRef,
 ) {
-  const coarse = useCoarsePointer()
+  const coarse = useMediaQuery('(pointer: coarse)')
   const { t, i18n } = useTranslation()
   const locale = i18n.language || 'fr'
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -39,7 +65,7 @@ export const DateInput = forwardRef<HTMLInputElement, Props>(function DateInput(
   const [value, setValue] = useState('')
   const [name, setName] = useState('')
   const [open, setOpen] = useState(false)
-  const [focused, setFocused] = useState(todayIso())
+  const [focused, setFocused] = useState(todayIso)
   const [moveFocus, setMoveFocus] = useState(false)
 
   const setRefs = useCallback(
@@ -56,14 +82,7 @@ export const DateInput = forwardRef<HTMLInputElement, Props>(function DateInput(
     const el = inputRef.current
     if (!el) return
     setValue((prev) => (prev === el.value ? prev : el.value))
-    const label = el.labels?.[0]
-    const text = label
-      ? Array.from(label.childNodes)
-          .filter((n) => !n.contains(el) && !n.contains(triggerRef.current))
-          .map((n) => n.textContent ?? '')
-          .join(' ')
-          .trim()
-      : ''
+    const text = labelTextOf(el, [el, triggerRef.current])
     setName((prev) => (prev === text ? prev : text))
   })
   useEffect(() => {
@@ -88,26 +107,12 @@ export const DateInput = forwardRef<HTMLInputElement, Props>(function DateInput(
       gridRef.current?.querySelector<HTMLElement>(`[data-iso="${focused}"]`)?.focus()
   }, [open, moveFocus, focused])
 
-  const dayName = useMemo(() => new Intl.DateTimeFormat(locale, { dateStyle: 'full' }), [locale])
-  const long = useMemo(() => new Intl.DateTimeFormat(locale, { dateStyle: 'long' }), [locale])
-  const monthTitle = useMemo(
-    () => new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }),
-    [locale],
-  )
-  const weekdays = useMemo(() => {
-    const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' })
-    return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 1 + i))) // 1er janv. 2024 = lundi
-  }, [locale])
+  const { dayName, long, monthTitle, weekdays } = calendarFormats(locale)
 
   function commit(iso: string) {
-    const el = inputRef.current
     setOpen(false)
-    if (el && el.value !== iso) {
-      // Même chemin qu'une saisie native : React et react-hook-form voient de vrais événements.
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(el, iso)
-      el.dispatchEvent(new Event('input', { bubbles: true }))
-      el.dispatchEvent(new Event('change', { bubbles: true }))
-    }
+    if (inputRef.current) setNativeValue(inputRef.current, iso)
+
     triggerRef.current?.focus()
   }
 
@@ -131,7 +136,7 @@ export const DateInput = forwardRef<HTMLInputElement, Props>(function DateInput(
   if (coarse) return <input ref={setRefs} type="date" className={className} {...props} />
 
   const view = parseIso(focused) ?? new Date()
-  const weeks = monthWeeks(view.getFullYear(), view.getMonth())
+  const weeks = open ? monthWeeks(view.getFullYear(), view.getMonth()) : [] // la grille ne sert qu'ouverte
   const today = todayIso()
   const shown = parseIso(selected)
 
@@ -182,113 +187,108 @@ export const DateInput = forwardRef<HTMLInputElement, Props>(function DateInput(
             <CalendarDays aria-hidden className="size-4 shrink-0 text-slate-500" />
           </button>
         </Popover.Trigger>
-        <Popover.Portal>
-          <Popover.Content
-            align="start"
-            sideOffset={6}
-            collisionPadding={12}
-            aria-label={name || t('calendar.choose')}
-            onOpenAutoFocus={(e) => {
-              // Le focus va sur le jour sélectionné (ou aujourd'hui) pour naviguer aux flèches.
-              e.preventDefault()
-              gridRef.current?.querySelector<HTMLElement>(`[data-iso="${focused}"]`)?.focus()
-            }}
-            className="animate-rise z-[80] w-[19rem] rounded-3xl bg-white p-3 shadow-[0_12px_32px_-8px_rgba(19,26,24,0.22)] ring-1 ring-slate-200"
-          >
-            <div className="flex items-center justify-between pb-2">
-              <button
-                type="button"
-                className={NAV}
-                aria-label={t('calendar.previous')}
-                onClick={() => {
-                  setMoveFocus(false)
-                  setFocused(addMonths(focused, -1))
-                }}
-              >
-                <ChevronLeft aria-hidden className="size-5" />
-              </button>
-              <p aria-live="polite" className="text-[15px] font-medium capitalize">
-                {monthTitle.format(view)}
-              </p>
-              <button
-                type="button"
-                className={NAV}
-                aria-label={t('calendar.next')}
-                onClick={() => {
-                  setMoveFocus(false)
-                  setFocused(addMonths(focused, 1))
-                }}
-              >
-                <ChevronRight aria-hidden className="size-5" />
-              </button>
-            </div>
-            <div
-              ref={gridRef}
-              role="grid"
-              aria-label={monthTitle.format(view)}
-              onKeyDown={onGridKeyDown}
+        <PopoverPanel
+          aria-label={name || t('calendar.choose')}
+          onOpenAutoFocus={(e) => {
+            // Le focus va sur le jour sélectionné (ou aujourd'hui) pour naviguer aux flèches.
+            e.preventDefault()
+            gridRef.current?.querySelector<HTMLElement>(`[data-iso="${focused}"]`)?.focus()
+          }}
+          className="w-[19rem] rounded-3xl p-3"
+        >
+          <div className="flex items-center justify-between pb-2">
+            <button
+              type="button"
+              className={NAV}
+              aria-label={t('calendar.previous')}
+              onClick={() => {
+                setMoveFocus(false)
+                setFocused(addMonths(focused, -1))
+              }}
             >
-              <div role="row" className="grid grid-cols-7 pb-1 text-center text-xs text-slate-600">
-                {weekdays.map((w) => (
-                  <span key={w} role="columnheader" className="py-1 capitalize">
-                    {w}
-                  </span>
-                ))}
-              </div>
-              {weeks.map((week, wi) => (
-                <div key={wi} role="row" className="grid grid-cols-7">
-                  {week.map((iso, di) => {
-                    if (!iso) return <span key={di} role="gridcell" />
-                    const isSelected = iso === selected
-                    const disabled = outOfRange(iso)
-                    return (
-                      <span key={iso} role="gridcell" className="flex justify-center">
-                        <button
-                          type="button"
-                          data-iso={iso}
-                          tabIndex={iso === focused ? 0 : -1}
-                          disabled={disabled}
-                          aria-pressed={isSelected}
-                          aria-current={iso === today ? 'date' : undefined}
-                          aria-label={dayName.format(parseIso(iso)!)}
-                          onClick={() => commit(iso)}
-                          className={cn(
-                            'inline-flex size-10 items-center justify-center rounded-full text-sm transition-colors duration-200 disabled:opacity-40',
-                            isSelected
-                              ? 'bg-slate-900 font-medium text-white'
-                              : 'text-slate-900 hover:bg-slate-100',
-                            iso === today && !isSelected && 'ring-brand-600 ring-1',
-                          )}
-                        >
-                          {Number(iso.slice(8))}
-                        </button>
-                      </span>
-                    )
-                  })}
-                </div>
+              <ChevronLeft aria-hidden className="size-5" />
+            </button>
+            <p aria-live="polite" className="text-[15px] font-medium capitalize">
+              {monthTitle.format(view)}
+            </p>
+            <button
+              type="button"
+              className={NAV}
+              aria-label={t('calendar.next')}
+              onClick={() => {
+                setMoveFocus(false)
+                setFocused(addMonths(focused, 1))
+              }}
+            >
+              <ChevronRight aria-hidden className="size-5" />
+            </button>
+          </div>
+          <div
+            ref={gridRef}
+            role="grid"
+            aria-label={monthTitle.format(view)}
+            onKeyDown={onGridKeyDown}
+          >
+            <div role="row" className="grid grid-cols-7 pb-1 text-center text-xs text-slate-600">
+              {weekdays.map((w) => (
+                <span key={w} role="columnheader" className="py-1 capitalize">
+                  {w}
+                </span>
               ))}
             </div>
-            <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-2">
+            {weeks.map((week, wi) => (
+              <div key={wi} role="row" className="grid grid-cols-7">
+                {week.map((iso, di) => {
+                  if (!iso) return <span key={di} role="gridcell" />
+                  const isSelected = iso === selected
+                  const disabled = outOfRange(iso)
+                  return (
+                    <span key={iso} role="gridcell" className="flex justify-center">
+                      <button
+                        type="button"
+                        data-iso={iso}
+                        tabIndex={iso === focused ? 0 : -1}
+                        disabled={disabled}
+                        aria-pressed={isSelected}
+                        aria-current={iso === today ? 'date' : undefined}
+                        aria-label={dayName.format(parseIso(iso)!)}
+                        onClick={() => commit(iso)}
+                        className={cn(
+                          'inline-flex size-10 items-center justify-center rounded-full text-sm transition-colors duration-200 disabled:opacity-40',
+                          isSelected
+                            ? 'bg-slate-900 font-medium text-white'
+                            : 'text-slate-900 hover:bg-slate-100',
+                          iso === today && !isSelected && 'ring-brand-600 ring-1',
+                        )}
+                      >
+                        {Number(iso.slice(8))}
+                      </button>
+                    </span>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-2">
+            <button
+              type="button"
+              disabled={outOfRange(today)}
+              onClick={() => commit(today)}
+              className="text-brand-700 min-h-10 rounded-full px-3 text-sm font-medium hover:bg-slate-100 disabled:opacity-40"
+            >
+              {t('calendar.today')}
+            </button>
+            {selected && !props.required ? (
               <button
                 type="button"
-                disabled={outOfRange(today)}
-                onClick={() => commit(today)}
-                className="text-brand-700 min-h-10 rounded-full px-3 text-sm font-medium hover:bg-slate-100 disabled:opacity-40"
+                onClick={() => commit('')}
+                className="min-h-10 rounded-full px-3 text-sm text-slate-700 hover:bg-slate-100"
               >
-                {t('calendar.today')}
+                {t('calendar.clear')}
               </button>
-              {selected && !props.required ? (
-                <button
-                  type="button"
-                  onClick={() => commit('')}
-                  className="min-h-10 rounded-full px-3 text-sm text-slate-700 hover:bg-slate-100"
-                >
-                  {t('calendar.clear')}
-                </button>
-              ) : null}
-            </div>
-          </Popover.Content>
-        </Popover.Portal>
+            ) : null}
+          </div>
+        </PopoverPanel>
       </Popover.Root>
     </>
   )
