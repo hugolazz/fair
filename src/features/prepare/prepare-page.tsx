@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { EmptyState, ErrorState, Loading } from '@/components/page-states'
+import { ImportTemplateButton } from '@/components/import-template-button'
 import { Button } from '@/components/ui/button'
 import { useIsAdmin } from '@/features/auth-team/roles'
 import { useReadySession } from '@/features/auth-team/session'
@@ -122,6 +123,7 @@ export default function PreparePage() {
                 <Plus aria-hidden className="size-4" />
                 {tm('company.open')}
               </Button>
+              <ImportTemplateButton variant="secondary" />
             </div>
           }
         />

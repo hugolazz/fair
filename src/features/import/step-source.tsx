@@ -1,10 +1,10 @@
-import { Download, FileSpreadsheet, Upload } from 'lucide-react'
+import { FileSpreadsheet, Upload } from 'lucide-react'
 import { useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ImportTemplateButton } from '@/components/import-template-button'
 import { Button } from '@/components/ui/button'
 import { TextareaField } from '@/components/ui/field'
 import { cn } from '@/lib/cn'
-import { downloadBytes } from '@/lib/download'
 import type { ParseInput } from './lib/runner'
 
 type Props = {
@@ -18,24 +18,11 @@ export function StepSource({ busy, error, onSubmit }: Props) {
   const [file, setFile] = useState<File>()
   const [paste, setPaste] = useState('')
   const [dragging, setDragging] = useState(false)
-  const [templateError, setTemplateError] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   async function submit() {
     if (file) onSubmit({ kind: 'file', name: file.name, buffer: await file.arrayBuffer() })
     else if (paste.trim()) onSubmit({ kind: 'paste', text: paste })
-  }
-
-  /** Télécharge un classeur vide : seulement les intitulés de colonnes attendus (généré dans le navigateur, chargé à la demande). */
-  async function downloadTemplate() {
-    setTemplateError(false)
-    try {
-      const { buildImportTemplate } = await import('@shared/exports/template.ts')
-      const r = await buildImportTemplate()
-      downloadBytes(r.filename, r.mime, r.bytes)
-    } catch {
-      setTemplateError(true)
-    }
   }
 
   function onDrop(e: DragEvent) {
@@ -83,15 +70,7 @@ export function StepSource({ busy, error, onSubmit }: Props) {
           {t('source.chooseFile')}
         </Button>
         <p className="text-sm text-slate-600">{t('source.dropHere')}</p>
-        <Button variant="ghost" onClick={() => void downloadTemplate()}>
-          <Download aria-hidden className="size-4" />
-          {t('source.template')}
-        </Button>
-        {templateError ? (
-          <p role="alert" className="text-sm text-red-700">
-            {t('source.templateError')}
-          </p>
-        ) : null}
+        <ImportTemplateButton />
         {file ? (
           <p role="status" className="text-sm font-medium">
             {t('source.selected', { name: file.name })}
