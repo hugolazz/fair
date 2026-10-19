@@ -19,17 +19,12 @@ export function TargetsCards(p: Props) {
     p.rows.length,
     CARD_HEIGHT,
     4,
+    { window: true }, // la page entière défile : le titre et les filtres montent avec la liste
   )
   const tagById = new Map(p.tags.map((tag) => [tag.id, tag]))
 
   return (
-    <div
-      ref={ref}
-      onScroll={onScroll}
-      role="list"
-      aria-label={t('title')}
-      className="max-h-[calc(100dvh-20rem)] min-h-64 overflow-auto"
-    >
+    <div ref={ref} onScroll={onScroll} role="list" aria-label={t('title')}>
       <div style={{ height: totalHeight }}>
         <div style={{ transform: `translateY(${offsetTop}px)` }}>
           {p.rows.slice(start, end).map((row) => {
