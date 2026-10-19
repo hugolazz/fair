@@ -43,7 +43,11 @@ export async function signUp(
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { display_name: displayName } },
+    // Le lien de confirmation ramène sur le site d'où l'on s'inscrit (il doit figurer dans les « Redirect URLs » de Supabase).
+    options: {
+      data: { display_name: displayName },
+      ...(typeof window === 'undefined' ? {} : { emailRedirectTo: window.location.origin }),
+    },
   })
   if (error) throw error
   // Sans session, l'inscription attend une confirmation par e-mail (réglage Supabase) : la connexion se fera ensuite.
