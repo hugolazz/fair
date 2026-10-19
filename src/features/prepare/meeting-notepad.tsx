@@ -94,7 +94,12 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
     setRecontactLocal(on)
     try {
       const id = await ensureMeeting()
-      await api.actions.updateMeetingReport(target.id, id, { recontact: on })
+      // À recontacter = on a vu la personne : la rencontre est aussi marquée comme terminée.
+      const patch =
+        on && meeting?.status !== 'done'
+          ? { recontact: on, status: 'done' as const }
+          : { recontact: on }
+      await api.actions.updateMeetingReport(target.id, id, patch)
     } catch {
       setRecontactLocal(undefined)
       setError(true)
@@ -136,6 +141,19 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
     }
   }
 
+  /** Le bouton « Rencontre terminée » : crée la rencontre au besoin, puis la marque terminée (ou la rouvre). */
+  async function toggleDone() {
+    setError(false)
+    try {
+      const id = await ensureMeeting()
+      await api.actions.updateMeetingReport(target.id, id, {
+        status: meeting?.status === 'done' ? 'in_progress' : 'done',
+      })
+    } catch {
+      setError(true)
+    }
+  }
+
   const done = meeting?.status === 'done'
   // Les notes de mes collègues restent listées sous la mienne.
   const list = [...(notes.data ?? [])].reverse().filter((n) => n.id !== mine?.id)
@@ -174,18 +192,15 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
         >
           {t('notepad.save')}
         </Button>
-        {meeting && !done ? (
-          <Button
-            variant="secondary"
-            className="min-h-12"
-            onClick={() =>
-              void api.actions.updateMeetingReport(target.id, meeting.id, { status: 'done' })
-            }
-          >
-            <CheckCircle2 aria-hidden className="size-4" />
-            {t('notepad.finish')}
-          </Button>
-        ) : null}
+        <Button
+          variant={done ? 'primary' : 'secondary'}
+          className="min-h-12"
+          aria-pressed={done}
+          onClick={() => void toggleDone()}
+        >
+          <CheckCircle2 aria-hidden className="size-4" />
+          {t('notepad.finish')}
+        </Button>
       </div>
       {saved ? (
         <p role="status" className="text-sm font-medium text-emerald-800">
