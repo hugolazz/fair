@@ -214,6 +214,8 @@ export default function PreparePage() {
           someSelected={selected.size > 0}
           onToggleAll={toggleAll}
           onPriority={(id, p) => void api.actions.setPriority([id], p)}
+          members={api.members}
+          onAssign={(id, userId) => request([id], userId)}
         />
       ) : (
         <TargetsCards {...common} selectMode={selectMode} />

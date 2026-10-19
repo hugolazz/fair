@@ -73,6 +73,8 @@
     "done": "Modifié pour {{count}} entreprise(s)."
   },
   "assign": {
+    "pickFor": "Assigner {{name}} à un commercial",
+    "pickPlaceholder": "Assigner à…",
     "conflictTitle": "Déjà ciblée par un collègue",
     "conflictBody": "{{count}} entreprise(s) sont déjà ciblées par quelqu'un d'autre que {{name}}.",
     "conflictItem": "{{name}} : déjà ciblée par {{others}}",

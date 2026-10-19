@@ -1,9 +1,16 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import type { MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PRIORITIES, type Priority, type Tag, type Target } from '@/db/schemas/prepare'
+import {
+  PRIORITIES,
+  type Priority,
+  type Tag,
+  type Target,
+  type TeamMember,
+} from '@/db/schemas/prepare'
 import { canPrepareTarget, useIsAdmin } from '@/features/auth-team/roles'
 import { cn } from '@/lib/cn'
+import { AssignPicker } from './assign-picker'
 import { Assignees, PriorityBadge, TagChip } from './atoms'
 import { formatSlot } from './lib/format'
 import type { Sort, SortKey } from './lib/sort'
@@ -27,6 +34,8 @@ type Props = ListProps & {
   someSelected: boolean
   onToggleAll: () => void
   onPriority: (id: string, p: Priority | null) => void
+  members: TeamMember[]
+  onAssign: (id: string, userId: string) => void
 }
 
 const ROW_HEIGHT = 52
@@ -65,14 +74,14 @@ export function TargetsTable(p: Props) {
       role="table"
       aria-rowcount={p.rows.length + 1}
       aria-label={t('title')}
-      className="max-h-[calc(100dvh-17rem)] min-h-80 overflow-auto rounded-3xl bg-white p-2 shadow-[0_0_0_1px_var(--color-slate-200)]"
+      className="max-h-[calc(100dvh-17rem)] min-h-80 overflow-auto rounded-3xl bg-white shadow-[0_0_0_1px_var(--color-slate-200)]"
     >
       <div
         role="row"
         className={cn(
           GRID,
           MIN_WIDTH,
-          'sticky top-0 z-10 h-10 bg-white text-[13px] font-medium text-slate-600 shadow-[0_1px_0_0_var(--color-slate-200)]',
+          'sticky top-0 z-10 h-12 bg-white px-2 pt-2 text-[13px] font-medium text-slate-600 shadow-[0_1px_0_0_var(--color-slate-200)]',
         )}
       >
         <div role="columnheader" className="flex justify-center">
@@ -120,7 +129,7 @@ export function TargetsTable(p: Props) {
         })}
       </div>
 
-      <div style={{ height: totalHeight }} className={MIN_WIDTH}>
+      <div style={{ height: totalHeight }} className={cn(MIN_WIDTH, 'px-2')}>
         <div style={{ transform: `translateY(${offsetTop}px)` }}>
           {p.rows.slice(start, end).map((row, i) => {
             const isSelected = p.selected.has(row.id)
@@ -188,7 +197,17 @@ export function TargetsTable(p: Props) {
                   ) : null}
                 </div>
                 <div role="cell" className="min-w-0 px-2">
-                  <Assignees target={row} nameOf={p.nameOf} meId={p.meId} compact />
+                  {row.assigneeIds.length === 0 ? (
+                    <AssignPicker
+                      companyName={row.name}
+                      members={p.members}
+                      meId={p.meId}
+                      admin={admin}
+                      onPick={(userId) => p.onAssign(row.id, userId)}
+                    />
+                  ) : (
+                    <Assignees target={row} nameOf={p.nameOf} meId={p.meId} compact />
+                  )}
                 </div>
                 <div role="cell" className="truncate px-2 text-slate-700">
                   {next ? formatSlot(next.plannedAt) : ''}
