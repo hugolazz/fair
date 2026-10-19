@@ -8,7 +8,8 @@ create role service_role nologin bypassrls;
 
 create table auth.users (
   id uuid primary key default gen_random_uuid(),
-  email text unique
+  email text unique,
+  raw_user_meta_data jsonb not null default '{}'::jsonb
 );
 
 create function auth.jwt() returns jsonb language sql stable as $$

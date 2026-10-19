@@ -6,6 +6,7 @@ import { ErrorState, Loading, PageHeader } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
 import { InputField, SelectField } from '@/components/ui/field'
 import { signOut } from '@/db/repositories/auth'
+import { updateMyDisplayName } from '@/db/repositories/profile'
 import {
   cancelInvitation,
   inviteMember,
@@ -32,7 +33,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 export default function SettingsPage() {
   const { t } = useTranslation('settings')
   const { t: tAuth } = useTranslation('auth')
-  const { session, membership, refreshMembership } = useReadySession()
+  const { session, membership, displayName, refreshMembership } = useReadySession()
   const isAdmin = isAdminRole(membership.role)
   const { teamId } = membership
 
@@ -58,6 +59,29 @@ export default function SettingsPage() {
       setMemberError(true)
     }
     members.reload()
+  }
+
+  const [myName, setMyName] = useState(displayName)
+  const [profileMsg, setProfileMsg] = useState<{ kind: 'ok' | 'error'; text: string }>()
+  async function onSaveProfile(e: FormEvent) {
+    e.preventDefault()
+    if (!myName.trim()) {
+      setProfileMsg({ kind: 'error', text: t('profile.required') })
+      return
+    }
+    try {
+      await updateMyDisplayName(session.user.id, myName)
+      await refreshMembership()
+      members.reload()
+      setProfileMsg({ kind: 'ok', text: t('profile.saved') })
+    } catch (err) {
+      // Le message technique (sans donnée personnelle) aide à comprendre un refus de la base.
+      const detail = err instanceof Error ? err.message : ''
+      setProfileMsg({
+        kind: 'error',
+        text: detail ? `${t('profile.error')} (${detail})` : t('profile.error'),
+      })
+    }
   }
 
   async function onRename(e: FormEvent) {
@@ -101,6 +125,38 @@ export default function SettingsPage() {
             {tAuth('signOut')}
           </Button>
         </div>
+      </Section>
+
+      <Section title={t('profile.title')}>
+        <p className="text-sm text-slate-700">{t('profile.hint')}</p>
+        <form
+          onSubmit={onSaveProfile}
+          noValidate
+          className="flex flex-col gap-3 sm:flex-row sm:items-end"
+        >
+          <div className="flex-1">
+            <InputField
+              label={t('profile.name')}
+              autoComplete="name"
+              value={myName}
+              onChange={(e) => setMyName(e.target.value)}
+              maxLength={100}
+            />
+          </div>
+          <Button type="submit" variant="secondary">
+            {t('profile.save')}
+          </Button>
+        </form>
+        {profileMsg ? (
+          <p
+            role={profileMsg.kind === 'error' ? 'alert' : 'status'}
+            className={
+              profileMsg.kind === 'error' ? 'text-sm text-red-700' : 'text-sm text-emerald-800'
+            }
+          >
+            {profileMsg.text}
+          </p>
+        ) : null}
       </Section>
 
       <Section title={t('team.title')}>

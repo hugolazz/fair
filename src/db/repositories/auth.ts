@@ -34,6 +34,22 @@ export async function signInWithPassword(email: string, password: string): Promi
   if (error) throw error
 }
 
+/** Crée le compte ; le nom d'usage alimente le profil (trigger `handle_new_user`). */
+export async function signUp(
+  email: string,
+  password: string,
+  displayName: string,
+): Promise<{ confirmationNeeded: boolean }> {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { display_name: displayName } },
+  })
+  if (error) throw error
+  // Sans session, l'inscription attend une confirmation par e-mail (réglage Supabase) : la connexion se fera ensuite.
+  return { confirmationNeeded: !data.session }
+}
+
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut()
   if (error) throw error

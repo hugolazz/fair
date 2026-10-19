@@ -1,5 +1,14 @@
 {
   "title": "Réglages",
+  "profile": {
+    "title": "Profil",
+    "hint": "Ce nom s'affiche auprès de vos collègues (assignations, rencontres, notes) à la place de votre adresse e-mail.",
+    "name": "Nom d'usage (prénom et nom)",
+    "save": "Enregistrer",
+    "saved": "Profil enregistré.",
+    "required": "Indiquez votre nom.",
+    "error": "Le profil n'a pas pu être enregistré."
+  },
   "account": {
     "title": "Compte",
     "signedInAs": "Connecté en tant que {{email}}"

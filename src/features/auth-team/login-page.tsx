@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { z } from 'zod'
 import { signInWithPassword } from '@/db/repositories/auth'
 import { Button } from '@/components/ui/button'
@@ -75,6 +76,9 @@ export default function LoginPage() {
         />
         <Button type="submit" disabled={signingIn} className="mt-3 min-h-[50px] w-full text-[15px]">
           {signingIn ? t('login.signingIn') : t('login.submit')}
+        </Button>
+        <Button asChild variant="secondary" className="min-h-[50px] w-full text-[15px]">
+          <Link to="/signup">{t('login.createAccount')}</Link>
         </Button>
       </form>
     </main>

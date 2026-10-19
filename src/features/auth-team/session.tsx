@@ -9,28 +9,38 @@ import {
   type ReactNode,
 } from 'react'
 import { devAutoSignIn, getSession, onAuthChange, type Session } from '@/db/repositories/auth'
+import { fetchMyDisplayName } from '@/db/repositories/profile'
 import { acceptPendingInvitations, fetchMembership, type Membership } from '@/db/repositories/teams'
 
 type SessionState =
   | { status: 'loading' }
   | { status: 'signedOut' }
-  | { status: 'needsTeam'; session: Session }
-  | { status: 'ready'; session: Session; membership: Membership }
+  | { status: 'needsTeam'; session: Session; displayName: string }
+  | { status: 'ready'; session: Session; membership: Membership; displayName: string }
   | { status: 'error'; session: Session; error: Error }
 
 type SessionContextValue = SessionState & { refreshMembership: () => Promise<void> }
 
 const SessionContext = createContext<SessionContextValue | null>(null)
 
-type Loaded = { userId: string; membership: Membership | null; error?: Error }
+type Loaded = {
+  userId: string
+  membership: Membership | null
+  displayName: string
+  error?: Error
+}
 
 async function loadFor(uid: string): Promise<Loaded> {
   try {
     // Un utilisateur invité rejoint son équipe avant qu'on lui propose d'en créer une.
     await acceptPendingInvitations()
-    return { userId: uid, membership: await fetchMembership(uid) }
+    const [membership, displayName] = await Promise.all([
+      fetchMembership(uid),
+      fetchMyDisplayName(uid),
+    ])
+    return { userId: uid, membership, displayName }
   } catch (e) {
-    return { userId: uid, membership: null, error: toError(e) }
+    return { userId: uid, membership: null, displayName: '', error: toError(e) }
   }
 }
 
@@ -72,8 +82,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (session === null) return { status: 'signedOut', refreshMembership }
     if (loaded?.userId !== session.user.id) return { status: 'loading', refreshMembership }
     if (loaded.error) return { status: 'error', session, error: loaded.error, refreshMembership }
-    if (loaded.membership === null) return { status: 'needsTeam', session, refreshMembership }
-    return { status: 'ready', session, membership: loaded.membership, refreshMembership }
+    const { displayName } = loaded
+    if (loaded.membership === null)
+      return { status: 'needsTeam', session, displayName, refreshMembership }
+    return {
+      status: 'ready',
+      session,
+      membership: loaded.membership,
+      displayName,
+      refreshMembership,
+    }
   }, [session, loaded, refreshMembership])
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

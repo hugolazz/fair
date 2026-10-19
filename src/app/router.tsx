@@ -5,6 +5,7 @@ import { AppLayout } from './app-layout'
 import { RedirectIfSignedIn, RequireAdmin, RequireReady, RequireSignedIn } from './guards'
 
 const LoginPage = lazy(() => import('@/features/auth-team/login-page'))
+const SignupPage = lazy(() => import('@/features/auth-team/signup-page'))
 const OnboardingPage = lazy(() => import('@/features/auth-team/onboarding-page'))
 const EventsPage = lazy(() => import('@/features/events/events-page'))
 const EventLayout = lazy(() => import('@/features/events/event-layout'))
@@ -22,7 +23,10 @@ const NotFoundPage = lazy(() => import('@/features/not-found-page'))
 const router = createBrowserRouter([
   {
     element: <RedirectIfSignedIn />,
-    children: [{ path: '/login', element: <LoginPage /> }],
+    children: [
+      { path: '/login', element: <LoginPage /> },
+      { path: '/signup', element: <SignupPage /> },
+    ],
   },
   {
     element: <RequireSignedIn />,

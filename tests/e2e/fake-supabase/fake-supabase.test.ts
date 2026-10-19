@@ -180,6 +180,12 @@ describe('faux Supabase', () => {
     await targets.updateMeetingReport(meetingId, { recontact: true, contactId: added.id })
     const after = (await targets.listTargets(event!.id)).find((t) => t.id === zeta.id)!
     expect(after.meetings[0]).toMatchObject({ id: meetingId, recontact: true })
+
+    // La note de la rencontre reste modifiable par son auteur (un seul texte, pas une note par envoi).
+    const note = await targets.addMeetingNote(teamId, meetingId, me, 'Première version')
+    await targets.updateMeetingNote(note.id, 'Version corrigée')
+    const notes = await targets.fetchMeetingNotes(meetingId)
+    expect(notes.map((n) => n.body)).toEqual(['Version corrigée'])
   })
 
   it('l’historique saisi suit l’entreprise ; un salon supprimé disparaît de l’historique', async () => {
@@ -238,5 +244,43 @@ describe('faux Supabase', () => {
 
     await exec(`update events set deleted_at = now() where id = '${String(past!['id'])}'`)
     expect(await targets.fetchHistory(zeta.companyId, event!.id)).toEqual([])
+  })
+
+  it('inscription : nom d’usage, recherche d’une équipe par son nom, adhésion, profil modifiable', async () => {
+    const auth = await import('@/db/repositories/auth')
+    const teams = await import('@/db/repositories/teams')
+    const profile = await import('@/db/repositories/profile')
+
+    await auth.signOut()
+    const { confirmationNeeded } = await auth.signUp(
+      'camille.martin@fair.test',
+      PASSWORD,
+      'Camille Martin',
+    )
+    expect(confirmationNeeded).toBe(false)
+    const me = (await auth.getSession())!.user.id
+    expect(await profile.fetchMyDisplayName(me)).toBe('Camille Martin')
+    expect(await teams.fetchMembership(me)).toBeNull() // pas encore d'équipe
+
+    expect(await teams.searchTeams('é')).toEqual([]) // trop court
+    const hits = await teams.searchTeams('équipe e2')
+    expect(hits).toEqual([expect.objectContaining({ name: 'Équipe e2e', memberCount: 3 })])
+    await teams.joinTeam(hits[0]!.id)
+    expect(await teams.fetchMembership(me)).toMatchObject({
+      teamName: 'Équipe e2e',
+      role: 'member',
+    })
+
+    // Les collègues la voient sous son nom d'usage, pas sous son e-mail.
+    expect((await teams.listMembers(hits[0]!.id)).map((m) => m.displayName)).toContain(
+      'Camille Martin',
+    )
+    await profile.updateMyDisplayName(me, '  Camille Martin-Dupont ')
+    expect(await profile.fetchMyDisplayName(me)).toBe('Camille Martin-Dupont')
+
+    await auth.signOut()
+    await expect(auth.signUp('camille.martin@fair.test', PASSWORD, 'Autre')).rejects.toThrow(
+      /already registered/i,
+    )
   })
 })

@@ -34,6 +34,7 @@
   },
   "filters": {
     "search": "Rechercher (nom, stand, secteur, ville…)",
+    "searchToggle": "Rechercher",
     "priority": "Priorité",
     "tag": "Tag",
     "assignee": "Assigné à",
@@ -118,6 +119,7 @@
     "recontactBadge": "À recontacter",
     "yes": "Oui",
     "no": "Non",
+    "saved": "Note enregistrée. Entreprise marquée comme rencontrée.",
     "finish": "Rencontre terminée",
     "finished": "Rencontre marquée comme terminée.",
     "error": "La note n'a pas pu être enregistrée. Votre texte est conservé, réessayez."

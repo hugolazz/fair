@@ -15,7 +15,7 @@ import { StatusBadge } from './status-badge'
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
-  const { membership, session } = useReadySession()
+  const { membership, session, displayName } = useReadySession()
   const { data: events, error, loading, reload } = useAsync(listEvents, [])
   const [creating, setCreating] = useState(false)
 
@@ -27,7 +27,7 @@ export default function EventsPage() {
       {t('new')}
     </Button>
   ) : undefined
-  const firstName = firstNameOf(session.user.email)
+  const firstName = displayName.split(/\s+/)[0] || firstNameOf(session.user.email)
 
   return (
     <>

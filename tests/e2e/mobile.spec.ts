@@ -23,7 +23,12 @@ test.beforeAll(async () => {
   await sql(`update event_companies set priority = 'A' where id = $1`, [seeded.targetIds['Acme']])
 })
 
+// Écrans sans connexion : visités déconnecté.
+const PUBLIC = new Set(['connexion', 'création de compte'])
+
 const SCREENS: [string, (id: string) => string][] = [
+  ['connexion', () => '/login'],
+  ['création de compte', () => '/signup'],
   ['salons', () => '/events'],
   ['participants', (id) => `/events/${id}/participants`],
   ['ma liste', (id) => `/events/${id}/my-list`],
@@ -34,10 +39,12 @@ const SCREENS: [string, (id: string) => string][] = [
 
 for (const [label, path] of SCREENS) {
   test(`mobile « ${label} » : axe, pas de débordement, cibles tactiles`, async ({ page }) => {
-    await login(page, USERS.admin)
-    await expect(page.getByRole('heading', { name: 'Salons' })).toBeVisible()
+    if (!PUBLIC.has(label)) {
+      await login(page, USERS.admin)
+      await expect(page.getByRole('heading', { name: 'Salons' })).toBeVisible()
+    }
     await page.goto(path(eventId))
-    await page.locator('main h1, main h2').first().waitFor()
+    await page.locator('main h1, main h2').first().waitFor({ state: 'attached' })
     await page.waitForTimeout(500)
 
     const { violations } = await new AxeBuilder({ page })

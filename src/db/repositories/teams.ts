@@ -39,6 +39,27 @@ export async function createTeam(name: string): Promise<void> {
   if (error) throw error
 }
 
+export type TeamHit = { id: string; name: string; memberCount: number }
+
+const teamHitsSchema = z.array(
+  z.object({ id: z.string(), name: z.string(), member_count: z.number() }),
+)
+
+/** Équipes dont le nom contient `query` (2 caractères au moins) : de quoi choisir celle à rejoindre. */
+export async function searchTeams(query: string): Promise<TeamHit[]> {
+  const { data, error } = await supabase.rpc('search_teams', { p_query: query })
+  if (error) throw error
+  return teamHitsSchema
+    .parse(data ?? [])
+    .map((t) => ({ id: t.id, name: t.name, memberCount: t.member_count }))
+}
+
+/** Rejoint une équipe existante, comme commercial. */
+export async function joinTeam(teamId: string): Promise<void> {
+  const { error } = await supabase.rpc('join_team', { p_team: teamId })
+  if (error) throw error
+}
+
 export async function renameTeam(teamId: string, name: string): Promise<void> {
   const { error } = await supabase.from('teams').update({ name }).eq('id', teamId)
   if (error) throw error

@@ -218,6 +218,28 @@ export async function startFakeSupabase(port: number) {
       }
       return send(res, 200, session(account))
     }
+    if (path === '/auth/v1/signup') {
+      // Inscription sans confirmation par e-mail : le profil naît du trigger, nourri par options.data.
+      const body = JSON.parse((await readBody(req)) || '{}') as {
+        email?: string
+        data?: Record<string, unknown>
+      }
+      const email = String(body.email ?? '').toLowerCase()
+      if (state.accounts.has(email)) {
+        return send(res, 422, {
+          code: 422,
+          error_code: 'user_already_exists',
+          msg: 'User already registered',
+        })
+      }
+      const created = await state.db.query<{ id: string }>(
+        'insert into auth.users (email, raw_user_meta_data) values ($1, $2::jsonb) returning id',
+        [email, JSON.stringify(body.data ?? {})],
+      )
+      const account = { id: created.rows[0]!.id, email }
+      state.accounts.set(email, account)
+      return send(res, 200, session(account))
+    }
     if (path === '/auth/v1/user') {
       const u = claimsOf(req)
       return u ? send(res, 200, authUser(u)) : send(res, 401, { msg: 'not authenticated' })

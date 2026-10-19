@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Wordmark } from '@/components/wordmark'
 import { useReadySession } from '@/features/auth-team/session'
 import { cn } from '@/lib/cn'
-import { initialsOf } from '@/lib/person'
+import { initialsOf, initialsOfName } from '@/lib/person'
 
 const NAV: { to: string; labelKey: string; icon: LucideIcon }[] = [
   { to: '/events', labelKey: 'nav.events', icon: CalendarDays },
@@ -14,7 +14,7 @@ const NAV: { to: string; labelKey: string; icon: LucideIcon }[] = [
 /** Cadre : en-tête (logo, navigation en pilule, avatar) sur desktop ; barre du bas sur mobile. */
 export function AppLayout() {
   const { t } = useTranslation()
-  const { session } = useReadySession()
+  const { session, displayName } = useReadySession()
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -60,7 +60,7 @@ export function AppLayout() {
           aria-label={t('nav.account')}
           className="bg-brand-50 text-brand-700 inline-flex size-11 items-center justify-center rounded-full text-[13px] font-semibold"
         >
-          {initialsOf(session.user.email)}
+          {displayName ? initialsOfName(displayName) : initialsOf(session.user.email)}
         </Link>
       </header>
 
