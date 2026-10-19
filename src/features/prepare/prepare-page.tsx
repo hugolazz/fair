@@ -167,15 +167,6 @@ export default function PreparePage() {
         </p>
       ) : null}
 
-      {isDesktop ? (
-        <div className="flex justify-end">
-          <Button variant="secondary" onClick={() => setAdding(true)}>
-            <Plus aria-hidden className="size-4" />
-            {tm('company.open')}
-          </Button>
-        </div>
-      ) : null}
-
       {/* Mobile : une seule rangée de boutons-icônes (ajouter, rechercher, filtres, sélectionner). */}
       <FilterBar
         filters={filters}
@@ -186,6 +177,12 @@ export default function PreparePage() {
         total={total}
         shown={rows.length}
         collapsible={!isDesktop}
+        desktopAction={
+          <Button variant="secondary" className="min-h-9" onClick={() => setAdding(true)}>
+            <Plus aria-hidden className="size-4" />
+            {tm('company.open')}
+          </Button>
+        }
         before={
           <Button
             variant="secondary"

@@ -126,13 +126,11 @@ test.describe.serial('parcours complet', () => {
     // Tags : la liste des tags de l'équipe s'ouvre au clic ; on coche, puis on décoche.
     const tagsButton = first.getByRole('button', { name: /Modifier les tags de/ })
     await tagsButton.click()
-    const tag = page
-      .getByRole('button', { pressed: false })
-      .filter({ hasText: /Veille|Client|Prospect|Partenaire|Concurrent/ })
-      .first()
-    const label = (await tag.textContent()) ?? ''
+    const menu = page.getByRole('dialog', { name: 'Tags' })
+    const tag = menu.getByRole('button', { pressed: false }).first()
+    const label = ((await tag.textContent()) ?? '').trim()
     await tag.click()
-    await expect(page.getByRole('button', { name: label, pressed: true })).toBeVisible()
+    await expect(menu.getByRole('button', { name: label, pressed: true })).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(first).toContainText(label)
 

@@ -35,6 +35,9 @@
   "filters": {
     "search": "Rechercher (nom, stand, secteur, ville…)",
     "searchToggle": "Rechercher",
+    "searchShort": "Rechercher",
+    "withCount": "{{label}} · {{count}}",
+    "clear": "Effacer",
     "priority": "Priorité",
     "tag": "Tag",
     "assignee": "Assigné à",
