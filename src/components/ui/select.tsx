@@ -218,7 +218,11 @@ export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
             )}
           >
             {name ? <span className="sr-only">{name}</span> : null}
-            <span className="min-w-0 flex-1 truncate">{display ?? current?.label ?? ''}</span>
+            {display !== undefined ? (
+              display
+            ) : (
+              <span className="min-w-0 flex-1 truncate">{current?.label ?? ''}</span>
+            )}
             {bare || display !== undefined ? null : (
               <ChevronDown aria-hidden className="size-4 shrink-0 text-slate-500" />
             )}

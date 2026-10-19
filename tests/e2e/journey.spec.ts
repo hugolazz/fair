@@ -102,6 +102,47 @@ test.describe.serial('parcours complet', () => {
     await expect(row.getByText('moi')).toBeAttached()
   })
 
+  test('changer la priorité et les tags d’une ligne en cliquant dessus, sans que la ligne bouge', async ({
+    page,
+  }) => {
+    await login(page, USERS.newcomer)
+    await page
+      .getByRole('link', { name: /Tech For Retail 2027/ })
+      .first()
+      .click()
+    await page.getByRole('link', { name: 'Participants', exact: true }).click()
+    await expect(page.getByRole('table')).toBeVisible()
+
+    // 1re ligne de données : sa priorité passe à « Sans priorité » et elle reste à sa place.
+    const first = page.getByRole('row').nth(1)
+    const name = (await first.getByRole('button').nth(1).textContent()) ?? ''
+    await first.getByRole('button', { name: /Priorité .* : changer/ }).click()
+    await page.getByRole('option', { name: 'Sans priorité' }).click()
+    await expect(page.getByRole('row').nth(1)).toContainText(name)
+    await expect(
+      page.getByRole('row').nth(1).getByRole('button', { name: 'Sans priorité : changer' }),
+    ).toBeVisible()
+
+    // Tags : la liste des tags de l'équipe s'ouvre au clic ; on coche, puis on décoche.
+    const tagsButton = first.getByRole('button', { name: /Modifier les tags de/ })
+    await tagsButton.click()
+    const tag = page
+      .getByRole('button', { pressed: false })
+      .filter({ hasText: /Veille|Client|Prospect|Partenaire|Concurrent/ })
+      .first()
+    const label = (await tag.textContent()) ?? ''
+    await tag.click()
+    await expect(page.getByRole('button', { name: label, pressed: true })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(first).toContainText(label)
+
+    // Le « + » d'une ligne sans commercial est centré dans son cercle.
+    const plus = page.getByRole('button', { name: /^Assigner .* à un commercial/ }).first()
+    const box = await plus.boundingBox()
+    const glyph = await plus.locator('span[aria-hidden]').first().boundingBox()
+    expect(Math.abs(box!.x + box!.width / 2 - (glyph!.x + glyph!.width / 2))).toBeLessThan(2)
+  })
+
   test('planifier un rendez-vous, rédiger le compte-rendu et ses notes', async ({ page }) => {
     await login(page, USERS.newcomer)
     await page

@@ -72,6 +72,11 @@
     "unassign": "Retirer l'assignation…",
     "done": "Modifié pour {{count}} entreprise(s)."
   },
+  "tagPicker": {
+    "edit": "Modifier les tags de {{name}}",
+    "title": "Tags",
+    "none": "Aucun tag dans l'équipe : un admin peut en créer."
+  },
   "assign": {
     "pickFor": "Assigner {{name}} à un commercial",
     "pickPlaceholder": "Assigner à…",

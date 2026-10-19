@@ -41,10 +41,25 @@ export default function PreparePage() {
   const anchor = useRef<string>(undefined)
   const { request, dialog } = useAssignFlow(api, api.targets)
 
-  const rows = useMemo(
-    () => sortTargets(filterTargets(api.targets ?? [], filters), sort, api.memberName),
-    [api.targets, filters, sort, api.memberName],
-  )
+  // Après un changement de priorité, la liste garde son ordre : sinon la ligne saute à sa nouvelle place (ou sort du
+  // filtre) et on la perd de vue. Le tri et les filtres reprennent la main dès qu'on les touche.
+  const [pinned, setPinned] = useState<string[]>()
+  const rows = useMemo(() => {
+    const sorted = sortTargets(filterTargets(api.targets ?? [], filters), sort, api.memberName)
+    if (!pinned) return sorted
+    const byId = new Map((api.targets ?? []).map((x) => [x.id, x]))
+    const kept = pinned.flatMap((id) => {
+      const target = byId.get(id)
+      return target ? [target] : []
+    })
+    const known = new Set(pinned)
+    return [...kept, ...sorted.filter((x) => !known.has(x.id))]
+  }, [api.targets, filters, sort, api.memberName, pinned])
+  const keepOrder = () => setPinned((prev) => prev ?? rows.map((r) => r.id))
+  const changeFilters = (next: Filters) => {
+    setPinned(undefined)
+    setFilters(next)
+  }
   const openTarget = api.targets?.find((x) => x.id === openId)
 
   function onToggle(id: string, shift: boolean) {
@@ -164,7 +179,7 @@ export default function PreparePage() {
       {/* Mobile : une seule rangée de boutons-icônes (ajouter, rechercher, filtres, sélectionner). */}
       <FilterBar
         filters={filters}
-        onChange={setFilters}
+        onChange={changeFilters}
         tags={api.tags}
         members={api.members}
         meId={meId}
@@ -205,17 +220,22 @@ export default function PreparePage() {
         <TargetsTable
           {...common}
           sort={sort}
-          onSort={(key: SortKey) =>
+          onSort={(key: SortKey) => {
+            setPinned(undefined)
             setSort((s) =>
               s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' },
             )
-          }
+          }}
           allSelected={allSelected}
           someSelected={selected.size > 0}
           onToggleAll={toggleAll}
-          onPriority={(id, p) => void api.actions.setPriority([id], p)}
+          onPriority={(id, p) => {
+            keepOrder()
+            void api.actions.setPriority([id], p)
+          }}
           members={api.members}
           onAssign={(id, userId) => request([id], userId)}
+          onToggleTag={(id, tagId, on) => void api.actions.toggleTag([id], tagId, on)}
         />
       ) : (
         <TargetsCards {...common} selectMode={selectMode} />
@@ -227,7 +247,10 @@ export default function PreparePage() {
           tags={api.tags}
           members={api.members}
           meId={meId}
-          onPriority={(p) => void api.actions.setPriority(ids, p)}
+          onPriority={(p) => {
+            keepOrder()
+            void api.actions.setPriority(ids, p)
+          }}
           onTag={(tagId, on) => void api.actions.toggleTag(ids, tagId, on)}
           onAssign={(userId) => request(ids, userId)}
           onUnassign={(userId) => void api.actions.unassign(ids, userId)}

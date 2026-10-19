@@ -11,7 +11,9 @@ import {
 import { canPrepareTarget, useIsAdmin } from '@/features/auth-team/roles'
 import { cn } from '@/lib/cn'
 import { AssignPicker } from './assign-picker'
-import { Assignees, PriorityBadge, TagChip } from './atoms'
+import { Select } from '@/components/ui/select'
+import { Assignees, PriorityBadge } from './atoms'
+import { TagPicker } from './tag-picker'
 import { formatSlot } from './lib/format'
 import type { Sort, SortKey } from './lib/sort'
 import { useVirtualRows } from './use-virtual-rows'
@@ -36,6 +38,7 @@ type Props = ListProps & {
   onPriority: (id: string, p: Priority | null) => void
   members: TeamMember[]
   onAssign: (id: string, userId: string) => void
+  onToggleTag: (id: string, tagId: string, on: boolean) => void
 }
 
 const ROW_HEIGHT = 52
@@ -63,9 +66,6 @@ export function TargetsTable(p: Props) {
     p.rows.length,
     ROW_HEIGHT,
   )
-  const tagById = new Map(p.tags.map((tag) => [tag.id, tag]))
-  const nextPriority = (cur: Priority | null): Priority | null =>
-    cur === null ? 'A' : cur === 'C' ? null : PRIORITIES[PRIORITIES.indexOf(cur) + 1]!
 
   return (
     <div
@@ -142,7 +142,11 @@ export function TargetsTable(p: Props) {
                 aria-selected={isSelected}
                 style={{ height: ROW_HEIGHT }}
                 onClick={(e) => {
-                  if (!(e.target as HTMLElement).closest('button,input,select,a')) p.onOpen(row.id)
+                  const target = e.target as HTMLElement
+                  // Les listes (priorité, tags, assignation) sont rendues hors de la ligne mais leurs clics remontent
+                  // jusqu'ici par React : on ne les prend pas pour un clic sur la ligne.
+                  if (!e.currentTarget.contains(target)) return
+                  if (!target.closest('button,input,select,a')) p.onOpen(row.id)
                 }}
                 className={cn(
                   GRID,
@@ -162,15 +166,23 @@ export function TargetsTable(p: Props) {
                   />
                 </div>
                 <div role="cell" className="px-2">
-                  <button
-                    type="button"
+                  <Select
+                    value={row.priority ?? ''}
                     disabled={!canPrepareTarget(admin, row.assigneeIds, p.meId)}
-                    onClick={() => p.onPriority(row.id, nextPriority(row.priority))}
-                    className="rounded-full disabled:cursor-not-allowed"
+                    onChange={(e) =>
+                      p.onPriority(row.id, (e.target.value || null) as Priority | null)
+                    }
                     aria-label={t('priority.set', { p: row.priority ?? t('priority.none') })}
+                    display={<PriorityBadge priority={row.priority} />}
+                    className="rounded-full"
                   >
-                    <PriorityBadge priority={row.priority} />
-                  </button>
+                    {PRIORITIES.map((pr) => (
+                      <option key={pr} value={pr}>
+                        {t(`priority.${pr}`)}
+                      </option>
+                    ))}
+                    <option value="">{t('priority.none')}</option>
+                  </Select>
                 </div>
                 <div role="cell" className="min-w-0 px-2">
                   <button
@@ -187,14 +199,12 @@ export function TargetsTable(p: Props) {
                 <div role="cell" className="truncate px-2 text-slate-700">
                   {row.industry}
                 </div>
-                <div role="cell" className="flex min-w-0 items-center gap-1 overflow-hidden px-2">
-                  {row.tagIds.slice(0, 3).map((id) => {
-                    const tag = tagById.get(id)
-                    return tag ? <TagChip key={id} tag={tag} /> : null
-                  })}
-                  {row.tagIds.length > 3 ? (
-                    <span className="text-xs text-slate-600">+{row.tagIds.length - 3}</span>
-                  ) : null}
+                <div role="cell" className="min-w-0 px-2">
+                  <TagPicker
+                    target={row}
+                    tags={p.tags}
+                    onToggle={(tagId, on) => p.onToggleTag(row.id, tagId, on)}
+                  />
                 </div>
                 <div role="cell" className="min-w-0 px-2">
                   {row.assigneeIds.length === 0 ? (
