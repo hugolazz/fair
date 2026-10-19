@@ -11,9 +11,8 @@ type Props = {
   members: TeamMember[]
   meId: string
   onPriority: (p: Priority | null) => void
-  onTag: (tagId: string, on: boolean) => void
+  onTag: (tagId: string) => void
   onAssign: (userId: string) => void
-  onUnassign: (userId: string) => void
   onClear: () => void
 }
 
@@ -49,10 +48,14 @@ export function BulkBar(p: Props) {
     <div
       role="toolbar"
       aria-label={t('bulk.label')}
-      className="border-brand-600 bg-brand-50 fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 flex flex-wrap items-center gap-2 border-t-2 px-3 py-2 shadow-lg md:sticky md:inset-x-auto md:bottom-0 md:z-10 md:rounded-xl md:border-2"
+      className="border-brand-600 bg-brand-50 fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 flex flex-wrap items-center gap-1.5 border-t-2 px-3 py-2 shadow-lg md:sticky md:inset-x-auto md:bottom-0 md:z-10 md:gap-2 md:rounded-xl md:border-2"
     >
       <p role="status" className="mr-1 text-sm font-semibold">
-        {t('select.count', { count: p.count })}
+        {/* Sur mobile, juste le nombre (la barre tient sur une ligne) ; le texte complet reste lu par les lecteurs d'écran. */}
+        <span aria-hidden className="md:hidden">
+          {p.count}
+        </span>
+        <span className="sr-only md:not-sr-only">{t('select.count', { count: p.count })}</span>
       </p>
       <Select
         aria-label={t('bulk.priority')}
@@ -72,22 +75,9 @@ export function BulkBar(p: Props) {
         aria-label={t('bulk.addTag')}
         className={selectCls}
         defaultValue=""
-        onChange={pick((v) => p.onTag(v, true))}
+        onChange={pick(p.onTag)}
       >
         <option value="">{t('bulk.addTag')}</option>
-        {p.tags.map((tag) => (
-          <option key={tag.id} value={tag.id}>
-            {tag.label}
-          </option>
-        ))}
-      </Select>
-      <Select
-        aria-label={t('bulk.removeTag')}
-        className={selectCls}
-        defaultValue=""
-        onChange={pick((v) => p.onTag(v, false))}
-      >
-        <option value="">{t('bulk.removeTag')}</option>
         {p.tags.map((tag) => (
           <option key={tag.id} value={tag.id}>
             {tag.label}
@@ -103,18 +93,13 @@ export function BulkBar(p: Props) {
         <option value="">{t('bulk.assign')}</option>
         {memberOptions}
       </Select>
-      <Select
-        aria-label={t('bulk.unassign')}
-        className={selectCls}
-        defaultValue=""
-        onChange={pick(p.onUnassign)}
+      <Button
+        variant="ghost"
+        className="ml-auto min-h-11 px-3 md:min-h-9 md:px-6"
+        onClick={p.onClear}
       >
-        <option value="">{t('bulk.unassign')}</option>
-        {memberOptions}
-      </Select>
-      <Button variant="ghost" className="ml-auto min-h-9" onClick={p.onClear}>
         <X aria-hidden className="size-4" />
-        {t('select.clear')}
+        <span className="sr-only md:not-sr-only">{t('select.clear')}</span>
       </Button>
     </div>
   )

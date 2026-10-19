@@ -250,9 +250,8 @@ export default function PreparePage() {
             keepOrder()
             void api.actions.setPriority(ids, p)
           }}
-          onTag={(tagId, on) => void api.actions.toggleTag(ids, tagId, on)}
+          onTag={(tagId) => void api.actions.toggleTag(ids, tagId, true)}
           onAssign={(userId) => request(ids, userId)}
-          onUnassign={(userId) => void api.actions.unassign(ids, userId)}
           onClear={clear}
         />
       ) : null}

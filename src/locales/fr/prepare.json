@@ -67,12 +67,10 @@
   },
   "bulk": {
     "label": "Actions sur la sélection",
-    "priority": "Priorité…",
+    "priority": "Priorité",
     "goal": "Objectif…",
-    "addTag": "Ajouter un tag…",
-    "removeTag": "Retirer un tag…",
-    "assign": "Assigner à…",
-    "unassign": "Retirer l'assignation…",
+    "addTag": "Tag",
+    "assign": "Assigner",
     "done": "Modifié pour {{count}} entreprise(s)."
   },
   "tagPicker": {
