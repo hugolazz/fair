@@ -43,6 +43,13 @@ test.describe.serial('parcours complet', () => {
       .click()
     await page.getByRole('link', { name: 'Importer des participants' }).click()
 
+    // Modèle vide à télécharger avant l'import : un .xlsx avec seulement les intitulés de colonnes.
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Télécharger un modèle (.xlsx)' }).click(),
+    ])
+    expect(download.suggestedFilename()).toBe('fair-modele-import.xlsx')
+
     await page.locator('input[type=file]').setInputFiles('exemples/participants-50.csv')
     await page.getByRole('button', { name: 'Analyser' }).click()
     await expect(page.getByRole('heading', { name: 'Associez vos colonnes' })).toBeVisible()

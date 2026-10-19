@@ -47,6 +47,9 @@ export const SALON_COLUMNS: Column[] = [
   col('optOut', 'Désinscrit', 'text', 12),
 ]
 
+/** Les colonnes du fichier d'import : les 14 premières de l'export (même intitulés, donc mêmes réglages de mapping). */
+export const IMPORT_COLUMNS: Column[] = SALON_COLUMNS.slice(0, 14)
+
 const orNull = (s: string | null | undefined) => (s && s.trim() !== '' ? s : null)
 const byText = (a: string, b: string) => a.localeCompare(b, 'fr', { sensitivity: 'base' })
 

@@ -7,7 +7,7 @@ import { ErrorState, Loading } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
 import { PriorityBadge } from '@/features/prepare/atoms'
 import { useEvent } from '@/features/events/event-context'
-import { downloadBytes } from './download'
+import { downloadBytes } from '@/lib/download'
 import { useExportData } from './use-export-data'
 
 function Card({

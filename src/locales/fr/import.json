@@ -13,6 +13,8 @@
     "fileHelp": "Formats acceptés : .csv, .tsv, .txt, .xlsx (5 000 lignes et plus sans souci). Les anciens .xls doivent d'abord être enregistrés en .xlsx.",
     "chooseFile": "Choisir un fichier",
     "dropHere": "ou déposez-le ici",
+    "template": "Télécharger un modèle (.xlsx)",
+    "templateError": "Le modèle n'a pas pu être généré.",
     "orPaste": "ou collez depuis un tableur",
     "pasteLabel": "Contenu copié depuis Excel, Google Sheets…",
     "pastePlaceholder": "Collez ici les cellules copiées, en-têtes compris.",

@@ -6,7 +6,7 @@ import { ErrorState, Loading } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
 import { useEvent } from '@/features/events/event-context'
 import { cn } from '@/lib/cn'
-import { downloadBytes } from './download'
+import { downloadBytes } from '@/lib/download'
 import { useExportData } from './use-export-data'
 
 type Format = Exclude<ExportKind, 'pdf-bilan'>
