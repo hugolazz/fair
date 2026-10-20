@@ -41,5 +41,9 @@ export const CHANNEL_LABEL: Record<string, string> = {
 export const statusLabel = (s: string) => STATUS_LABEL[s as MeetingStatus] ?? s
 export const priorityLabel = (p: Priority | null) => PRIORITY_LABEL[p ?? 'none']
 
+/** Note d'intérêt (1 à 5) ou moyenne : toujours suivie de « /5 » pour que l'échelle se comprenne sans légende. */
+export const interestLabel = (n: number) =>
+  `${Number.isInteger(n) ? n : n.toFixed(1).replace('.', ',')}/5`
+
 /** Marque en pied de page des PDF : « fair » est toujours en minuscules. */
 export const GENERATED_WITH = 'généré avec fair'

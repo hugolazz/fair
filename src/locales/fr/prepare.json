@@ -123,6 +123,7 @@
     "label": "Note de la rencontre",
     "placeholder": "Écrivez ici ce qui se dit pendant la rencontre…",
     "save": "Enregistrer la note",
+    "interest": "Intérêt (sur 5)",
     "recontact": "À recontacter après le salon",
     "recontactBadge": "À recontacter",
     "yes": "Oui",

@@ -1,6 +1,6 @@
 import { computeBilan, type Bilan } from './bilan.ts'
 import { formatDate, formatEventDates, percent } from './format.ts'
-import { priorityLabel, statusLabel } from './labels.ts'
+import { interestLabel, priorityLabel, statusLabel } from './labels.ts'
 import { COLORS, CONTENT_W, MARGIN, PAGE_W, PRIORITY_COLORS, PdfWriter } from './pdf-writer.ts'
 import type { ExportData } from './types.ts'
 
@@ -134,7 +134,7 @@ async function draw(
         { label: 'Prévues', weight: 1, align: 'right' },
         { label: 'Réalisées', weight: 1.1, align: 'right' },
         { label: 'Manquées', weight: 1.1, align: 'right' },
-        { label: 'Intérêt moy.', weight: 1.2, align: 'right' },
+        { label: 'Intérêt moy.', weight: 1.3, align: 'right' },
       ],
       rows: [
         ...shown.map((s) => [
@@ -143,7 +143,7 @@ async function draw(
           String(s.planned),
           String(s.held),
           String(s.missed),
-          s.avgInterest === null ? '—' : s.avgInterest.toFixed(1).replace('.', ','),
+          s.avgInterest === null ? '—' : interestLabel(s.avgInterest),
         ]),
         ...more(b.bySalesperson.length - shown.length).map((t) => [t, '', '', '', '', '']),
       ],
@@ -167,14 +167,14 @@ async function draw(
       columns: [
         { label: 'Entreprise', weight: 2.8 },
         { label: 'Prio', weight: 0.6 },
-        { label: 'Int.', weight: 0.6, align: 'right' },
+        { label: 'Intérêt', weight: 0.9, align: 'right' },
         { label: 'Commercial', weight: 1.7 },
         { label: 'Prochaine étape', weight: 3 },
       ],
       rows: shown.map((o) => [
         o.company,
         o.priority ?? '–',
-        String(o.interest),
+        interestLabel(o.interest),
         o.owner,
         o.nextStep ?? '',
       ]),

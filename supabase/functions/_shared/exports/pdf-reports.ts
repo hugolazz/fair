@@ -1,6 +1,6 @@
 import { computeBilan } from './bilan.ts'
 import { formatDate, formatDateTime, formatEventDates, percent } from './format.ts'
-import { SOURCE_LABEL, priorityLabel, statusLabel } from './labels.ts'
+import { SOURCE_LABEL, interestLabel, priorityLabel, statusLabel } from './labels.ts'
 import { COLORS, MARGIN, PAGE_H, PRIORITY_COLORS, PdfWriter } from './pdf-writer.ts'
 import { memberNames } from './select.ts'
 import type { ExportData, MeetingRec, TargetRec } from './types.ts'
@@ -108,7 +108,7 @@ function synthese(w: PdfWriter, data: ExportData) {
       String(s.planned),
       String(s.held),
       String(s.missed),
-      s.avgInterest === null ? '—' : s.avgInterest.toFixed(1).replace('.', ','),
+      s.avgInterest === null ? '—' : interestLabel(s.avgInterest),
     ]),
   })
 }
@@ -130,7 +130,7 @@ function entreprises(w: PdfWriter, data: ExportData) {
       { label: 'Commerciaux', weight: 2 },
       { label: 'Tags', weight: 1.6 },
       { label: 'Statut', weight: 1.3 },
-      { label: 'Int.', weight: 0.6, align: 'right' },
+      { label: 'Intérêt', weight: 1, align: 'right' },
     ],
     rows: targets.map((t) => {
       const ms = (meetingsOf.get(t.id) ?? [])
@@ -147,7 +147,7 @@ function entreprises(w: PdfWriter, data: ExportData) {
           .filter(Boolean)
           .join(', '),
         ms.length ? statusLabel(ms.at(-1)!.status) : '',
-        interests.length ? String(Math.max(...interests)) : '',
+        interests.length ? interestLabel(Math.max(...interests)) : '',
       ]
     }),
     fills: targets.map((t) =>
@@ -170,7 +170,7 @@ function rencontres(w: PdfWriter, data: ExportData) {
       { label: 'Entreprise', weight: 2.4 },
       { label: 'Commercial', weight: 1.6 },
       { label: 'Statut', weight: 1.2 },
-      { label: 'Int.', weight: 0.6, align: 'right' },
+      { label: 'Intérêt', weight: 0.9, align: 'right' },
       { label: 'Prochaine étape', weight: 2.8 },
     ],
     rows: ms.map((m) => [
@@ -178,7 +178,7 @@ function rencontres(w: PdfWriter, data: ExportData) {
       targetById.get(m.targetId)?.name ?? '',
       owner(m.ownerId),
       statusLabel(m.status),
-      m.interest === null ? '' : String(m.interest),
+      m.interest === null ? '' : interestLabel(m.interest),
       m.nextStep ?? '',
     ]),
   })

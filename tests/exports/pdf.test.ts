@@ -69,9 +69,14 @@ describe('PDF global du salon', () => {
     ])
       expect(companies).toContain(n)
     expect(companies).toContain('Hugo, Marie')
+    // L'intérêt est toujours écrit « n/5 » : l'échelle se comprend sans légende (meilleure note de l'entreprise).
+    expect(companies).toContain('Intérêt')
+    expect(companies).toContain('5/5')
     const meetings = pdf.pages[4]!
     expect(meetings).toContain('12/05/2027 10:30') // heure de Paris
     expect(meetings).toContain('Envoyer le devis')
+    expect(meetings).toContain('Intérêt')
+    expect(meetings).toContain('4/5')
     const notes = pdf.pages[5]!
     expect(notes).toContain('Décideur présent, budget validé T3')
     expect(notes).toContain('Croisé au bar')
@@ -94,7 +99,7 @@ describe('PDF global du salon', () => {
     expect(pdf.pages.length).toBeGreaterThan(15)
     // Le tableau des entreprises s'étend sur plusieurs pages, et son en-tête est répété sur chacune.
     const tablePages = pdf.pages.filter((p) =>
-      /Entreprise Stand Prio Commerciaux Tags Statut Int\./.test(p),
+      /Entreprise Stand Prio Commerciaux Tags Statut Intérêt/.test(p),
     )
     expect(tablePages.length).toBeGreaterThan(3)
     for (const p of tablePages) expect(p).toContain('Entreprise numéro')
@@ -130,6 +135,7 @@ describe('bilan en une page', () => {
     expect(t).toContain('À relancer 2')
     expect(t).toContain('Priorité A')
     expect(t).toContain('Top opportunités')
+    expect(t).toContain('5/5')
     expect(t).toContain('Carrefour')
     expect(t).toContain('Envoyer le devis')
     expect(t).toContain('Actions de suivi en attente (3)')

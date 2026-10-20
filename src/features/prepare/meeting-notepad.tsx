@@ -29,8 +29,8 @@ type Props = {
 
 /**
  * Prise de notes pendant la rencontre : un grand champ, un bouton. La rencontre est créée toute seule à la première
- * note (sans planification) ; le détail du compte-rendu (intérêt, prochaine étape…) reste dans « Plus de détails ».
- * On peut aussi y noter avec qui on a parlé (contact en cases séparées) et si la personne est à recontacter.
+ * note (sans planification). On y donne aussi l'intérêt (1 à 5, un appui), avec qui on a parlé (contact en cases
+ * séparées) et si la personne est à recontacter ; la prochaine étape reste dans « Modifier la fiche ».
  */
 export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }: Props) {
   const { t } = useTranslation('prepare')
@@ -52,6 +52,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   const [metWith, setMetWith] = useState<string>()
   // Case « à recontacter » : l'état local répond tout de suite, sans attendre la création de la rencontre.
   const [recontactLocal, setRecontactLocal] = useState<boolean>()
+  const [interestLocal, setInterestLocal] = useState<number | null>()
   const creating = useRef<Promise<string>>(undefined)
   const seededFor = useRef<string>(undefined)
   const typed = useRef(false) // le chargement des notes n'écrase jamais un texte déjà tapé
@@ -102,6 +103,24 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
       await api.actions.updateMeetingReport(target.id, id, patch)
     } catch {
       setRecontactLocal(undefined)
+      setError(true)
+    }
+  }
+
+  /** Intérêt 1 à 5 ; retoucher la note choisie l'efface. Noter = avoir vu la personne, comme « à recontacter ». */
+  async function setInterest(n: number) {
+    setError(false)
+    const next = n === interest ? null : n
+    setInterestLocal(next)
+    try {
+      const id = await ensureMeeting()
+      const patch =
+        next !== null && meeting?.status !== 'done'
+          ? { interest: next, status: 'done' as const }
+          : { interest: next }
+      await api.actions.updateMeetingReport(target.id, id, patch)
+    } catch {
+      setInterestLocal(undefined)
       setError(true)
     }
   }
@@ -158,6 +177,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   // Les notes de mes collègues restent listées sous la mienne.
   const list = [...(notes.data ?? [])].reverse().filter((n) => n.id !== mine?.id)
   const recontact = recontactLocal ?? meeting?.recontact ?? false
+  const interest = interestLocal !== undefined ? interestLocal : (meeting?.interest ?? null)
 
   return (
     <section aria-labelledby="notepad-title" className="flex flex-col gap-3">
@@ -213,6 +233,30 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
           {t('notepad.finished')}
         </p>
       ) : null}
+
+      <div role="group" aria-labelledby="notepad-interest" className="flex flex-col gap-1.5">
+        <span id="notepad-interest" className="text-base font-medium">
+          {t('notepad.interest')}
+        </span>
+        <div className="grid grid-cols-5 gap-1.5">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              aria-pressed={interest === n}
+              aria-label={t('report.interestValue', { n })}
+              onClick={() => void setInterest(n)}
+              className={`focus-visible:outline-brand-600 min-h-12 rounded-xl border text-lg font-semibold ${
+                interest === n
+                  ? 'bg-brand-600 border-brand-600 text-white'
+                  : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white px-3">
         <input

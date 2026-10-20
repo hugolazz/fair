@@ -31,6 +31,43 @@ test('« À recontacter » marque la rencontre comme terminée ; le bouton « Re
   await expect(finish).toHaveAttribute('aria-pressed', 'true')
 })
 
+test('l’intérêt se donne d’un appui dans le bloc-notes, se retire en retouchant la note, et reste enregistré', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId } = await seedEvent('Salon intérêt', [{ name: 'Bolt', stand: 'B2' }])
+  await login(page, USERS.admin)
+  await page.goto(`/events/${eventId}/participants`)
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Bolt' })
+  const group = sheet.getByRole('group', { name: 'Intérêt (sur 5)' })
+  const four = group.getByRole('button', { name: '4 sur 5' })
+
+  // Sans rencontre, un appui crée la rencontre, donne la note et la marque comme terminée.
+  await four.click()
+  await expect(four).toHaveAttribute('aria-pressed', 'true')
+  await expect(sheet.getByRole('button', { name: 'Rencontre terminée' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+
+  // Choisir une autre note remplace la première.
+  await group.getByRole('button', { name: '2 sur 5' }).click()
+  await expect(four).toHaveAttribute('aria-pressed', 'false')
+
+  // Conservé en fermant puis rouvrant la fiche.
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const two = sheet.getByRole('group', { name: 'Intérêt (sur 5)' }).getByRole('button', {
+    name: '2 sur 5',
+  })
+  await expect(two).toHaveAttribute('aria-pressed', 'true')
+
+  // Retoucher la note choisie l'efface.
+  await two.click()
+  await expect(two).toHaveAttribute('aria-pressed', 'false')
+})
+
 test('note et « à recontacter » conservés en fermant puis rouvrant la fiche, et en changeant d’onglet', async ({
   page,
 }) => {
