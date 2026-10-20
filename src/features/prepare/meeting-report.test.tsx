@@ -29,6 +29,7 @@ const meeting: TargetMeeting = {
   interest: null,
   nextStep: '',
   recontact: false,
+  news: false,
 }
 const target = { id: 'ec1', name: 'Carrefour' } as Target
 

@@ -74,7 +74,7 @@ describe('PDF global du salon', () => {
     expect(companies).toContain('5/5')
     const meetings = pdf.pages[4]!
     expect(meetings).toContain('12/05/2027 10:30') // heure de Paris
-    expect(meetings).toContain('Envoyer le devis')
+    expect(meetings).not.toContain('Prochaine étape') // retirée du tableau des rencontres
     expect(meetings).toContain('Intérêt')
     expect(meetings).toContain('4/5')
     const notes = pdf.pages[5]!
@@ -206,6 +206,12 @@ describe('mise en page : rien ne dépasse, rien ne se chevauche', () => {
   }
 
   it('PDF global', async () => check(await readPdfBoxes(await buildEventReportPdf(sampleData()))))
+  it('PDF global avec « Actualité » et « Recontacter » cochés', async () => {
+    const d = sampleData()
+    d.team.newsEnabled = true
+    for (const m of d.meetings) Object.assign(m, { news: true, recontact: true })
+    check(await readPdfBoxes(await buildEventReportPdf(d)))
+  })
   it('PDF global, gros volume', async () =>
     check((await readPdfBoxes(await buildEventReportPdf(bigData()))).slice(0, 8)))
   it('bilan', async () => check(await readPdfBoxes(await buildBilanPdf(sampleData()))))

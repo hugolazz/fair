@@ -241,6 +241,7 @@ export function useTargets(eventId: string, teamId: string) {
             interest: prev?.interest ?? null,
             nextStep: prev?.nextStep ?? '',
             recontact: prev?.recontact ?? false,
+            news: prev?.news ?? false,
           }
           setData(
             (d) =>
@@ -283,6 +284,7 @@ export function useTargets(eventId: string, teamId: string) {
                             ...(patch.recontact !== undefined
                               ? { recontact: patch.recontact }
                               : {}),
+                            ...(patch.news !== undefined ? { news: patch.news } : {}),
                           }
                         : m,
                     ),

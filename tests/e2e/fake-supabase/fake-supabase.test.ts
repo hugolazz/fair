@@ -287,6 +287,43 @@ describe('faux Supabase', () => {
     await auth.signOut()
   })
 
+  it('un salon supprimé ne pèse plus sur les imports : ses entreprises ne sont plus proposées à la fusion', async () => {
+    const auth = await import('@/db/repositories/auth')
+    const teams = await import('@/db/repositories/teams')
+    const events = await import('@/db/repositories/events')
+    const importRepo = await import('@/db/repositories/import')
+    const { addCompanyManually } = await import('@/features/manual-entry/add-company')
+    const { emptyCompanyForm } = await import('@/features/manual-entry/lib/manual')
+
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    const me = (await auth.getSession())!.user.id
+    const teamId = (await teams.fetchMembership(me))!.teamId
+    const values = { startsOn: '2027-01-10', endsOn: '2027-01-11', venue: '', city: '', goals: '' }
+    const old = await events.createEvent(teamId, { ...values, name: 'Salon supprimé' })
+    const current = await events.createEvent(teamId, { ...values, name: 'Salon actuel' })
+    const form = { ...emptyCompanyForm, name: 'Fantôme SAS', website: 'fantome.example' }
+
+    // L'entreprise est connue tant que son salon existe…
+    await addCompanyManually({ teamId, eventId: old.id, meId: me, assignToMe: false, form })
+    expect((await importRepo.fetchKnownCompanies()).map((c) => c.name)).toContain('Fantôme SAS')
+
+    // … puis elle disparaît des entreprises connues quand le salon est supprimé.
+    await events.deleteEvent(old.id)
+    expect((await importRepo.fetchKnownCompanies()).map((c) => c.name)).not.toContain('Fantôme SAS')
+
+    // Importer la même entreprise dans un autre salon la crée à neuf (pas de fusion, pas de conflit de site web).
+    const again = await addCompanyManually({
+      teamId,
+      eventId: current.id,
+      meId: me,
+      assignToMe: false,
+      form,
+    })
+    expect(again.status).toBe('created')
+    expect((await importRepo.fetchKnownCompanies()).map((c) => c.name)).toContain('Fantôme SAS')
+  })
+
   it('inscription : nom d’usage, recherche d’une équipe par son nom, adhésion, profil modifiable', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')

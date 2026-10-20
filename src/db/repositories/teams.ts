@@ -6,16 +6,22 @@ export type TeamRole = (typeof TEAM_ROLES)[number]
 
 const membershipSchema = z.object({
   role: z.enum(TEAM_ROLES),
-  teams: z.object({ id: z.string(), name: z.string() }),
+  teams: z.object({ id: z.string(), name: z.string(), news_enabled: z.boolean().default(false) }),
 })
-export type Membership = { teamId: string; teamName: string; role: TeamRole }
+export type Membership = {
+  teamId: string
+  teamName: string
+  role: TeamRole
+  /** La case « Actualité ? » est activée pour l'équipe (réglage d'équipe). */
+  newsEnabled: boolean
+}
 
 export type Member = { userId: string; role: TeamRole; displayName: string }
 
 export async function fetchMembership(userId: string): Promise<Membership | null> {
   const { data, error } = await supabase
     .from('team_members')
-    .select('role, teams!inner(id, name)')
+    .select('role, teams!inner(id, name, news_enabled)')
     .eq('user_id', userId)
     .is('teams.deleted_at', null)
     // L'équipe rejointe en dernier (il n'y a pas de sélecteur d'équipe) : quand on en quitte une, la précédente reprend la main.
@@ -25,7 +31,12 @@ export async function fetchMembership(userId: string): Promise<Membership | null
   const row = data?.[0]
   if (!row) return null
   const parsed = membershipSchema.parse({ role: row.role, teams: row.teams })
-  return { teamId: parsed.teams.id, teamName: parsed.teams.name, role: parsed.role }
+  return {
+    teamId: parsed.teams.id,
+    teamName: parsed.teams.name,
+    role: parsed.role,
+    newsEnabled: parsed.teams.news_enabled,
+  }
 }
 
 export async function createTeam(name: string): Promise<void> {
@@ -57,6 +68,17 @@ export async function joinTeam(teamId: string): Promise<void> {
 export async function renameTeam(teamId: string, name: string): Promise<void> {
   const { error } = await supabase.from('teams').update({ name }).eq('id', teamId)
   if (error) throw error
+}
+
+/** Active ou retire la case « Actualité ? » des notes de rencontre pour toute l'équipe (admins seulement). */
+export async function setNewsEnabled(teamId: string, enabled: boolean): Promise<void> {
+  const { data, error } = await supabase
+    .from('teams')
+    .update({ news_enabled: enabled })
+    .eq('id', teamId)
+    .select('id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
 }
 
 // --- Logo de l'équipe (en-tête des PDF) ---------------------------------------------------------------------------

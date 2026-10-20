@@ -90,7 +90,11 @@ export async function fetchExportData(
   const e = ev.data as Row
   const teamId = String(e.team_id)
 
-  const teamRes = await client.from('teams').select('id, name, logo_path').eq('id', teamId).single()
+  const teamRes = await client
+    .from('teams')
+    .select('id, name, logo_path, news_enabled')
+    .eq('id', teamId)
+    .single()
   if (teamRes.error || !teamRes.data) throw new Error('team not found')
   const t = teamRes.data as Row
 
@@ -210,7 +214,7 @@ export async function fetchExportData(
       client
         .from('meetings')
         .select(
-          'id, event_company_id, contact_id, owner_id, status, planned_at, planned_duration_min, is_unplanned, interest, need, budget, timing, decision_maker, next_step, outcome, recontact',
+          'id, event_company_id, contact_id, owner_id, status, planned_at, planned_duration_min, is_unplanned, interest, need, budget, timing, decision_maker, next_step, outcome, recontact, news',
         )
         .eq('event_id', eventId)
         .is('deleted_at', null)
@@ -236,6 +240,7 @@ export async function fetchExportData(
     nextStep: str(m.next_step),
     outcome: str(m.outcome),
     recontact: m.recontact === true,
+    news: m.news === true,
   }))
 
   const noteCols = 'id, meeting_id, event_company_id, author_id, body, source, captured_at'
@@ -316,7 +321,12 @@ export async function fetchExportData(
 
   return {
     generatedAt: now.toISOString(),
-    team: { id: teamId, name: String(t.name), logo: await loadLogo(client, str(t.logo_path)) },
+    team: {
+      id: teamId,
+      name: String(t.name),
+      logo: await loadLogo(client, str(t.logo_path)),
+      newsEnabled: t.news_enabled === true,
+    },
     event: {
       id: eventId,
       name: String(e.name),

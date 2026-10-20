@@ -13,6 +13,7 @@ import {
   listMembers,
   removeMember,
   renameTeam,
+  setNewsEnabled,
   updateMemberRole,
 } from '@/db/repositories/teams'
 import { isAdminRole } from '@/features/auth-team/roles'
@@ -124,6 +125,24 @@ export default function SettingsPage() {
       await refreshMembership()
     } catch {
       setLeaveError(true)
+    }
+  }
+
+  // La case répond tout de suite ; elle revient en arrière si la base refuse.
+  const [newsOn, setNewsOn] = useState(membership.newsEnabled)
+  const [newsError, setNewsError] = useState(false)
+  const [newsSaved, setNewsSaved] = useState(false)
+  async function onToggleNews(enabled: boolean) {
+    setNewsError(false)
+    setNewsSaved(false)
+    setNewsOn(enabled)
+    try {
+      await setNewsEnabled(teamId, enabled)
+      await refreshMembership()
+      setNewsSaved(true)
+    } catch {
+      setNewsOn(!enabled)
+      setNewsError(true)
     }
   }
 
@@ -246,6 +265,32 @@ export default function SettingsPage() {
         ) : null}
 
         <TeamLogo teamId={teamId} canEdit={isAdmin} />
+
+        {isAdmin ? (
+          <div className="flex flex-col gap-2">
+            <h3 className="mt-2 font-medium">{t('team.fields')}</h3>
+            <label className="flex min-h-11 cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                className="size-6"
+                checked={newsOn}
+                onChange={(e) => void onToggleNews(e.target.checked)}
+              />
+              <span>{t('team.newsToggle')}</span>
+            </label>
+            <p className="text-sm text-slate-700">{t('team.newsHelp')}</p>
+            {newsSaved ? (
+              <p role="status" className="text-sm text-emerald-800">
+                {t('team.newsSaved')}
+              </p>
+            ) : null}
+            {newsError ? (
+              <p role="alert" className="text-sm text-red-700">
+                {t('team.newsError')}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <h3 className="mt-2 font-medium">{t('team.members')}</h3>
         {members.loading && !members.data ? <Loading /> : null}

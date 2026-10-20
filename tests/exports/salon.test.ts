@@ -143,6 +143,68 @@ describe('table du salon', () => {
     ])
   })
 
+  it('« Actualité » n’existe que si l’équipe l’a activée, juste après « À recontacter »', () => {
+    expect(buildSalonTable(sampleData()).columns.map((c) => c.key)).not.toContain('news')
+
+    const d = sampleData()
+    d.team.newsEnabled = true
+    d.meetings.find((m) => m.id === 'm1')!.news = true // rencontre avec Jean Martin (c1)
+    const table = buildSalonTable(d)
+    const keys = table.columns.map((c) => c.key)
+    expect(keys[keys.indexOf('recontact') + 1]).toBe('news')
+    expect(table.columns.find((c) => c.key === 'news')!.label).toBe('Actualité')
+    const carrefour = table.rows.map((r) => r.cells).filter((r) => r.name === 'Carrefour')
+    expect(carrefour.map((r) => [r.contact, r.news])).toEqual([
+      ['Jean Martin', 'Oui'],
+      ['Paula Désinscrite', 'Non'],
+    ])
+    // Sans aucune rencontre : vide, comme « À recontacter ».
+    d.meetings = []
+    expect(buildSalonTable(d).rows[0]!.cells.news).toBeNull()
+  })
+
+  it('« Actualité » est masquée si l’option est décochée et que personne ne l’a cochée', () => {
+    const keysOf = (d: ReturnType<typeof sampleData>) =>
+      buildSalonTable(d).columns.map((c) => c.key)
+
+    const off = sampleData() // option décochée, aucune réponse
+    expect(keysOf(off)).not.toContain('news')
+
+    const offButAnswered = sampleData() // option décochée depuis, mais une réponse existe : elle ne disparaît pas
+    offButAnswered.meetings.find((m) => m.id === 'm1')!.news = true
+    expect(keysOf(offButAnswered)).toContain('news')
+
+    const on = sampleData() // option activée, personne n'a encore coché : la colonne est là
+    on.team.newsEnabled = true
+    expect(keysOf(on)).toContain('news')
+  })
+
+  it('l’option « Actualité » se retrouve dans le CSV, l’Excel et les deux PDF', async () => {
+    const d = sampleData()
+    d.team.newsEnabled = true
+    d.meetings.find((m) => m.id === 'm1')!.news = true
+
+    const header = parseCsv(buildSalonCsv(d))[0]!
+    expect(header).toContain('Actualité')
+    expect(header.indexOf('Actualité')).toBe(header.indexOf('À recontacter') + 1)
+    expect(parseCsv(buildSalonCsv(sampleData()))[0]).not.toContain('Actualité')
+
+    const xlsx = await generateExport(d, 'xlsx')
+    const wb = new ExcelJS.Workbook()
+    await wb.xlsx.load(xlsx.bytes as unknown as ArrayBuffer)
+    const ws = wb.getWorksheet('Salon')!
+    const headers = (ws.getRow(1).values as unknown[]).slice(1)
+    expect(headers).toContain('Actualité')
+    expect(ws.autoFilter).toBe(`A1:${ws.getColumn(headers.length).letter}1`)
+
+    const pdf = await readPdf((await generateExport(d, 'pdf')).bytes)
+    expect(pdf.pages.join(' ')).toContain('Actualité')
+    const without = await readPdf((await generateExport(sampleData(), 'pdf')).bytes)
+    expect(without.pages.join(' ')).not.toContain('Actualité')
+    // « Recontacter » figure dans le PDF, option ou pas.
+    expect(without.pages.join(' ')).toContain('Recontacter')
+  })
+
   it('signale les contacts désinscrits', () => {
     expect(of('Carrefour').map((r) => r.optOut)).toEqual([null, 'Oui'])
   })

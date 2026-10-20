@@ -41,6 +41,8 @@ export type TargetMeeting = {
   nextStep: string
   /** À recontacter après le salon. */
   recontact: boolean
+  /** « Actualité ? » (case activable par équipe). */
+  news: boolean
 }
 
 /** Statuts d'une rencontre, dans l'ordre proposé au commercial. */
@@ -124,6 +126,7 @@ export const targetRowSchema = z.object({
         interest: z.number().nullable().default(null),
         next_step: z.string().nullable().default(null),
         recontact: z.boolean().nullable().default(false),
+        news: z.boolean().nullable().default(false),
         deleted_at: z.string().nullable(),
       }),
     )
@@ -163,6 +166,7 @@ export function rowToTarget(row: TargetRow, tagIds: string[]): Target {
         interest: m.interest,
         nextStep: m.next_step ?? '',
         recontact: m.recontact === true,
+        news: m.news === true,
       }))
       .sort((a, b) => a.plannedAt.localeCompare(b.plannedAt)),
     searchKey: buildSearchKey([c.name, row.stand_label, c.industry, c.city, c.country, c.domain]),

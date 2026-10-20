@@ -2,7 +2,7 @@ import { computeBilan } from './bilan.ts'
 import { formatDate, formatDateTime, formatEventDates, percent } from './format.ts'
 import { SOURCE_LABEL, interestLabel, priorityLabel, statusLabel } from './labels.ts'
 import { COLORS, MARGIN, PAGE_H, PRIORITY_COLORS, PdfWriter } from './pdf-writer.ts'
-import { memberNames } from './select.ts'
+import { memberNames, showsNews } from './select.ts'
 import type { ExportData, MeetingRec, TargetRec } from './types.ts'
 
 // PDF de compte-rendu du salon : page de garde, sommaire, synthèse, entreprises, rencontres, notes.
@@ -118,19 +118,22 @@ function entreprises(w: PdfWriter, data: ExportData) {
   const targets = data.targets.slice().sort(byName)
   if (targets.length === 0) return none(w, 'Aucune entreprise.')
   const owner = memberNames(data)
+  const news = showsNews(data)
   const tagLabel = new Map(data.tags.map((t) => [t.id, t.label]))
   const meetingsOf = new Map<string, MeetingRec[]>()
   for (const m of data.meetings)
     meetingsOf.set(m.targetId, [...(meetingsOf.get(m.targetId) ?? []), m])
   w.table({
     columns: [
-      { label: 'Entreprise', weight: 3.2 },
+      { label: 'Entreprise', weight: 2.8 },
       { label: 'Stand', weight: 0.9 },
       { label: 'Prio', weight: 0.6 },
       { label: 'Commerciaux', weight: 2 },
       { label: 'Tags', weight: 1.6 },
       { label: 'Statut', weight: 1.3 },
       { label: 'Intérêt', weight: 1, align: 'right' },
+      { label: 'Recontacter', weight: 1.3 },
+      ...(news ? [{ label: 'Actualité', weight: 1.1 }] : []),
     ],
     rows: targets.map((t) => {
       const ms = (meetingsOf.get(t.id) ?? [])
@@ -148,6 +151,8 @@ function entreprises(w: PdfWriter, data: ExportData) {
           .join(', '),
         ms.length ? statusLabel(ms.at(-1)!.status) : '',
         interests.length ? interestLabel(Math.max(...interests)) : '',
+        ms.some((m) => m.recontact) ? 'Oui' : '',
+        ...(news ? [ms.some((m) => m.news) ? 'Oui' : ''] : []),
       ]
     }),
     fills: targets.map((t) =>
@@ -166,12 +171,13 @@ function rencontres(w: PdfWriter, data: ExportData) {
     .sort((a, b) => (a.plannedAt ?? '9999').localeCompare(b.plannedAt ?? '9999'))
   w.table({
     columns: [
-      { label: 'Date', weight: 1.6 },
-      { label: 'Entreprise', weight: 2.4 },
-      { label: 'Commercial', weight: 1.6 },
-      { label: 'Statut', weight: 1.2 },
+      { label: 'Date', weight: 2 },
+      { label: 'Entreprise', weight: 3 },
+      { label: 'Commercial', weight: 2 },
+      { label: 'Statut', weight: 1.5 },
       { label: 'Intérêt', weight: 0.9, align: 'right' },
-      { label: 'Prochaine étape', weight: 2.8 },
+      { label: 'Recontacter', weight: 1.3 },
+      ...(showsNews(data) ? [{ label: 'Actualité', weight: 1.1 }] : []),
     ],
     rows: ms.map((m) => [
       formatDateTime(m.plannedAt, data.event.timezone),
@@ -179,7 +185,8 @@ function rencontres(w: PdfWriter, data: ExportData) {
       owner(m.ownerId),
       statusLabel(m.status),
       m.interest === null ? '' : interestLabel(m.interest),
-      m.nextStep ?? '',
+      m.recontact ? 'Oui' : '',
+      ...(showsNews(data) ? [m.news ? 'Oui' : ''] : []),
     ]),
   })
 }

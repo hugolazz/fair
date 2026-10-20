@@ -33,7 +33,7 @@ const TARGET_SELECT =
   'id, event_id, company_id, stand_label, priority, objective, prep_comment, ' +
   'companies(id, name, domain, website, industry, country, city, history, contacts(count)), ' +
   'event_company_assignees(user_id, deleted_at), ' +
-  'meetings(id, planned_at, planned_duration_min, reminder_minutes, owner_id, status, interest, next_step, recontact, deleted_at)'
+  'meetings(id, planned_at, planned_duration_min, reminder_minutes, owner_id, status, interest, next_step, recontact, news, deleted_at)'
 
 export async function fetchTags(): Promise<Tag[]> {
   const { data, error } = await supabase
@@ -405,6 +405,8 @@ export type MeetingReportPatch = {
   nextStep?: string
   /** À recontacter après le salon. */
   recontact?: boolean
+  /** « Actualité ? » (case activable par équipe). */
+  news?: boolean
   /** Contact avec qui la rencontre a eu lieu. */
   contactId?: string | null
 }
@@ -414,6 +416,7 @@ export async function updateMeetingReport(id: string, patch: MeetingReportPatch)
   const columns: Record<string, unknown> = {}
   if (patch.status !== undefined) columns.status = patch.status
   if (patch.recontact !== undefined) columns.recontact = patch.recontact
+  if (patch.news !== undefined) columns.news = patch.news
   if (patch.contactId !== undefined) columns.contact_id = patch.contactId
   if (patch.interest !== undefined) columns.interest = patch.interest
   if (patch.nextStep !== undefined)

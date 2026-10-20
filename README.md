@@ -29,7 +29,8 @@ L'appli est utilisée connectée (pas de mode hors-ligne ni de mode terrain).
   contact clé ; l'entreprise est rapprochée de celles déjà connues de l'équipe (jamais dupliquée, son historique suit).
 - **Prise de notes sur le salon** : ouvrez une entreprise → historique, contact clé, grand champ de notes, ajout d'un
   contact (prénom, nom, poste, e-mail, téléphone, LinkedIn dans des cases séparées) et case **« À recontacter après le
-  salon »** (Oui / Non), reprise dans les exports Excel, CSV et PDF.
+  salon »** (Oui / Non), reprise dans les exports Excel, CSV et PDF. Une case supplémentaire **« Actualité ? »** peut être
+  activée par l'équipe dans les réglages.
 - **Préparation** : priorités A/B/C, objectifs, tags, commentaires, assignations (alerte si deux commerciaux visent la même
   entreprise), rendez-vous avec rappel et export `.ics`, **Ma liste** triée par priorité.
 - **Vue équipe** : qui a rencontré quelle entreprise, qui doit encore la voir, risque de doublon de relance.

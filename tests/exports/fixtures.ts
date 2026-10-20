@@ -51,6 +51,7 @@ const meeting = (
   nextStep: null,
   outcome: null,
   recontact: false,
+  news: false,
   ...over,
 })
 
@@ -65,6 +66,7 @@ export function sampleData(withLogo = true): ExportData {
       id: 'team-1',
       name: 'Équipe Démo',
       logo: withLogo ? { bytes: LOGO_PNG, mime: 'image/png' } : null,
+      newsEnabled: false,
     },
     event: {
       id: 'e1',

@@ -456,3 +456,50 @@ describe('une équipe garde toujours un propriétaire', () => {
     await expect(db.query('delete from teams where id = $1', [t])).resolves.toBeTruthy()
   })
 })
+
+describe('case « Actualité ? » (réglage d’équipe)', () => {
+  it('est désactivée par défaut ; seul un admin d’équipe l’active, pour son équipe seulement', async () => {
+    const flag = async (u: TestUser) =>
+      (await rows(u, 'select news_enabled from teams where id = $1', [team])) as unknown as {
+        news_enabled: boolean
+      }[]
+    expect((await flag(amy))[0]!.news_enabled).toBe(false)
+
+    // Un commercial et un inconnu n'ont aucun effet (la RLS renvoie 0 ligne, sans erreur).
+    expect(
+      await rows(amy, 'update teams set news_enabled = true where id = $1 returning id', [team]),
+    ).toHaveLength(0)
+    expect(
+      await rows(outsider, 'update teams set news_enabled = true where id = $1 returning id', [
+        team,
+      ]),
+    ).toHaveLength(0)
+    expect((await flag(amy))[0]!.news_enabled).toBe(false)
+
+    expect(
+      await rows(admin, 'update teams set news_enabled = true where id = $1 returning id', [team]),
+    ).toHaveLength(1)
+    expect((await flag(amy))[0]!.news_enabled).toBe(true)
+  })
+
+  it('la réponse est portée par la rencontre : décochée par défaut, modifiable par son auteur seulement', async () => {
+    const m = randomUUID()
+    await rows(
+      amy,
+      `insert into meetings (id, team_id, event_id, event_company_id, owner_id) values ($1, $2, $3, $4, $5)`,
+      [m, team, event, ec1, amy.id],
+    )
+    const news = async () =>
+      (await rows(amy, 'select news from meetings where id = $1', [m])) as unknown as {
+        news: boolean
+      }[]
+    expect((await news())[0]!.news).toBe(false)
+    expect(
+      await rows(amos, 'update meetings set news = true where id = $1 returning id', [m]),
+    ).toHaveLength(0)
+    expect(
+      await rows(amy, 'update meetings set news = true where id = $1 returning id', [m]),
+    ).toHaveLength(1)
+    expect((await news())[0]!.news).toBe(true)
+  })
+})

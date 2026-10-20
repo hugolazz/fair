@@ -79,6 +79,7 @@ describe('myList', () => {
       interest: null,
       nextStep: '',
       recontact: false,
+      news: false,
     },
   ]
   it('ne garde que mes cibles, triées par priorité, rendez-vous puis nom', () => {

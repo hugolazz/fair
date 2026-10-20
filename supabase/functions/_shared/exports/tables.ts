@@ -1,4 +1,4 @@
-import { memberNames } from './select.ts'
+import { memberNames, showsNews } from './select.ts'
 import { statusLabel } from './labels.ts'
 import { formatDate, formatDateTime, wallClock } from './format.ts'
 import type { ContactRec, ExportData, MeetingRec, Priority } from './types.ts'
@@ -47,6 +47,15 @@ export const SALON_COLUMNS: Column[] = [
   col('optOut', 'Désinscrit', 'text', 12),
 ]
 
+const NEWS_COLUMN = col('news', 'Actualité', 'text', 12)
+
+/** Les colonnes de l'export : celles du salon, plus « Actualité » (juste après « À recontacter ») si elle est utilisée (voir `showsNews`). */
+export function salonColumns(withNews: boolean): Column[] {
+  if (!withNews) return SALON_COLUMNS
+  const at = SALON_COLUMNS.findIndex((c) => c.key === 'recontact') + 1
+  return [...SALON_COLUMNS.slice(0, at), NEWS_COLUMN, ...SALON_COLUMNS.slice(at)]
+}
+
 /** Les colonnes du fichier d'import : les 14 premières de l'export (même intitulés, donc mêmes réglages de mapping). */
 export const IMPORT_COLUMNS: Column[] = SALON_COLUMNS.slice(0, 14)
 
@@ -61,6 +70,16 @@ function contactRecontact(c: ContactRec | null, meetings: MeetingRec[]): string 
   if (meetings.length === 0) return null
   return meetings.some(
     (m) => m.recontact && (c === null || m.contactId === null || m.contactId === c.id),
+  )
+    ? 'Oui'
+    : 'Non'
+}
+
+/** « Actualité » d'un contact : mêmes règles que « À recontacter » (une rencontre de l'entreprise le concernant). */
+function contactNews(c: ContactRec | null, meetings: MeetingRec[]): string | null {
+  if (meetings.length === 0) return null
+  return meetings.some(
+    (m) => m.news && (c === null || m.contactId === null || m.contactId === c.id),
   )
     ? 'Oui'
     : 'Non'
@@ -132,12 +151,13 @@ export function buildSalonTable(data: ExportData): Table {
           phone: orNull(c?.phone),
           linkedin: orNull(c?.linkedin),
           recontact: contactRecontact(c, meetings),
+          news: contactNews(c, meetings),
           optOut: c?.optOut ? 'Oui' : null,
         },
       })
     }
   }
-  return { id: 'salon', title: 'Salon', columns: SALON_COLUMNS, rows }
+  return { id: 'salon', title: 'Salon', columns: salonColumns(showsNews(data)), rows }
 }
 
 /** Valeur d'une cellule en texte (CSV, aperçus). */

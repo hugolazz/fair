@@ -53,6 +53,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   // Case « à recontacter » : l'état local répond tout de suite, sans attendre la création de la rencontre.
   const [recontactLocal, setRecontactLocal] = useState<boolean>()
   const [interestLocal, setInterestLocal] = useState<number | null>()
+  const [newsLocal, setNewsLocal] = useState<boolean>()
   const creating = useRef<Promise<string>>(undefined)
   const seededFor = useRef<string>(undefined)
   const typed = useRef(false) // le chargement des notes n'écrase jamais un texte déjà tapé
@@ -103,6 +104,21 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
       await api.actions.updateMeetingReport(target.id, id, patch)
     } catch {
       setRecontactLocal(undefined)
+      setError(true)
+    }
+  }
+
+  /** « Actualité ? » (réglage d'équipe) : cocher = on a vu la personne, la rencontre est aussi marquée terminée. */
+  async function setNews(on: boolean) {
+    setError(false)
+    setNewsLocal(on)
+    try {
+      const id = await ensureMeeting()
+      const patch =
+        on && meeting?.status !== 'done' ? { news: on, status: 'done' as const } : { news: on }
+      await api.actions.updateMeetingReport(target.id, id, patch)
+    } catch {
+      setNewsLocal(undefined)
       setError(true)
     }
   }
@@ -178,6 +194,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   const list = [...(notes.data ?? [])].reverse().filter((n) => n.id !== mine?.id)
   const recontact = recontactLocal ?? meeting?.recontact ?? false
   const interest = interestLocal !== undefined ? interestLocal : (meeting?.interest ?? null)
+  const news = newsLocal ?? meeting?.news ?? false
 
   return (
     <section aria-labelledby="notepad-title" className="flex flex-col gap-3">
@@ -270,6 +287,21 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
           {recontact ? t('notepad.yes') : t('notepad.no')}
         </span>
       </label>
+
+      {membership.newsEnabled ? (
+        <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white px-3">
+          <input
+            type="checkbox"
+            className="size-6"
+            checked={news}
+            onChange={(e) => void setNews(e.target.checked)}
+          />
+          <span className="flex-1 text-base font-medium">{t('notepad.news')}</span>
+          <span className="text-sm font-semibold" aria-hidden>
+            {news ? t('notepad.yes') : t('notepad.no')}
+          </span>
+        </label>
+      ) : null}
 
       {addingContact ? (
         <AddContactForm

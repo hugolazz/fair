@@ -28,6 +28,11 @@
     "name": "Nom de l'équipe",
     "rename": "Renommer",
     "renamed": "Équipe renommée.",
+    "fields": "Notes de rencontre",
+    "newsToggle": "Ajouter la case « Actualité ? »",
+    "newsHelp": "Une case à cocher sous « À recontacter après le salon » dans les notes de chaque rencontre. Elle est reprise dans tous les exports (Excel, CSV, PDF) tant qu'elle est activée ; les réponses déjà saisies sont conservées si vous la désactivez.",
+    "newsSaved": "Réglage enregistré.",
+    "newsError": "Impossible de modifier ce réglage.",
     "members": "Membres",
     "roles": {
       "owner": "Propriétaire",

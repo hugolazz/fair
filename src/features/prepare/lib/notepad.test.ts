@@ -12,6 +12,7 @@ const m = (id: string, ownerId: string, status: string): TargetMeeting => ({
   interest: null,
   nextStep: '',
   recontact: false,
+  news: false,
 })
 
 describe('currentMeeting', () => {

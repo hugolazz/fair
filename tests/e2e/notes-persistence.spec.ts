@@ -97,3 +97,48 @@ test('note et « à recontacter » conservés en fermant puis rouvrant la fiche,
   await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue('Intéressée par une démo.')
   await expect(sheet.getByLabel('À recontacter après le salon')).toBeChecked()
 })
+
+test('« Actualité ? » : une case activée dans les réglages de l’équipe, sous « À recontacter »', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId } = await seedEvent('Salon actualité', [{ name: 'Bolt', stand: 'B2' }])
+  await login(page, USERS.admin)
+  await page.goto(`/events/${eventId}/participants`)
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Bolt' })
+  await expect(sheet.getByLabel('À recontacter après le salon')).toBeVisible()
+  // Désactivée par défaut : la case n'existe pas.
+  await expect(sheet.getByLabel('Actualité ?')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+
+  // Un admin l'active dans les réglages.
+  await page.goto('/settings')
+  await page.getByLabel('Ajouter la case « Actualité ? »').check()
+  await expect(page.getByText('Réglage enregistré.')).toBeVisible()
+
+  await page.goto(`/events/${eventId}/participants`)
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const news = sheet.getByLabel('Actualité ?')
+  await expect(news).not.toBeChecked() // décochée de base
+  const finish = sheet.getByRole('button', { name: 'Rencontre terminée' })
+  await expect(finish).toHaveAttribute('aria-pressed', 'false')
+  await news.check()
+  await expect(news).toBeChecked()
+  // Comme « À recontacter » : cocher « Actualité ? » termine la rencontre.
+  await expect(finish).toHaveAttribute('aria-pressed', 'true')
+
+  // La réponse est conservée en fermant puis rouvrant la fiche.
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  await expect(sheet.getByLabel('Actualité ?')).toBeChecked()
+
+  // Désactivée de nouveau : la case disparaît de la fiche.
+  await page.keyboard.press('Escape')
+  await page.goto('/settings')
+  await page.getByLabel('Ajouter la case « Actualité ? »').uncheck()
+  await expect(page.getByText('Réglage enregistré.')).toBeVisible()
+  await page.goto(`/events/${eventId}/participants`)
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  await expect(sheet.getByLabel('Actualité ?')).toHaveCount(0)
+})

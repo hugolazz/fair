@@ -23,6 +23,8 @@ export type TeamInfo = {
   name: string
   /** Logo de l'équipe (PNG ou JPEG) pour les PDF. */
   logo: { bytes: Uint8Array; mime: 'image/png' | 'image/jpeg' } | null
+  /** La case « Actualité ? » est activée pour l'équipe : sa colonne figure alors dans les exports. */
+  newsEnabled: boolean
 }
 
 export type EventInfo = {
@@ -90,6 +92,8 @@ export type MeetingRec = {
   outcome: string | null
   /** À recontacter après le salon. */
   recontact: boolean
+  /** « Actualité ? » (case activable par équipe). */
+  news: boolean
 }
 
 export type NoteRec = {
