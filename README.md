@@ -3,7 +3,18 @@
 fair aide les commerciaux qui se rendent sur des salons tech (Tech For Retail, NRF…) à **préparer** leurs rencontres et à
 **garder l'historique par entreprise** d'un salon à l'autre. Elle remplace le bloc-notes.
 
-Usage interne : l'appli est utilisée connectée (pas de mode hors-ligne ni de mode terrain).
+_In short: a web app (PWA) for sales teams attending trade shows. Import the attendee list, prioritise and assign
+companies, take meeting notes on your phone, keep a per-company history from one show to the next, and export everything
+as Excel, CSV or PDF. Built with React, TypeScript and Supabase (Postgres with row-level security). The interface is in
+French._
+
+L'appli est utilisée connectée (pas de mode hors-ligne ni de mode terrain).
+
+![Liste des salons](docs/screenshots/salons.png)
+
+![Participants : priorités, tags, assignations](docs/screenshots/participants.png)
+
+![Bilan du salon](docs/screenshots/bilan.png)
 
 ## Fonctionnalités
 
@@ -41,8 +52,9 @@ l'interface est refusé par Postgres. L'interface grise ou masque ce qui serait 
 
 ## Stack
 
-TypeScript strict · React + Vite + React Router (SPA) · Tailwind + shadcn/ui · Supabase (Postgres, Auth, Storage, Edge
-Functions, RLS) · zod · react-hook-form · react-i18next · Vitest, Testing Library, Playwright, axe, Lighthouse, PGlite.
+TypeScript strict · React + Vite + React Router (SPA) · Tailwind + shadcn/ui · Supabase (Postgres, Auth, Storage, RLS) ·
+zod · react-hook-form · react-i18next · Vitest, Testing Library, Playwright, axe, PGlite. Les exports (Excel, CSV, PDF)
+sont générés dans le navigateur.
 
 ## Démarrage
 
@@ -66,8 +78,8 @@ Les e-mails d'auth du Supabase local arrivent dans Inbucket : http://127.0.0.1:5
 
 fair se connecte par **e-mail + mot de passe**.
 
-1. Créez un utilisateur dans Supabase (_Authentication → Users → Add user_, avec mot de passe).
-2. Connectez-vous sur `/login`. Au premier login, fair demande le nom de l'équipe : vous en devenez propriétaire (admin).
+1. Sur `/signup`, créez votre compte (prénom, e-mail, mot de passe).
+2. À l'étape suivante, choisissez « Créer une équipe » : vous en devenez propriétaire (admin).
 3. Vos collègues créent leur compte et rejoignent l'équipe en tapant son nom ; ils arrivent commerciaux, changez leur rôle dans _Réglages_ → liste des membres.
 
 > Connexion automatique de développement : `VITE_DEV_EMAIL` et `VITE_DEV_PASSWORD` dans `.env.local` (jamais en production).
@@ -114,8 +126,7 @@ pnpm icons             # régénère les icônes PWA
 (`tests/e2e/fake-supabase/`) : les migrations réelles tournent dans PGlite derrière une façade HTTP qui parle assez de
 PostgREST et de GoTrue pour `supabase-js`. Les politiques RLS s'y appliquent comme en production. Aucun secret, aucun réseau.
 
-Ce que ce faux serveur **ne couvre pas** : Storage (plans, logo), les Edge Functions (export serveur — les exports
-retombent sur la génération dans le navigateur), l'envoi d'e-mails. Ces parties se vérifient sur un vrai Supabase (voir la
+Ce que ce faux serveur **ne couvre pas** : Storage (plans, logo) et l'envoi d'e-mails. Ces parties se vérifient sur un vrai Supabase (voir la
 liste de contrôle de [docs/deploiement.md](docs/deploiement.md)).
 
 Parcours testé (`tests/e2e/journey.spec.ts`) : créer l'équipe → créer un salon → importer `exemples/participants-50.csv` →
@@ -162,4 +173,8 @@ Règle : `features/*` → `db/repositories`, `components`, `lib` ; jamais l'inve
 ## Déploiement
 
 Guide complet : [docs/deploiement.md](docs/deploiement.md) (projet Supabase UE, migrations dans l'ordre, authentification,
-Edge Functions, hébergement statique, en-têtes de sécurité, vérifications, sauvegardes, mises à jour).
+hébergement statique, en-têtes de sécurité, vérifications, sauvegardes, mises à jour).
+
+## Licence
+
+[MIT](LICENSE)
