@@ -164,7 +164,38 @@ Referrer-Policy: strict-origin-when-cross-origin
 - **Retour arrière** : redéployer l'ancien `dist/` ; les migrations ne sont pas réversibles automatiquement — écrire une
   migration corrective plutôt que de modifier une migration déjà appliquée.
 
-## 8. Intégration continue
+## 8. Auto-héberger Supabase (sans supabase.com)
+
+fair parle directement à l'API de Supabase (PostgREST, authentification, stockage) et ses règles d'accès sont des politiques
+RLS dans Postgres : on ne remplace donc pas Supabase par une autre base sans réécrire la couche `src/db/repositories/`.
+En revanche, **Supabase lui-même peut tourner sur vos serveurs** (open source, Docker) : les données restent chez vous et
+le code de fair ne change pas.
+
+1. Déployer Supabase en auto-hébergement en suivant le guide officiel « Self-Hosting with Docker »
+   (<https://supabase.com/docs/guides/self-hosting/docker>) : il fournit un `docker-compose.yml` et un `.env` modèle.
+2. Dans ce `.env`, **remplacer tous les secrets par défaut** (mot de passe Postgres, `JWT_SECRET`, `ANON_KEY`,
+   `SERVICE_ROLE_KEY`, mot de passe du tableau de bord) et régler l'authentification :
+   - `SITE_URL` et `ADDITIONAL_REDIRECT_URLS` : l'URL publique de fair (équivalent de la section 3) ;
+   - `SMTP_*` : un serveur SMTP, nécessaire pour « Mot de passe oublié » ;
+   - `ENABLE_EMAIL_AUTOCONFIRM=true` si l'on ne veut pas de confirmation par e-mail à l'inscription.
+3. Rejouer les migrations dans l'ordre, contre la base auto-hébergée (voir la section 2), par exemple :
+
+   ```bash
+   pnpm supabase db push --db-url "postgresql://postgres:<mot de passe>@<hôte>:5432/postgres"
+   ```
+
+   Le service de stockage doit être actif : les migrations créent les buckets privés `attachments` (plan, logo) et `exports`.
+
+4. Construire fair avec `VITE_SUPABASE_URL` (l'URL de l'API, derrière HTTPS) et `VITE_SUPABASE_ANON_KEY` (la clé `anon`
+   de ce `.env`), puis héberger `dist/` (section 5).
+5. Mettre en place les sauvegardes (`pg_dump` régulier + volume de stockage), les mises à jour de Supabase et le
+   renouvellement du certificat HTTPS : tout cela devient votre responsabilité.
+
+Reprendre les données d'un projet hébergé : `pg_dump` des schémas `public` et `auth` (les comptes sont dans
+`auth.users`), puis restauration sur la nouvelle base après avoir rejoué les migrations ; les fichiers de Storage
+(plans, logos) se copient à part.
+
+## 9. Intégration continue
 
 `.github/workflows/ci.yml` exécute à chaque _push_ : types, lint, format, tests unitaires et RLS, puis les tests de bout en
 bout Playwright (faux Supabase, sans secrets) et l'audit Lighthouse mobile. Aucun secret n'est nécessaire.
