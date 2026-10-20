@@ -7,12 +7,16 @@ import { buildWorkbook } from './xlsx.ts'
 
 export const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
-/** La priorité dit ce qu'on y met : une lettre A, B ou C. */
-const PRIORITY_LABEL = 'Priorité (A, B, C)'
+/** Les intitulés disent ce qu'on y met : une lettre A, B ou C ; un type d'entreprise (n'importe quel libellé : un tag inconnu est créé à l'import). */
+const TEMPLATE_LABELS: Record<string, string> = {
+  priority: 'Priorité (A, B, C)',
+  tags: 'Type (Client, Prospect…)',
+}
 
-const TEMPLATE_COLUMNS: Column[] = IMPORT_COLUMNS.map((c) =>
-  c.key === 'priority' ? { ...c, label: PRIORITY_LABEL } : c,
-)
+const TEMPLATE_COLUMNS: Column[] = IMPORT_COLUMNS.map((c) => {
+  const label = TEMPLATE_LABELS[c.key]
+  return label ? { ...c, label } : c
+})
 
 export async function buildImportTemplate(
   generatedAt: string = new Date().toISOString(),

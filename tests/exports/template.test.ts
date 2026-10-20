@@ -7,9 +7,11 @@ import { detectMapping } from '@/features/import/lib/mapping'
 
 // Le modèle d'import : un classeur sans données, avec seulement les intitulés de colonnes que fair reconnaît.
 
-const TEMPLATE_LABELS = IMPORT_COLUMNS.map((c) =>
-  c.key === 'priority' ? 'Priorité (A, B, C)' : c.label,
-)
+const EXPECTED: Record<string, string> = {
+  priority: 'Priorité (A, B, C)',
+  tags: 'Type (Client, Prospect…)',
+}
+const TEMPLATE_LABELS = IMPORT_COLUMNS.map((c) => EXPECTED[c.key] ?? c.label)
 
 async function readTemplate() {
   const { filename, mime, bytes } = await buildImportTemplate('2027-01-01T00:00:00.000Z')
@@ -33,11 +35,13 @@ describe('modèle d’import (.xlsx)', () => {
     expect(ws.getRow(1).values).toEqual([undefined, ...TEMPLATE_LABELS])
   })
 
-  it('appelle la colonne de priorité « Priorité (A, B, C) »', async () => {
+  it('précise ce qu’on attend dans les colonnes « Priorité » et « Type »', async () => {
     const { wb } = await readTemplate()
     const labels = (wb.worksheets[0]!.getRow(1).values as (string | undefined)[]).slice(1)
     expect(labels).toContain('Priorité (A, B, C)')
+    expect(labels).toContain('Type (Client, Prospect…)')
     expect(labels).not.toContain('Priorité')
+    expect(labels).not.toContain('Type')
   })
 
   it('a les 14 colonnes du fichier d’import et une ligne d’intitulés figée, sans flèches de filtre', async () => {
