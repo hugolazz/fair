@@ -236,6 +236,7 @@ export default function PreparePage() {
           }}
           members={api.members}
           onAssign={(id, userId) => request([id], userId)}
+          onUnassign={(id, userId) => void api.actions.unassign([id], userId)}
           onToggleTag={(id, tagId, on) => void api.actions.toggleTag([id], tagId, on)}
         />
       ) : (

@@ -115,7 +115,7 @@ test.describe.serial('parcours complet', () => {
     await expect(sheet.getByText(/On a déjà contacté Claire Dubois/)).toBeVisible()
   })
 
-  test('assigner directement depuis le « + » de la colonne « Assigné à »', async ({ page }) => {
+  test('assigner et retirer directement depuis la colonne « Assigné à »', async ({ page }) => {
     await login(page, USERS.newcomer)
     await page
       .getByRole('link', { name: /Tech For Retail 2027/ })
@@ -124,9 +124,20 @@ test.describe.serial('parcours complet', () => {
     await page.getByRole('link', { name: 'Participants', exact: true }).click()
     await page.getByRole('searchbox').fill('Sephora')
     const row = page.getByRole('row', { name: /Sephora/ })
-    await row.getByLabel('Assigner Sephora à un commercial').selectOption({ label: 'moi' })
-    await expect(row.getByLabel('Assigner Sephora à un commercial')).toHaveCount(0)
-    await expect(row.getByText('moi')).toBeAttached()
+    const picker = row.getByRole('button', { name: /^Modifier l'assignation de Sephora/ })
+    await expect(picker).toContainText('+')
+
+    // Un clic ouvre la liste de l'équipe : on se choisit, les initiales remplacent le « + ».
+    await picker.click()
+    await page.getByRole('button', { name: /\(moi\)$/ }).click()
+    await expect(picker).not.toContainText('+')
+    await expect(picker).toHaveAccessibleName(/actuellement : moi/)
+
+    // Le même clic permet de se retirer : le « + » revient.
+    await picker.click()
+    await page.getByRole('button', { name: /\(moi\)$/, pressed: true }).click()
+    await expect(picker).toContainText('+')
+    await expect(picker).toHaveAccessibleName(/actuellement : Non assignée/)
   })
 
   test('changer la priorité et les tags d’une ligne en cliquant dessus, sans que la ligne bouge', async ({
@@ -162,9 +173,13 @@ test.describe.serial('parcours complet', () => {
     await expect(first).toContainText(label)
 
     // Le « + » d'une ligne sans commercial est centré dans son cercle.
-    const plus = page.getByRole('button', { name: /^Assigner .* à un commercial/ }).first()
+    const plus = page
+      .getByRole('button', { name: /^Modifier l'assignation de .*Non assignée/ })
+      .first()
+      .locator('span')
+      .first()
     const box = await plus.boundingBox()
-    const glyph = await plus.locator('span[aria-hidden]').first().boundingBox()
+    const glyph = await plus.locator('span').first().boundingBox()
     expect(Math.abs(box!.x + box!.width / 2 - (glyph!.x + glyph!.width / 2))).toBeLessThan(2)
   })
 

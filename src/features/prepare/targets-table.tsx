@@ -12,7 +12,7 @@ import { canPrepareTarget, useIsAdmin } from '@/features/auth-team/roles'
 import { cn } from '@/lib/cn'
 import { AssignPicker } from './assign-picker'
 import { Select } from '@/components/ui/select'
-import { Assignees, PriorityBadge } from './atoms'
+import { PriorityBadge } from './atoms'
 import { TagPicker } from './tag-picker'
 import { formatSlot } from './lib/format'
 import type { Sort, SortKey } from './lib/sort'
@@ -38,6 +38,7 @@ type Props = ListProps & {
   onPriority: (id: string, p: Priority | null) => void
   members: TeamMember[]
   onAssign: (id: string, userId: string) => void
+  onUnassign: (id: string, userId: string) => void
   onToggleTag: (id: string, tagId: string, on: boolean) => void
 }
 
@@ -212,17 +213,15 @@ export function TargetsTable(p: Props) {
                   />
                 </div>
                 <div role="cell" className="min-w-0 px-2">
-                  {row.assigneeIds.length === 0 ? (
-                    <AssignPicker
-                      companyName={row.name}
-                      members={p.members}
-                      meId={p.meId}
-                      admin={admin}
-                      onPick={(userId) => p.onAssign(row.id, userId)}
-                    />
-                  ) : (
-                    <Assignees target={row} nameOf={p.nameOf} meId={p.meId} compact />
-                  )}
+                  <AssignPicker
+                    target={row}
+                    members={p.members}
+                    meId={p.meId}
+                    nameOf={p.nameOf}
+                    admin={admin}
+                    onAssign={(userId) => p.onAssign(row.id, userId)}
+                    onUnassign={(userId) => p.onUnassign(row.id, userId)}
+                  />
                 </div>
                 <div role="cell" className="truncate px-2 text-slate-700">
                   {next ? formatSlot(next.plannedAt) : ''}

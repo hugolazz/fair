@@ -79,8 +79,9 @@
     "none": "Aucun tag dans l'équipe : un admin peut en créer."
   },
   "assign": {
-    "pickFor": "Assigner {{name}} à un commercial",
-    "pickPlaceholder": "Assigner à…",
+    "editFor": "Modifier l'assignation de {{name}} (actuellement : {{who}})",
+    "panelTitle": "Assigné à",
+    "meNamed": "{{name}} (moi)",
     "conflictTitle": "Déjà ciblée par un collègue",
     "conflictBody": "{{count}} entreprise(s) sont déjà ciblées par quelqu'un d'autre que {{name}}.",
     "conflictItem": "{{name}} : déjà ciblée par {{others}}",
