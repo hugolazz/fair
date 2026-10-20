@@ -11,13 +11,6 @@ const membershipSchema = z.object({
 export type Membership = { teamId: string; teamName: string; role: TeamRole }
 
 export type Member = { userId: string; role: TeamRole; displayName: string }
-export type Invitation = { id: string; email: string; role: TeamRole }
-
-/** Rejoint les équipes dont une invitation attend cette adresse e-mail. */
-export async function acceptPendingInvitations(): Promise<void> {
-  const { error } = await supabase.rpc('accept_pending_invitations')
-  if (error) throw error
-}
 
 export async function fetchMembership(userId: string): Promise<Membership | null> {
   const { data, error } = await supabase
@@ -25,7 +18,7 @@ export async function fetchMembership(userId: string): Promise<Membership | null
     .select('role, teams!inner(id, name)')
     .eq('user_id', userId)
     .is('teams.deleted_at', null)
-    // L'équipe rejointe en dernier : une invitation fait changer d'équipe (il n'y a pas de sélecteur d'équipe).
+    // L'équipe rejointe en dernier (il n'y a pas de sélecteur d'équipe) : quand on en quitte une, la précédente reprend la main.
     .order('created_at', { ascending: false })
     .limit(1)
   if (error) throw error
@@ -159,37 +152,5 @@ export async function removeMember(teamId: string, userId: string): Promise<void
  */
 export async function leaveTeam(teamId: string): Promise<void> {
   const { error } = await supabase.rpc('leave_team', { p_team: teamId })
-  if (error) throw error
-}
-
-export async function listInvitations(teamId: string): Promise<Invitation[]> {
-  const { data, error } = await supabase
-    .from('team_invitations')
-    .select('id, email, role')
-    .eq('team_id', teamId)
-    .is('accepted_at', null)
-    .order('created_at')
-  if (error) throw error
-  return (data ?? []).map((i) => ({
-    id: i.id as string,
-    email: i.email as string,
-    role: i.role as TeamRole,
-  }))
-}
-
-export async function cancelInvitation(id: string): Promise<void> {
-  const { error } = await supabase.from('team_invitations').delete().eq('id', id)
-  if (error) throw error
-}
-
-/** Crée l'invitation et envoie l'e-mail « fair » via l'Edge Function `invite-member`. */
-export async function inviteMember(
-  teamId: string,
-  email: string,
-  role: 'admin' | 'member',
-): Promise<void> {
-  const { error } = await supabase.functions.invoke('invite-member', {
-    body: { teamId, email, role },
-  })
   if (error) throw error
 }

@@ -10,7 +10,7 @@ import {
 } from 'react'
 import { devAutoSignIn, getSession, onAuthChange, type Session } from '@/db/repositories/auth'
 import { fetchMyDisplayName } from '@/db/repositories/profile'
-import { acceptPendingInvitations, fetchMembership, type Membership } from '@/db/repositories/teams'
+import { fetchMembership, type Membership } from '@/db/repositories/teams'
 
 type SessionState =
   | { status: 'loading' }
@@ -20,13 +20,6 @@ type SessionState =
   | { status: 'error'; session: Session; error: Error }
 
 type SessionContextValue = SessionState & { refreshMembership: () => Promise<void> }
-
-/**
- * Une personne invitée (nouveau compte créé par l'invitation) n'a pas encore de mot de passe : la fonction d'invitation
- * pose ce drapeau, retiré quand elle en choisit un (voir updatePassword).
- */
-export const needsPassword = (session: Session): boolean =>
-  session.user.user_metadata?.['needs_password'] === true
 
 const SessionContext = createContext<SessionContextValue | null>(null)
 
@@ -39,8 +32,6 @@ type Loaded = {
 
 async function loadFor(uid: string): Promise<Loaded> {
   try {
-    // Un utilisateur invité rejoint son équipe avant qu'on lui propose d'en créer une.
-    await acceptPendingInvitations()
     const [membership, displayName] = await Promise.all([
       fetchMembership(uid),
       fetchMyDisplayName(uid),

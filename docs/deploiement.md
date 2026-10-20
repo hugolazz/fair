@@ -65,42 +65,33 @@ Dans _Authentication_ :
 
 - **URL Configuration** : _Site URL_ = l'URL publique de fair ; ajouter la même URL (et celle de prévisualisation éventuelle)
   aux _Redirect URLs_.
-- **Providers → Email** : activé. Désactiver _Enable sign ups_ si l'équipe est fermée (les collègues arrivent par invitation).
+- **Providers → Email** : activé. Les collègues créent leur compte et rejoignent l'équipe par son nom ; l'inscription est donc libre.
 - **Email Templates** : reporter ceux de `supabase/templates/` (signés « fair »).
 - **SMTP** : configurer un SMTP personnalisé avec le nom d'expéditeur `fair` (le SMTP intégré est limité à quelques
   e-mails par heure et ne doit pas servir en production).
 
-L'écran de connexion de fair est **e-mail + mot de passe**. fair n'a pas (encore) d'écran « mot de passe oublié » ni de
-choix de mot de passe à l'invitation : créer les comptes dans _Authentication → Users → Add user_ (cocher _Auto Confirm_),
-ou envoyer un lien de réinitialisation depuis ce même écran.
+L'écran de connexion de fair est **e-mail + mot de passe**, avec « Créer un compte » et « Mot de passe oublié ? » (le lien
+de réinitialisation part par e-mail : voir le SMTP ci-dessus).
 
 ### Premier administrateur
 
 1. Créer l'utilisateur dans _Authentication → Users_.
 2. Il se connecte sur fair ; au premier login, fair lui demande le nom de l'équipe (fonction `create_team`) : il en devient
    **propriétaire**, c'est-à-dire admin d'équipe.
-3. _Réglages_ → inviter les collègues. Par défaut ils sont **commerciaux** ; un admin peut changer leur rôle dans la liste
-   des membres.
+3. Les collègues créent leur compte et rejoignent l'équipe en tapant son nom. Par défaut ils sont **commerciaux** ; un
+   admin peut changer leur rôle dans la liste des membres (_Réglages_).
 
 | Rôle (base)      | Rôle (interface) | Peut                                                                             |
 | ---------------- | ---------------- | -------------------------------------------------------------------------------- |
-| `owner`, `admin` | Admin d'équipe   | tout : salons, import, tags, plan, assignations, rôles, invitations              |
+| `owner`, `admin` | Admin d'équipe   | tout : salons, import, tags, plan, assignations, rôles                           |
 | `member`         | Commercial       | consulter, s'assigner, préparer ses cibles, planifier ses rendez-vous, ses notes |
 
 Le dernier propriétaire d'une équipe ne peut ni être retiré ni être rétrogradé (déclencheur `protect_last_owner`).
 
-## 4. Edge Function d'invitation
+## 4. Edge Functions
 
-```bash
-pnpm supabase functions deploy invite-member
-pnpm supabase secrets set SITE_URL=https://fair.example.com
-```
-
-- `invite-member` : crée l'invitation et envoie l'e-mail. Sans elle, on ne peut pas inviter depuis Réglages.
-- Les exports (Excel, CSV, PDF) sont générés dans le navigateur : rien à déployer. Voir [exports.md](exports.md).
-
-La fonction utilise la clé `service_role` **fournie par Supabase dans l'environnement de la fonction** : ne l'ajoutez
-jamais à `.env.local` ni au build.
+Aucune : les exports (Excel, CSV, PDF) sont générés dans le navigateur (voir [exports.md](exports.md)) et il n'y a pas
+d'invitation par e-mail. Aucune clé `service_role` n'est nécessaire côté projet.
 
 ## 5. Build et hébergement du front
 

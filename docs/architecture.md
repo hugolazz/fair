@@ -77,4 +77,4 @@ ligne par contact), en Excel, CSV ou PDF, sans filtre ni réglage ; le bilan s'e
 ## Reste à faire (idées)
 
 Relances et e-mails, fusion de doublons, OCR des numéros de stand sur le plan (structure prête, voir [plan.md](plan.md)),
-« mot de passe oublié » / choix du mot de passe à l'invitation, écran RGPD (export / anonymisation d'un contact).
+écran RGPD (export / anonymisation d'un contact).

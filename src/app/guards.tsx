@@ -4,15 +4,13 @@ import { Link, Navigate, Outlet } from 'react-router-dom'
 import { EmptyState, ErrorState, Loading } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
 import { useIsAdmin } from '@/features/auth-team/roles'
-import { needsPassword, useSession } from '@/features/auth-team/session'
+import { useSession } from '@/features/auth-team/session'
 
 /** Redirige selon l'état : déconnecté → /login, sans équipe → /onboarding. */
 export function RequireReady() {
   const s = useSession()
   if (s.status === 'loading') return <Loading />
   if (s.status === 'signedOut') return <Navigate to="/login" replace />
-  if (s.status !== 'error' && needsPassword(s.session))
-    return <Navigate to="/reset-password" replace />
   if (s.status === 'needsTeam') return <Navigate to="/onboarding" replace />
   if (s.status === 'error')
     return <ErrorState message={s.error.message} onRetry={() => void s.refreshMembership()} />
@@ -42,8 +40,6 @@ export function RequireSignedIn() {
   const s = useSession()
   if (s.status === 'loading') return <Loading />
   if (s.status === 'signedOut') return <Navigate to="/login" replace />
-  if (s.status !== 'error' && needsPassword(s.session))
-    return <Navigate to="/reset-password" replace />
   if (s.status === 'ready') return <Navigate to="/events" replace />
   if (s.status === 'error')
     return <ErrorState message={s.error.message} onRetry={() => void s.refreshMembership()} />
@@ -53,8 +49,6 @@ export function RequireSignedIn() {
 export function RedirectIfSignedIn() {
   const s = useSession()
   if (s.status === 'loading') return <Loading />
-  if ((s.status === 'ready' || s.status === 'needsTeam') && needsPassword(s.session))
-    return <Navigate to="/reset-password" replace />
   if (s.status === 'ready') return <Navigate to="/events" replace />
   if (s.status === 'needsTeam') return <Navigate to="/onboarding" replace />
   return <Outlet />

@@ -60,9 +60,7 @@ pnpm dev                   # http://localhost:5173
 ```
 
 Sans Docker, pointez `.env.local` vers un projet Supabase hébergé (voir [docs/deploiement.md](docs/deploiement.md)).
-Les e-mails d'auth et d'invitation du Supabase local arrivent dans Inbucket : http://127.0.0.1:54324.
-
-Pour tester les invitations en local : `pnpm supabase functions serve invite-member --env-file supabase/.env.local`.
+Les e-mails d'auth du Supabase local arrivent dans Inbucket : http://127.0.0.1:54324.
 
 ### Premier login
 
@@ -70,7 +68,7 @@ fair se connecte par **e-mail + mot de passe**.
 
 1. Créez un utilisateur dans Supabase (_Authentication → Users → Add user_, avec mot de passe).
 2. Connectez-vous sur `/login`. Au premier login, fair demande le nom de l'équipe : vous en devenez propriétaire (admin).
-3. _Réglages_ → invitez vos collègues (commerciaux par défaut) ; changez leur rôle dans la liste des membres.
+3. Vos collègues créent leur compte et rejoignent l'équipe en tapant son nom ; ils arrivent commerciaux, changez leur rôle dans _Réglages_ → liste des membres.
 
 > Connexion automatique de développement : `VITE_DEV_EMAIL` et `VITE_DEV_PASSWORD` dans `.env.local` (jamais en production).
 
@@ -116,7 +114,7 @@ pnpm icons             # régénère les icônes PWA
 (`tests/e2e/fake-supabase/`) : les migrations réelles tournent dans PGlite derrière une façade HTTP qui parle assez de
 PostgREST et de GoTrue pour `supabase-js`. Les politiques RLS s'y appliquent comme en production. Aucun secret, aucun réseau.
 
-Ce que ce faux serveur **ne couvre pas** : Storage (plans, logo), les Edge Functions (invitation, export serveur — les exports
+Ce que ce faux serveur **ne couvre pas** : Storage (plans, logo), les Edge Functions (export serveur — les exports
 retombent sur la génération dans le navigateur), l'envoi d'e-mails. Ces parties se vérifient sur un vrai Supabase (voir la
 liste de contrôle de [docs/deploiement.md](docs/deploiement.md)).
 

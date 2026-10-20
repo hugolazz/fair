@@ -44,6 +44,16 @@ test.describe.serial('réglages du compte', () => {
     await expect(page.getByLabel('Mot de passe actuel')).toHaveValue('')
   })
 
+  test('les réglages n’ont plus d’invitation de collègue : on rejoint une équipe par son nom', async ({
+    page,
+  }) => {
+    await login(page, USERS.admin)
+    await page.goto('/settings')
+    await expect(page.getByRole('heading', { name: 'Mot de passe' })).toBeVisible()
+    await expect(page.getByText('Inviter un collègue')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: "Envoyer l'invitation" })).toHaveCount(0)
+  })
+
   test('quitter l’équipe : on peut changer d’avis, puis on est renvoyé vers le choix d’une équipe', async ({
     page,
   }) => {

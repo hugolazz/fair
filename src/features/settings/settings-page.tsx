@@ -2,7 +2,6 @@ import { DoorOpen, LogOut } from 'lucide-react'
 import { Select } from '@/components/ui/select'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { z } from 'zod'
 import { ErrorState, Loading, PageHeader } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
 import { InputField } from '@/components/ui/field'
@@ -10,10 +9,7 @@ import { signOut } from '@/db/repositories/auth'
 import { changePassword, WRONG_CURRENT_PASSWORD } from '@/db/repositories/auth'
 import { updateMyDisplayName } from '@/db/repositories/profile'
 import {
-  cancelInvitation,
-  inviteMember,
   leaveTeam,
-  listInvitations,
   listMembers,
   removeMember,
   renameTeam,
@@ -43,16 +39,8 @@ export default function SettingsPage() {
   const { teamId } = membership
 
   const members = useAsync(() => listMembers(teamId), [teamId])
-  const invitations = useAsync(
-    () => (isAdmin ? listInvitations(teamId) : Promise.resolve([])),
-    [teamId, isAdmin],
-  )
-
   const [teamName, setTeamName] = useState(membership.teamName)
   const [renameMsg, setRenameMsg] = useState<string>()
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteMsg, setInviteMsg] = useState<{ kind: 'ok' | 'error'; text: string }>()
-  const [inviting, setInviting] = useState(false)
 
   const [memberError, setMemberError] = useState(false)
   async function changeMember(run: () => Promise<void>) {
@@ -145,27 +133,6 @@ export default function SettingsPage() {
     await renameTeam(teamId, teamName.trim())
     await refreshMembership()
     setRenameMsg(t('team.renamed'))
-  }
-
-  async function onInvite(e: FormEvent) {
-    e.preventDefault()
-    const email = z.email().safeParse(inviteEmail.trim().toLowerCase())
-    if (!email.success) {
-      setInviteMsg({ kind: 'error', text: tAuth('login.invalidEmail') })
-      return
-    }
-    setInviting(true)
-    setInviteMsg(undefined)
-    try {
-      await inviteMember(teamId, email.data, 'member') // on invite comme commercial ; le rôle se change ensuite dans la liste de l'équipe
-      setInviteMsg({ kind: 'ok', text: t('invite.sent', { email: email.data }) })
-      setInviteEmail('')
-      invitations.reload()
-    } catch {
-      setInviteMsg({ kind: 'error', text: t('invite.error') })
-    } finally {
-      setInviting(false)
-    }
   }
 
   return (
@@ -339,60 +306,6 @@ export default function SettingsPage() {
             )
           })}
         </ul>
-
-        {isAdmin && invitations.data && invitations.data.length > 0 ? (
-          <>
-            <h3 className="mt-2 font-medium">{t('team.pending')}</h3>
-            <ul className="divide-y divide-slate-100">
-              {invitations.data.map((i) => (
-                <li key={i.id} className="flex min-h-11 items-center justify-between gap-3 py-2">
-                  <span className="min-w-0 truncate">{i.email}</span>
-                  <Button
-                    variant="ghost"
-                    onClick={async () => {
-                      await cancelInvitation(i.id)
-                      invitations.reload()
-                    }}
-                  >
-                    {t('team.cancelInvite')}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : null}
-      </Section>
-
-      <Section title={t('invite.title')}>
-        {isAdmin ? (
-          <form onSubmit={onInvite} noValidate className="flex flex-col gap-3">
-            <InputField
-              label={t('invite.email')}
-              type="email"
-              inputMode="email"
-              autoComplete="off"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-            />
-            <div>
-              <Button type="submit" disabled={inviting}>
-                {inviting ? t('invite.sending') : t('invite.submit')}
-              </Button>
-            </div>
-            {inviteMsg ? (
-              <p
-                role={inviteMsg.kind === 'error' ? 'alert' : 'status'}
-                className={
-                  inviteMsg.kind === 'error' ? 'text-sm text-red-700' : 'text-sm text-emerald-800'
-                }
-              >
-                {inviteMsg.text}
-              </p>
-            ) : null}
-          </form>
-        ) : (
-          <p className="text-slate-700">{t('invite.adminOnly')}</p>
-        )}
       </Section>
 
       <Section title={t('leave.title')}>

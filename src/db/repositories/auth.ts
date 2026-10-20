@@ -68,11 +68,10 @@ export async function requestPasswordReset(email: string): Promise<void> {
 }
 
 /**
- * Change le mot de passe de la session en cours (session ouverte par le lien de l'e-mail : récupération ou invitation).
- * Retire aussi le drapeau « mot de passe à choisir » posé à l'invitation.
+ * Change le mot de passe de la session en cours (session de récupération ouverte par le lien de l'e-mail).
  */
 export async function updatePassword(password: string): Promise<void> {
-  const { error } = await supabase.auth.updateUser({ password, data: { needs_password: false } })
+  const { error } = await supabase.auth.updateUser({ password })
   if (error) throw error
 }
 
