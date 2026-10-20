@@ -54,8 +54,11 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(url, serviceKey)
+  // Nouveau compte : 
+eeds_password fait passer la personne par le choix d'un mot de passe à sa première connexion.
   const { error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
     redirectTo: siteUrl,
+    data: { needs_password: true },
   })
   if (inviteErr) {
     // Compte existant : on envoie un lien magique à la place.

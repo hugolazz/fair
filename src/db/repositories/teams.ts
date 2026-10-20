@@ -25,7 +25,8 @@ export async function fetchMembership(userId: string): Promise<Membership | null
     .select('role, teams!inner(id, name)')
     .eq('user_id', userId)
     .is('teams.deleted_at', null)
-    .order('created_at')
+    // L'équipe rejointe en dernier : une invitation fait changer d'équipe (il n'y a pas de sélecteur d'équipe).
+    .order('created_at', { ascending: false })
     .limit(1)
   if (error) throw error
   const row = data?.[0]

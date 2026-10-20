@@ -216,7 +216,7 @@ export async function startFakeSupabase(port: number) {
           msg: 'Invalid login credentials',
         })
       }
-      return send(res, 200, session(account))
+      return send(res, 200, await session(account))
     }
     if (path === '/auth/v1/signup') {
       // Inscription sans confirmation par e-mail : le profil naît du trigger, nourri par options.data.
@@ -238,7 +238,7 @@ export async function startFakeSupabase(port: number) {
       )
       const account = { id: created.rows[0]!.id, email }
       state.accounts.set(email, account)
-      return send(res, 200, session(account))
+      return send(res, 200, await session(account))
     }
     if (path === '/auth/v1/recover') {
       // Comme Supabase : même réponse que l'adresse existe ou non, aucun e-mail envoyé ici.
@@ -247,7 +247,18 @@ export async function startFakeSupabase(port: number) {
     }
     if (path === '/auth/v1/user') {
       const u = claimsOf(req)
-      return u ? send(res, 200, authUser(u)) : send(res, 401, { msg: 'not authenticated' })
+      if (!u) return send(res, 401, { msg: 'not authenticated' })
+      if (req.method === 'PUT') {
+        // updateUser : le mot de passe n'est pas stocké (la connexion de test accepte le mot de passe commun), mais les
+        // métadonnées (data) le sont, comme chez GoTrue.
+        const body = JSON.parse((await readBody(req)) || '{}') as { data?: Record<string, unknown> }
+        if (body.data)
+          await state.db.query(
+            'update auth.users set raw_user_meta_data = raw_user_meta_data || $2::jsonb where id = $1',
+            [u.id, JSON.stringify(body.data)],
+          )
+      }
+      return send(res, 200, await authUser(u))
     }
     if (path === '/auth/v1/logout') return send(res, 204)
 
@@ -289,25 +300,29 @@ export async function startFakeSupabase(port: number) {
     return send(res, 404, { message: 'not found' })
   }
 
-  function authUser(a: Account) {
+  async function authUser(a: Account) {
+    const meta = await state.db.query<{ m: unknown }>(
+      'select raw_user_meta_data as m from auth.users where id = $1',
+      [a.id],
+    )
     return {
       id: a.id,
       aud: 'authenticated',
       role: 'authenticated',
       email: a.email,
       app_metadata: {},
-      user_metadata: {},
+      user_metadata: meta.rows[0]?.m ?? {},
       created_at: new Date().toISOString(),
     }
   }
-  function session(a: Account) {
+  async function session(a: Account) {
     return {
       access_token: jwt(a),
       token_type: 'bearer',
       expires_in: 3600,
       expires_at: Math.floor(Date.now() / 1000) + 3600,
       refresh_token: `rt-${a.id}`,
-      user: authUser(a),
+      user: await authUser(a),
     }
   }
 

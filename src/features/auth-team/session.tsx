@@ -21,6 +21,13 @@ type SessionState =
 
 type SessionContextValue = SessionState & { refreshMembership: () => Promise<void> }
 
+/**
+ * Une personne invitée (nouveau compte créé par l'invitation) n'a pas encore de mot de passe : la fonction d'invitation
+ * pose ce drapeau, retiré quand elle en choisit un (voir updatePassword).
+ */
+export const needsPassword = (session: Session): boolean =>
+  session.user.user_metadata?.['needs_password'] === true
+
 const SessionContext = createContext<SessionContextValue | null>(null)
 
 type Loaded = {

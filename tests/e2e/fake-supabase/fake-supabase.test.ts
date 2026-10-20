@@ -244,6 +244,30 @@ describe('faux Supabase', () => {
     expect(await targets.fetchHistory(zeta.companyId, event!.id)).toEqual([])
   })
 
+  it('invitation : l’équipe rejointe en dernier devient celle de la personne, et le choix du mot de passe retire le drapeau', async () => {
+    const auth = await import('@/db/repositories/auth')
+    const teams = await import('@/db/repositories/teams')
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    const me = (await auth.getSession())!.user.id
+    const first = await teams.fetchMembership(me)
+    expect(first?.teamName).toBe('Équipe e2e')
+
+    // Une autre équipe rejointe plus tard (par invitation) passe devant.
+    await exec(`
+      with t as (insert into teams (name) values ('Équipe invitante') returning id)
+      insert into team_members (team_id, user_id, role) select id, '${me}', 'member' from t`)
+    expect((await teams.fetchMembership(me))?.teamName).toBe('Équipe invitante')
+
+    // Le drapeau posé à l'invitation est retiré quand la personne choisit son mot de passe.
+    await exec(
+      `update auth.users set raw_user_meta_data = raw_user_meta_data || '{"needs_password": true}'::jsonb where id = '${me}'`,
+    )
+    await auth.updatePassword('nouveau-mot-de-passe-1')
+    const [meta] = await exec(`select raw_user_meta_data as m from auth.users where id = '${me}'`)
+    expect((meta!['m'] as { needs_password?: boolean }).needs_password).toBe(false)
+    await auth.signOut()
+  })
+
   it('mot de passe oublié : le lien se demande pour n’importe quelle adresse, le nouveau mot de passe se pose sur la session', async () => {
     const auth = await import('@/db/repositories/auth')
     await auth.signOut()
