@@ -6,7 +6,7 @@
     "source": "Fichier",
     "mapping": "Colonnes",
     "review": "Vérification",
-    "report": "Rapport"
+    "report": "Résultat"
   },
   "source": {
     "fileTitle": "Fichier CSV ou Excel",
@@ -18,7 +18,7 @@
     "orPaste": "ou collez depuis un tableur",
     "pasteLabel": "Contenu copié depuis Excel, Google Sheets…",
     "pastePlaceholder": "Collez ici les cellules copiées, en-têtes compris.",
-    "analyze": "Analyser",
+    "analyze": "Importer",
     "analyzing": "Lecture du fichier…",
     "selected": "Fichier : {{name}}"
   },
@@ -31,7 +31,7 @@
     "required": "obligatoire",
     "preview": "Aperçu des premières lignes",
     "rowsDetected": "{{count}} lignes détectées",
-    "continue": "Vérifier avant d'importer",
+    "continue": "Continuer",
     "loading": "Analyse des données…",
     "multiContactsHint": "Plusieurs contacts pour une même entreprise ? Mettez-les dans la même cellule, séparés par « ; » ou un retour à la ligne (nom 1 ; nom 2 — e-mail 1 ; e-mail 2), ou sur des lignes distinctes : l'entreprise est alors fusionnée. Le premier contact est le contact clé.",
     "multiContactsFound": "{{count}} ligne(s) contiennent plusieurs contacts : un contact sera créé pour chacun.",
@@ -57,7 +57,7 @@
     }
   },
   "review": {
-    "title": "Vérifiez avant d'importer",
+    "title": "Vérifiez votre import",
     "stats": {
       "ready": "Lignes prêtes",
       "empty": "Lignes vides ou de total retirées",
@@ -68,7 +68,7 @@
       "contacts": "Contacts ajoutés"
     },
     "duplicatesTitle": "Doublons",
-    "duplicatesHelp": "Fusionner complète la société existante (sans rien écraser) et rattache les contacts. Ignorer écarte la ligne. Créer en fait une société distincte.",
+    "duplicatesHelp": "Ces entreprises apparaissent plusieurs fois ou existent déjà dans votre équipe. « Fusionner » (recommandé) complète la fiche existante sans rien écraser, « Ignorer » écarte la ligne, « Créer » en fait une entreprise distincte.",
     "noDuplicates": "Aucun doublon détecté.",
     "kind": {
       "known": "Déjà connue de votre équipe",
@@ -87,16 +87,25 @@
     "errorsHelp": "Ces lignes ne seront pas importées.",
     "removedHeaders": "{{count}} répétition(s) de la ligne de titres retirée(s).",
     "warnings": "{{count}} valeur(s) invalide(s) (e-mail ou site) ont été ignorées, la ligne est importée.",
-    "start": "Importer {{count}} lignes",
+    "start": "Confirmer l'import",
     "nothing": "Aucune ligne à importer.",
-    "back": "Modifier les colonnes"
+    "back": "Modifier les colonnes",
+    "summary": "Prêt : {{companies}} et {{contacts}} seront ajoutés à ce salon.",
+    "summaryNoContact": "Prêt : {{companies}} seront ajoutées à ce salon.",
+    "summaryKnown_one": "1 existe déjà dans votre équipe : ses informations seront complétées, sans rien écraser.",
+    "summaryKnown_other": "{{count}} existent déjà dans votre équipe : leurs informations seront complétées, sans rien écraser.",
+    "duplicatesTitle_one": "1 doublon possible",
+    "duplicatesTitle_other": "{{count}} doublons possibles",
+    "leftAside_one": "1 ligne ne sera pas importée",
+    "leftAside_other": "{{count}} lignes ne seront pas importées",
+    "detail": "Voir le détail des chiffres"
   },
   "progress": {
     "label": "Import en cours",
     "text": "{{done}} / {{total}} lots enregistrés"
   },
   "report": {
-    "title": "Rapport d'import",
+    "title": "Import terminé",
     "imported": "Lignes importées",
     "skipped": "Lignes ignorées",
     "errors": "Lignes en erreur",
@@ -105,13 +114,21 @@
     "alreadyInEvent": "Déjà présentes dans ce salon",
     "contactsCreated": "Contacts créés",
     "contactsLinked": "Contacts déjà connus rattachés",
-    "exportErrors": "Exporter les erreurs (CSV)",
+    "exportErrors": "Télécharger ces lignes (CSV)",
     "errorsTitle": "Détail des erreurs",
     "newImport": "Nouvel import",
-    "done": "Import terminé.",
-    "partial": "Import terminé avec des erreurs : corrigez le fichier d'erreurs et ré-importez-le."
+    "summary": "{{companies}} et {{contacts}} ajoutés à ce salon.",
+    "summaryNoContact": "{{companies}} ajoutées à ce salon.",
+    "leftAside_one": "1 ligne n'a pas pu être importée. Téléchargez-la, corrigez-la puis importez-la de nouveau.",
+    "leftAside_other": "{{count}} lignes n'ont pas pu être importées. Téléchargez-les, corrigez-les puis importez-les de nouveau.",
+    "seeLines": "Voir les lignes concernées",
+    "detail": "Voir le détail des chiffres",
+    "validate": "Valider"
   },
-  "csv": { "row": "Ligne", "reason": "Motif" },
+  "csv": {
+    "row": "Ligne",
+    "reason": "Motif"
+  },
   "errors": {
     "missing_company": "Nom de société manquant",
     "save_failed": "Échec d'enregistrement",
@@ -122,5 +139,11 @@
     "parse_failed": "Impossible de lire ce fichier.",
     "load": "Impossible de charger les données de votre équipe.",
     "import": "L'import a échoué avant l'enregistrement. Rien n'a été modifié."
+  },
+  "n": {
+    "company_one": "{{count}} entreprise",
+    "company_other": "{{count}} entreprises",
+    "contact_one": "{{count}} contact",
+    "contact_other": "{{count}} contacts"
   }
 }

@@ -59,20 +59,32 @@ test.describe.serial('parcours complet', () => {
     expect(download.suggestedFilename()).toBe('fair-modele-import.xlsx')
 
     await page.locator('input[type=file]').setInputFiles('exemples/participants-50.csv')
-    await page.getByRole('button', { name: 'Analyser' }).click()
+    await page.getByRole('button', { name: 'Importer', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Associez vos colonnes' })).toBeVisible()
     // Les colonnes priorité / type / LinkedIn sont reconnues, et les lignes à plusieurs contacts signalées.
     await expect(page.getByLabel('Priorité (A, B, C)')).toHaveValue(/\d+/)
     await expect(page.getByLabel('Type (client, prospect…)')).toHaveValue(/\d+/)
     await expect(page.getByLabel('LinkedIn du contact')).toHaveValue(/\d+/)
     await expect(page.getByText(/2 ligne\(s\) contiennent plusieurs contacts/)).toBeVisible()
-    await page.getByRole('button', { name: "Vérifier avant d'importer" }).click()
+    await page.getByRole('button', { name: 'Continuer' }).click()
 
-    await expect(page.getByRole('heading', { name: "Vérifiez avant d'importer" })).toBeVisible()
-    // Les doublons détectés (Carrefour / Carrefour SA) sont fusionnés par défaut ou à décider : on garde le défaut.
-    await page.getByRole('button', { name: /^Importer \d+ lignes$/ }).click()
-    await expect(page.getByRole('heading', { name: "Rapport d'import" })).toBeVisible()
-    await expect(page.getByText('Import terminé')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Vérifiez votre import' })).toBeVisible()
+    // Une phrase de synthèse, et les doublons seulement parce qu'il y en a (Carrefour / Carrefour SA).
+    await expect(page.getByText(/^Prêt : \d+ entreprises/)).toBeVisible()
+    await expect(page.getByRole('heading', { name: /doublons? possibles?/ })).toBeVisible()
+    // Les chiffres détaillés sont repliés : un clic pour les voir.
+    await expect(page.getByText('Lignes prêtes')).toBeHidden()
+    // Les doublons sont fusionnés par défaut : on garde le défaut.
+    await page.getByRole('button', { name: "Confirmer l'import" }).click()
+
+    // Le résultat est une réussite : pas d'alerte, une phrase, et « Valider » pour terminer.
+    await expect(page.getByRole('heading', { name: 'Import terminé' })).toBeVisible()
+    await expect(
+      page.getByText(/^\d+ entreprises et \d+ contacts ajoutés à ce salon\.$/),
+    ).toBeVisible()
+    await expect(page.getByText('Entreprises créées')).toBeHidden()
+    await page.getByRole('link', { name: 'Valider', exact: true }).click()
+    await expect(page.getByRole('table')).toBeVisible() // la liste des participants, déjà remplie
   })
 
   test('prioriser, s’assigner et préparer une entreprise', async ({ page }) => {

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import type { Decision, DuplicateGroup, ImportPlan, RowError } from '@/db/schemas/import'
 import type { Analysis } from './lib/runner'
+import { summaryText } from './lib/summary'
 
 type Props = {
   analysis: Analysis
@@ -16,7 +17,7 @@ type Props = {
 const DECISIONS: Decision[] = ['merge', 'skip', 'create']
 const MAX_GROUPS_SHOWN = 200
 
-function Stat({ label, value }: { label: string; value: number }) {
+export function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3">
       <dd className="text-2xl font-semibold tabular-nums">{value.toLocaleString('fr-FR')}</dd>
@@ -32,6 +33,10 @@ function rowsLabel(t: (key: string, o?: Record<string, unknown>) => string, numb
     : t('review.rows', { rows: shown })
 }
 
+/**
+ * Vérification avant l'import : une phrase de synthèse, puis seulement ce qui demande une décision (doublons) ou une
+ * attention (lignes écartées). Les chiffres détaillés restent à un clic.
+ */
 export function StepReview({
   analysis,
   plan,
@@ -46,6 +51,7 @@ export function StepReview({
   const dupRows = groups.reduce((n, g) => n + g.rowNumbers.length, 0)
   const invalidValues = plan.warnings.filter((w) => w.code !== 'domain_conflict').length
   const toImport = plan.stats.rowsImported
+  const companies = plan.stats.companiesCreated + plan.stats.companiesMerged
 
   return (
     <section className="flex flex-col gap-6" aria-labelledby="review-title">
@@ -53,69 +59,92 @@ export function StepReview({
         {t('review.title')}
       </h2>
 
-      <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label={t('review.stats.ready')} value={rows.length} />
-        <Stat label={t('review.stats.empty')} value={removed.empty} />
-        <Stat label={t('review.stats.errors')} value={errors.length} />
-        <Stat label={t('review.stats.duplicates')} value={dupRows} />
-        <Stat label={t('review.stats.companies')} value={plan.stats.companiesCreated} />
-        <Stat label={t('review.stats.merged')} value={plan.stats.companiesMerged} />
-        <Stat label={t('review.stats.contacts')} value={plan.stats.contactsCreated} />
-      </dl>
-
-      {removed.repeatedHeader > 0 ? (
-        <p className="text-sm text-slate-600">
-          {t('review.removedHeaders', { count: removed.repeatedHeader })}
+      {toImport === 0 ? (
+        <p role="status" className="text-slate-700">
+          {t('review.nothing')}
         </p>
-      ) : null}
-      {invalidValues > 0 ? (
-        <p className="text-sm text-slate-600">{t('review.warnings', { count: invalidValues })}</p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          <p role="status" className="text-xl leading-snug font-medium">
+            {summaryText(t, companies, plan.stats.contactsCreated, 'review')}
+          </p>
+          {plan.stats.companiesMerged > 0 ? (
+            <p className="text-sm text-slate-600">
+              {t('review.summaryKnown', { count: plan.stats.companiesMerged })}
+            </p>
+          ) : null}
+        </div>
+      )}
+
+      {groups.length > 0 ? (
+        <div>
+          <h3 className="font-semibold">{t('review.duplicatesTitle', { count: groups.length })}</h3>
+          <p className="mt-1 text-sm text-slate-600">{t('review.duplicatesHelp')}</p>
+          <div className="my-3 flex flex-wrap items-center gap-2">
+            <span className="text-sm">{t('review.bulk')}</span>
+            {DECISIONS.map((d) => (
+              <Button key={d} variant="secondary" onClick={() => onBulk(d)}>
+                {t(`review.decision.${d}`)}
+              </Button>
+            ))}
+          </div>
+          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+            {groups.slice(0, MAX_GROUPS_SHOWN).map((g) => (
+              <GroupItem
+                key={g.id}
+                group={g}
+                decision={decisions[g.id] ?? 'merge'}
+                onDecision={onDecision}
+              />
+            ))}
+          </ul>
+          {groups.length > MAX_GROUPS_SHOWN ? (
+            <p className="mt-2 text-sm text-slate-600">… +{groups.length - MAX_GROUPS_SHOWN}</p>
+          ) : null}
+        </div>
       ) : null}
 
-      <div>
-        <h3 className="font-semibold">{t('review.duplicatesTitle')}</h3>
-        {groups.length === 0 ? (
-          <p className="mt-1 text-sm text-slate-600">{t('review.noDuplicates')}</p>
-        ) : (
-          <>
-            <p className="mt-1 text-sm text-slate-600">{t('review.duplicatesHelp')}</p>
-            <div className="my-3 flex flex-wrap items-center gap-2">
-              <span className="text-sm">{t('review.bulk')}</span>
-              {DECISIONS.map((d) => (
-                <Button key={d} variant="secondary" onClick={() => onBulk(d)}>
-                  {t(`review.decision.${d}`)}
-                </Button>
-              ))}
-            </div>
-            <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
-              {groups.slice(0, MAX_GROUPS_SHOWN).map((g) => (
-                <GroupItem
-                  key={g.id}
-                  group={g}
-                  decision={decisions[g.id] ?? 'merge'}
-                  onDecision={onDecision}
-                />
-              ))}
-            </ul>
-            {groups.length > MAX_GROUPS_SHOWN ? (
-              <p className="mt-2 text-sm text-slate-600">… +{groups.length - MAX_GROUPS_SHOWN}</p>
-            ) : null}
-          </>
-        )}
-      </div>
+      {errors.length > 0 ? (
+        <details className="rounded-xl border border-slate-200 bg-white p-3">
+          <summary className="min-h-11 cursor-pointer py-2 font-medium">
+            {t('review.leftAside', { count: errors.length })}
+          </summary>
+          <div className="pt-2">
+            <ErrorList errors={errors} />
+          </div>
+        </details>
+      ) : null}
 
-      {errors.length > 0 ? <ErrorList errors={errors} /> : null}
+      <details className="text-sm">
+        <summary className="min-h-11 cursor-pointer py-2 text-slate-700">
+          {t('review.detail')}
+        </summary>
+        <dl className="grid grid-cols-2 gap-3 pt-2 md:grid-cols-4">
+          <Stat label={t('review.stats.ready')} value={rows.length} />
+          <Stat label={t('review.stats.empty')} value={removed.empty} />
+          <Stat label={t('review.stats.errors')} value={errors.length} />
+          <Stat label={t('review.stats.duplicates')} value={dupRows} />
+          <Stat label={t('review.stats.companies')} value={plan.stats.companiesCreated} />
+          <Stat label={t('review.stats.merged')} value={plan.stats.companiesMerged} />
+          <Stat label={t('review.stats.contacts')} value={plan.stats.contactsCreated} />
+        </dl>
+        {removed.repeatedHeader > 0 ? (
+          <p className="pt-3 text-slate-600">
+            {t('review.removedHeaders', { count: removed.repeatedHeader })}
+          </p>
+        ) : null}
+        {invalidValues > 0 ? (
+          <p className="pt-1 text-slate-600">{t('review.warnings', { count: invalidValues })}</p>
+        ) : null}
+      </details>
 
       <div className="flex flex-wrap gap-3">
         <Button variant="secondary" onClick={onBack}>
           {t('review.back')}
         </Button>
         <Button disabled={toImport === 0} onClick={onStart}>
-          {t('review.start', { count: toImport })}
+          {t('review.start')}
         </Button>
-        {toImport === 0 ? (
-          <p className="self-center text-sm text-slate-600">{t('review.nothing')}</p>
-        ) : null}
       </div>
     </section>
   )
