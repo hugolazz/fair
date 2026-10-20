@@ -244,6 +244,18 @@ describe('faux Supabase', () => {
     expect(await targets.fetchHistory(zeta.companyId, event!.id)).toEqual([])
   })
 
+  it('changer de mot de passe exige l’actuel : un mauvais mot de passe est refusé, le bon laisse passer', async () => {
+    const auth = await import('@/db/repositories/auth')
+    await auth.signInWithPassword(USERS.marie, PASSWORD)
+    await expect(
+      auth.changePassword(USERS.marie, 'pas-le-bon', 'nouveau-mot-de-passe-1'),
+    ).rejects.toThrow(auth.WRONG_CURRENT_PASSWORD)
+    await expect(
+      auth.changePassword(USERS.marie, PASSWORD, 'nouveau-mot-de-passe-1'),
+    ).resolves.toBeUndefined()
+    await auth.signOut()
+  })
+
   it('invitation : l’équipe rejointe en dernier devient celle de la personne, et le choix du mot de passe retire le drapeau', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')

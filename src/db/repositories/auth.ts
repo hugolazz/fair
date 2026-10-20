@@ -76,6 +76,23 @@ export async function updatePassword(password: string): Promise<void> {
   if (error) throw error
 }
 
+/** Message de l'erreur levée quand le mot de passe actuel saisi est faux. */
+export const WRONG_CURRENT_PASSWORD = 'wrong_current_password'
+
+/**
+ * Change le mot de passe en exigeant l'actuel : on se reconnecte avec lui avant d'accepter le nouveau, pour qu'une session
+ * laissée ouverte sur un poste ne suffise pas à prendre la main sur le compte.
+ */
+export async function changePassword(
+  email: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const { error } = await supabase.auth.signInWithPassword({ email, password: currentPassword })
+  if (error) throw new Error(WRONG_CURRENT_PASSWORD)
+  await updatePassword(newPassword)
+}
+
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut()
   if (error) throw error

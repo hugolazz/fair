@@ -7,7 +7,7 @@ import { ErrorState, Loading, PageHeader } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
 import { InputField } from '@/components/ui/field'
 import { signOut } from '@/db/repositories/auth'
-import { updatePassword } from '@/db/repositories/auth'
+import { changePassword, WRONG_CURRENT_PASSWORD } from '@/db/repositories/auth'
 import { updateMyDisplayName } from '@/db/repositories/profile'
 import {
   cancelInvitation,
@@ -88,11 +88,16 @@ export default function SettingsPage() {
     }
   }
 
+  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordMsg, setPasswordMsg] = useState<{ kind: 'ok' | 'error'; text: string }>()
   async function onChangePassword(e: FormEvent) {
     e.preventDefault()
+    if (!currentPassword) {
+      setPasswordMsg({ kind: 'error', text: t('password.currentRequired') })
+      return
+    }
     if (newPassword.length < MIN_PASSWORD) {
       setPasswordMsg({ kind: 'error', text: t('password.tooShort', { min: MIN_PASSWORD }) })
       return
@@ -102,12 +107,22 @@ export default function SettingsPage() {
       return
     }
     try {
-      await updatePassword(newPassword)
+      await changePassword(session.user.email ?? '', currentPassword, newPassword)
+      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
       setPasswordMsg({ kind: 'ok', text: t('password.saved') })
-    } catch {
-      setPasswordMsg({ kind: 'error', text: t('password.error') })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ''
+      setPasswordMsg({
+        kind: 'error',
+        text:
+          message === WRONG_CURRENT_PASSWORD
+            ? t('password.wrongCurrent')
+            : /different from the old password|same password/i.test(message)
+              ? t('password.same')
+              : t('password.error'),
+      })
     }
   }
 
@@ -201,6 +216,13 @@ export default function SettingsPage() {
 
       <Section title={t('password.title')}>
         <form onSubmit={onChangePassword} noValidate className="flex flex-col gap-3">
+          <InputField
+            label={t('password.current')}
+            type="password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+          />
           <InputField
             label={t('password.new')}
             type="password"

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { login, resetBackend, USERS } from './support'
+import { login, PASSWORD, resetBackend, USERS } from './support'
 
 // Réglages : changer son mot de passe, quitter l'équipe.
 test.describe.serial('réglages du compte', () => {
@@ -12,12 +12,26 @@ test.describe.serial('réglages du compte', () => {
     await page.goto('/settings')
     await expect(page.getByRole('heading', { name: 'Mot de passe' })).toBeVisible()
 
-    await page.getByLabel('Nouveau mot de passe').fill('court')
+    const change = page.getByRole('button', { name: 'Changer le mot de passe' })
+
+    // Le mot de passe actuel est exigé.
+    await page.getByLabel('Nouveau mot de passe', { exact: true }).fill('nouveau-mot-de-passe-1')
+    await page.getByLabel('Confirmez le mot de passe').fill('nouveau-mot-de-passe-1')
+    await change.click()
+    await expect(page.getByText('Saisissez votre mot de passe actuel.')).toBeVisible()
+
+    // Un mauvais mot de passe actuel est refusé : rien n'est modifié.
+    await page.getByLabel('Mot de passe actuel').fill('pas-le-bon-mot-de-passe')
+    await change.click()
+    await expect(page.getByText('Le mot de passe actuel est incorrect.')).toBeVisible()
+
+    await page.getByLabel('Mot de passe actuel').fill(PASSWORD)
+    await page.getByLabel('Nouveau mot de passe', { exact: true }).fill('court')
     await page.getByLabel('Confirmez le mot de passe').fill('court')
-    await page.getByRole('button', { name: 'Changer le mot de passe' }).click()
+    await change.click()
     await expect(page.getByText(/au moins 8 caractères/)).toBeVisible()
 
-    await page.getByLabel('Nouveau mot de passe').fill('nouveau-mot-de-passe-1')
+    await page.getByLabel('Nouveau mot de passe', { exact: true }).fill('nouveau-mot-de-passe-1')
     await page.getByLabel('Confirmez le mot de passe').fill('autre-mot-de-passe-22')
     await page.getByRole('button', { name: 'Changer le mot de passe' }).click()
     await expect(page.getByText('Les deux mots de passe ne sont pas identiques.')).toBeVisible()
@@ -26,7 +40,8 @@ test.describe.serial('réglages du compte', () => {
     await page.getByRole('button', { name: 'Changer le mot de passe' }).click()
     await expect(page.getByText('Mot de passe modifié.')).toBeVisible()
     // Les champs sont vidés après l'enregistrement.
-    await expect(page.getByLabel('Nouveau mot de passe')).toHaveValue('')
+    await expect(page.getByLabel('Nouveau mot de passe', { exact: true })).toHaveValue('')
+    await expect(page.getByLabel('Mot de passe actuel')).toHaveValue('')
   })
 
   test('quitter l’équipe : on peut changer d’avis, puis on est renvoyé vers le choix d’une équipe', async ({
