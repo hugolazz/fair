@@ -49,7 +49,7 @@ TypeScript strict · React + Vite + React Router (SPA, pas de SSR) · Tailwind +
 - Mobile first ; desktop complet pour Avant/Après. Cibles tactiles ≥ 44 px, actions principales à portée de pouce.
 - WCAG 2.2 AA : contraste, focus visible, navigation clavier, labels/ARIA, statuts jamais portés par la couleur seule, `prefers-reduced-motion`.
 
-- **Design** (`design_handoff_fair_redesign/`) : tokens dans `src/index.css` (`@theme` : palette chaude, les `slate-*` sont remappés, `brand`, `gold`, `danger`), polices Instrument Sans / Instrument Serif auto-hébergées (`@fontsource`), boutons en pilule, champs soulignés, cartes à 24 px de rayon. Statut = pastille + texte, priorité = lettre.
+- **Design** : tokens dans `src/index.css` (`@theme` : palette chaude, les `slate-*` sont remappés, `brand`, `gold`, `danger`), polices Instrument Sans / Instrument Serif auto-hébergées (`@fontsource`), boutons en pilule, champs soulignés, cartes à 24 px de rayon. Statut = pastille + texte, priorité = lettre.
 
 - **Menus et calendriers** : `Select` (`components/ui/select.tsx`) et `DateInput` (`date-input.tsx`, branché sur `InputField type="date"`) habillent les listes et dates aux couleurs de l'appli (popover Radix). Même usage qu'un `<select>` / `<input type="date">` : un vrai champ caché (`sr-only`) porte la valeur, donc react-hook-form et les tests (`selectOption`, `fill('aaaa-mm-jj')`) fonctionnent. Sur écran tactile (`pointer: coarse`), on garde le sélecteur natif. Garder **une seule version** de `@radix-ui/react-dismissable-layer` (`pnpm why`) : deux copies et la fenêtre modale bloque les clics dans le popover. Ne pas utiliser de `<select>` brut : passer par `Select`.
 
