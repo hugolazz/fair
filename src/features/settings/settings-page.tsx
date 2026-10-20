@@ -1,4 +1,4 @@
-import { LogOut } from 'lucide-react'
+import { DoorOpen, LogOut } from 'lucide-react'
 import { Select } from '@/components/ui/select'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,10 +7,12 @@ import { ErrorState, Loading, PageHeader } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
 import { InputField } from '@/components/ui/field'
 import { signOut } from '@/db/repositories/auth'
+import { updatePassword } from '@/db/repositories/auth'
 import { updateMyDisplayName } from '@/db/repositories/profile'
 import {
   cancelInvitation,
   inviteMember,
+  leaveTeam,
   listInvitations,
   listMembers,
   removeMember,
@@ -21,6 +23,8 @@ import { isAdminRole } from '@/features/auth-team/roles'
 import { useReadySession } from '@/features/auth-team/session'
 import { useAsync } from '@/lib/use-async'
 import { TeamLogo } from './team-logo'
+
+const MIN_PASSWORD = 8
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -81,6 +85,42 @@ export default function SettingsPage() {
         kind: 'error',
         text: detail ? `${t('profile.error')} (${detail})` : t('profile.error'),
       })
+    }
+  }
+
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordMsg, setPasswordMsg] = useState<{ kind: 'ok' | 'error'; text: string }>()
+  async function onChangePassword(e: FormEvent) {
+    e.preventDefault()
+    if (newPassword.length < MIN_PASSWORD) {
+      setPasswordMsg({ kind: 'error', text: t('password.tooShort', { min: MIN_PASSWORD }) })
+      return
+    }
+    if (confirmPassword !== newPassword) {
+      setPasswordMsg({ kind: 'error', text: t('password.mismatch') })
+      return
+    }
+    try {
+      await updatePassword(newPassword)
+      setNewPassword('')
+      setConfirmPassword('')
+      setPasswordMsg({ kind: 'ok', text: t('password.saved') })
+    } catch {
+      setPasswordMsg({ kind: 'error', text: t('password.error') })
+    }
+  }
+
+  const [leaveError, setLeaveError] = useState(false)
+  async function onLeave() {
+    if (!window.confirm(t('leave.confirm', { team: membership.teamName }))) return
+    setLeaveError(false)
+    try {
+      await leaveTeam(teamId)
+      // Sans équipe, l'appli renvoie sur le choix d'une équipe ; sinon sur l'équipe rejointe auparavant.
+      await refreshMembership()
+    } catch {
+      setLeaveError(true)
     }
   }
 
@@ -157,6 +197,40 @@ export default function SettingsPage() {
             {profileMsg.text}
           </p>
         ) : null}
+      </Section>
+
+      <Section title={t('password.title')}>
+        <form onSubmit={onChangePassword} noValidate className="flex flex-col gap-3">
+          <InputField
+            label={t('password.new')}
+            type="password"
+            autoComplete="new-password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+          <InputField
+            label={t('password.confirm')}
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          <div>
+            <Button type="submit" variant="secondary">
+              {t('password.save')}
+            </Button>
+          </div>
+          {passwordMsg ? (
+            <p
+              role={passwordMsg.kind === 'error' ? 'alert' : 'status'}
+              className={
+                passwordMsg.kind === 'error' ? 'text-sm text-red-700' : 'text-sm text-emerald-800'
+              }
+            >
+              {passwordMsg.text}
+            </p>
+          ) : null}
+        </form>
       </Section>
 
       <Section title={t('team.title')}>
@@ -297,6 +371,21 @@ export default function SettingsPage() {
         ) : (
           <p className="text-slate-700">{t('invite.adminOnly')}</p>
         )}
+      </Section>
+
+      <Section title={t('leave.title')}>
+        <p className="text-sm text-slate-700">{t('leave.help')}</p>
+        <div>
+          <Button variant="danger" onClick={() => void onLeave()}>
+            <DoorOpen aria-hidden className="size-4" />
+            {t('leave.button')}
+          </Button>
+        </div>
+        {leaveError ? (
+          <p role="alert" className="text-sm text-red-700">
+            {t('leave.error')}
+          </p>
+        ) : null}
       </Section>
     </div>
   )

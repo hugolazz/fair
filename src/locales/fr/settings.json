@@ -40,6 +40,23 @@
     "pending": "Invitations en attente",
     "cancelInvite": "Annuler l'invitation"
   },
+  "password": {
+    "title": "Mot de passe",
+    "new": "Nouveau mot de passe",
+    "confirm": "Confirmez le mot de passe",
+    "save": "Changer le mot de passe",
+    "saved": "Mot de passe modifié.",
+    "tooShort": "Le mot de passe doit faire au moins {{min}} caractères.",
+    "mismatch": "Les deux mots de passe ne sont pas identiques.",
+    "error": "Le mot de passe n'a pas pu être modifié. Reconnectez-vous puis réessayez."
+  },
+  "leave": {
+    "title": "Quitter l'équipe",
+    "help": "Vous n'aurez plus accès aux salons, entreprises et notes de cette équipe. Propriétaire : le plus ancien admin (à défaut, le plus ancien membre) le devient ; si vous êtes seul(e), l'équipe est fermée. Vous pourrez ensuite rejoindre ou créer une autre équipe.",
+    "button": "Quitter l'équipe",
+    "confirm": "Quitter l'équipe « {{team}} » ? Vous n'aurez plus accès à ses données.",
+    "error": "Impossible de quitter l'équipe pour le moment."
+  },
   "invite": {
     "title": "Inviter un collègue",
     "email": "Adresse e-mail du collègue",

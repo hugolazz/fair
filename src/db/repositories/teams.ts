@@ -153,6 +153,15 @@ export async function removeMember(teamId: string, userId: string): Promise<void
   if (!data?.length) throw new Error('not allowed or not found')
 }
 
+/**
+ * Quitte l'équipe. Propriétaire avec des collègues : la propriété passe au plus ancien admin (à défaut, au plus ancien
+ * membre) ; propriétaire seul : l'équipe est fermée (masquée, données conservées).
+ */
+export async function leaveTeam(teamId: string): Promise<void> {
+  const { error } = await supabase.rpc('leave_team', { p_team: teamId })
+  if (error) throw error
+}
+
 export async function listInvitations(teamId: string): Promise<Invitation[]> {
   const { data, error } = await supabase
     .from('team_invitations')
