@@ -177,4 +177,6 @@ hébergement statique, en-têtes de sécurité, vérifications, sauvegardes, mis
 
 ## Licence
 
-[MIT](LICENSE)
+[PolyForm Internal Use 1.0.0](LICENSE) : le code est public et lisible. Une entreprise peut l'utiliser et le modifier
+pour ses propres besoins internes (y compris en l'auto-hébergeant), mais ne peut ni le redistribuer, ni le revendre, ni
+l'héberger comme service pour d'autres.

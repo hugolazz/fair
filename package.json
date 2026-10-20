@@ -1,7 +1,7 @@
 {
   "name": "fair",
   "private": true,
-  "license": "MIT",
+  "license": "PolyForm-Internal-Use-1.0.0",
   "version": "0.1.0",
   "type": "module",
   "packageManager": "pnpm@12.8.1",
