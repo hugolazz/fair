@@ -24,11 +24,12 @@ test.beforeAll(async () => {
 })
 
 // Écrans sans connexion : visités déconnecté.
-const PUBLIC = new Set(['connexion', 'création de compte'])
+const PUBLIC = new Set(['connexion', 'création de compte', 'mot de passe oublié'])
 
 const SCREENS: [string, (id: string) => string][] = [
   ['connexion', () => '/login'],
   ['création de compte', () => '/signup'],
+  ['mot de passe oublié', () => '/forgot-password'],
   ['salons', () => '/events'],
   ['participants', (id) => `/events/${id}/participants`],
   ['ma liste', (id) => `/events/${id}/my-list`],

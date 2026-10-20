@@ -244,6 +244,19 @@ describe('faux Supabase', () => {
     expect(await targets.fetchHistory(zeta.companyId, event!.id)).toEqual([])
   })
 
+  it('mot de passe oublié : le lien se demande pour n’importe quelle adresse, le nouveau mot de passe se pose sur la session', async () => {
+    const auth = await import('@/db/repositories/auth')
+    await auth.signOut()
+    // Même réponse pour une adresse connue et pour une adresse inconnue (aucune fuite d'information).
+    await expect(auth.requestPasswordReset(USERS.admin)).resolves.toBeUndefined()
+    await expect(auth.requestPasswordReset('inconnu@fair.test')).resolves.toBeUndefined()
+
+    // Le lien de l'e-mail ouvre une session : on y change le mot de passe.
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    await expect(auth.updatePassword('nouveau-mot-de-passe-1')).resolves.toBeUndefined()
+    await auth.signOut()
+  })
+
   it('inscription : nom d’usage, recherche d’une équipe par son nom, adhésion, profil modifiable', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')

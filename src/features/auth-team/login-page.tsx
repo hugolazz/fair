@@ -74,7 +74,13 @@ export default function LoginPage() {
           error={error}
           required
         />
-        <Button type="submit" disabled={signingIn} className="mt-3 min-h-[50px] w-full text-[15px]">
+        <Link
+          to="/forgot-password"
+          className="focus-visible:outline-brand-600 -mt-2 inline-flex min-h-11 items-center self-start rounded-full text-sm text-slate-600 underline underline-offset-4 hover:text-slate-900"
+        >
+          {t('login.forgot')}
+        </Link>
+        <Button type="submit" disabled={signingIn} className="min-h-[50px] w-full text-[15px]">
           {signingIn ? t('login.signingIn') : t('login.submit')}
         </Button>
         <Button asChild variant="secondary" className="min-h-[50px] w-full text-[15px]">

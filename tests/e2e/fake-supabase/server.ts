@@ -240,6 +240,11 @@ export async function startFakeSupabase(port: number) {
       state.accounts.set(email, account)
       return send(res, 200, session(account))
     }
+    if (path === '/auth/v1/recover') {
+      // Comme Supabase : même réponse que l'adresse existe ou non, aucun e-mail envoyé ici.
+      await readBody(req)
+      return send(res, 200, {})
+    }
     if (path === '/auth/v1/user') {
       const u = claimsOf(req)
       return u ? send(res, 200, authUser(u)) : send(res, 401, { msg: 'not authenticated' })

@@ -5,6 +5,8 @@ import { AppLayout } from './app-layout'
 import { RedirectIfSignedIn, RequireAdmin, RequireReady, RequireSignedIn } from './guards'
 
 const LoginPage = lazy(() => import('@/features/auth-team/login-page'))
+const ForgotPasswordPage = lazy(() => import('@/features/auth-team/forgot-password-page'))
+const ResetPasswordPage = lazy(() => import('@/features/auth-team/reset-password-page'))
 const SignupPage = lazy(() => import('@/features/auth-team/signup-page'))
 const OnboardingPage = lazy(() => import('@/features/auth-team/onboarding-page'))
 const EventsPage = lazy(() => import('@/features/events/events-page'))
@@ -26,8 +28,11 @@ const router = createBrowserRouter([
     children: [
       { path: '/login', element: <LoginPage /> },
       { path: '/signup', element: <SignupPage /> },
+      { path: '/forgot-password', element: <ForgotPasswordPage /> },
     ],
   },
+  // Sans garde : le lien de l'e-mail ouvre une session de récupération, qui ne doit pas être renvoyée vers /events.
+  { path: '/reset-password', element: <ResetPasswordPage /> },
   {
     element: <RequireSignedIn />,
     children: [{ path: '/onboarding', element: <OnboardingPage /> }],

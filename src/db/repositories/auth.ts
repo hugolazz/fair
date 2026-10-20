@@ -54,6 +54,25 @@ export async function signUp(
   return { confirmationNeeded: !data.session }
 }
 
+/**
+ * Envoie le lien de réinitialisation. Supabase répond pareil que l'adresse existe ou non : l'appelant ne doit jamais
+ * révéler si un compte existe. Le lien ramène sur `/reset-password` (adresse à lister dans les « Redirect URLs »).
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    ...(typeof window === 'undefined'
+      ? {}
+      : { redirectTo: `${window.location.origin}/reset-password` }),
+  })
+  if (error) throw error
+}
+
+/** Change le mot de passe de la session en cours (session de récupération ouverte par le lien de l'e-mail). */
+export async function updatePassword(password: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) throw error
+}
+
 export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut()
   if (error) throw error
