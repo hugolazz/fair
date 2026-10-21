@@ -9,15 +9,18 @@ import {
   type RawTable,
 } from '@/db/schemas/import'
 import { cleanRows } from './lib/clean'
+import { detectShowColumns, isCross } from './lib/mapping'
 
 type Props = {
   table: RawTable
   mapping: ColumnMapping
+  showCols: number[]
   restored: number
   firstRowIsHeader: boolean
   busy: boolean
   error: string | undefined
   onFirstRowIsHeader: (value: boolean) => void
+  onShowColsChange: (cols: number[]) => void
   onMappingChange: (mapping: ColumnMapping) => void
   onContinue: () => void
 }
@@ -25,11 +28,13 @@ type Props = {
 export function StepMapping({
   table,
   mapping,
+  showCols,
   restored,
   firstRowIsHeader,
   busy,
   error,
   onFirstRowIsHeader,
+  onShowColsChange,
   onMappingChange,
   onContinue,
 }: Props) {
@@ -47,6 +52,7 @@ export function StepMapping({
     onMappingChange(next)
   }
 
+  const showCandidates = useMemo(() => detectShowColumns(table, mapping), [table, mapping])
   const preview = table.rows.slice(0, 5)
   const canContinue = mapping.companyName !== undefined
   const hasContactColumns =
@@ -112,6 +118,33 @@ export function StepMapping({
           </SelectField>
         ))}
       </div>
+
+      {showCandidates.length > 0 ? (
+        <fieldset className="flex flex-col gap-2 text-sm">
+          <legend className="font-semibold">{t('mapping.showsTitle')}</legend>
+          <p className="text-slate-600">{t('mapping.showsHelp')}</p>
+          <div role="group" aria-label={t('mapping.showsGroup')} className="flex flex-col">
+            {showCandidates.map((col) => (
+              <label key={col} className="flex min-h-11 items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="size-5"
+                  checked={showCols.includes(col)}
+                  onChange={(e) =>
+                    onShowColsChange(
+                      e.target.checked ? [...showCols, col] : showCols.filter((c) => c !== col),
+                    )
+                  }
+                />
+                {t('mapping.showsColumn', {
+                  label: table.headers[col],
+                  count: table.rows.filter((r) => isCross(r[col] ?? '')).length,
+                })}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
 
       {hasContactColumns ? (
         <div className="flex flex-col gap-2 text-sm">

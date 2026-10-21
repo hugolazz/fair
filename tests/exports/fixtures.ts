@@ -83,8 +83,8 @@ export function sampleData(withLogo = true): ExportData {
       { userId: 'u3', name: 'Paul' },
     ],
     tags: [
-      { id: 't1', label: 'Client', color: '#0f766e' },
-      { id: 't2', label: 'Prospect', color: '#1d4ed8' },
+      { id: 't1', label: 'Client', color: '#0f766e', kind: 'type' },
+      { id: 't2', label: 'Prospect', color: '#1d4ed8', kind: 'type' },
     ],
     targets: [
       target('ec1', 'Carrefour', {

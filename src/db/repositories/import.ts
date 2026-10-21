@@ -1,3 +1,4 @@
+import { showColorFor } from '../schemas/prepare'
 import { supabase } from '@/lib/supabase'
 import { normalizeName } from '@/lib/normalize-name'
 import { createTag, ensureDefaultTags, setCompanyTag } from './targets'
@@ -102,24 +103,36 @@ function chunks<T>(items: T[], size = CHUNK): T[][] {
 }
 
 /**
- * Pose la typologie (client, prospect…) du fichier sur les sociétés. Un libellé inconnu crée le tag. Une erreur ici ne
- * remet pas en cause l'import des sociétés : les tags se corrigent ensuite depuis la fiche.
+ * Pose la typologie (client, prospect…) et les salons (pastilles) du fichier sur les sociétés. Un libellé inconnu crée
+ * le tag (couleur automatique pour un salon). Une erreur ici ne remet pas en cause l'import des sociétés : les tags se
+ * corrigent ensuite depuis la fiche.
  */
 async function applyCompanyTags(teamId: string, tags: CompanyTagWrite[]): Promise<void> {
   if (tags.length === 0) return
   try {
+    // Un libellé n'existe qu'une fois par équipe : s'il sert déjà à l'autre usage (typologie ou salon), on ne le double pas.
     const known = new Map(
-      (await ensureDefaultTags(teamId)).map((t) => [normalizeName(t.label), t.id]),
+      (await ensureDefaultTags(teamId)).map((t) => [
+        normalizeName(t.label),
+        { id: t.id, kind: t.kind },
+      ]),
     )
     const byTag = new Map<string, string[]>()
-    for (const { company_id, label } of tags) {
+    for (const { company_id, label, kind } of tags) {
       const key = normalizeName(label)
-      let tagId = known.get(key)
-      if (!tagId) {
-        tagId = (await createTag(teamId, label, '#475569')).id
-        known.set(key, tagId)
+      let tag = known.get(key)
+      if (tag && tag.kind !== kind) continue
+      if (!tag) {
+        const created = await createTag(
+          teamId,
+          label,
+          kind === 'show' ? showColorFor(label) : '#475569',
+          kind,
+        )
+        tag = { id: created.id, kind }
+        known.set(key, tag)
       }
-      byTag.set(tagId, [...(byTag.get(tagId) ?? []), company_id])
+      byTag.set(tag.id, [...(byTag.get(tag.id) ?? []), company_id])
     }
     for (const [tagId, companyIds] of byTag) await setCompanyTag(teamId, companyIds, tagId, true)
   } catch {

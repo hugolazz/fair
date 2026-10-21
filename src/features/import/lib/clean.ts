@@ -7,7 +7,7 @@ import {
   type RowError,
   type RowWarning,
 } from '@/db/schemas/import'
-import { normHeader } from './mapping'
+import { isCross, normHeader } from './mapping'
 import {
   cleanCell,
   normalizeEmail,
@@ -82,8 +82,17 @@ export function extractContacts(cell: (f: keyof ColumnMapping) => string): {
 
 export type CleanResult = { rows: CleanRow[]; errors: RowError[]; removed: RemovedCounts }
 
-/** Applique le mapping : nettoie chaque cellule, retire lignes vides / en-têtes répétés, signale les lignes inexploitables. */
-export function cleanRows(table: RawTable, mapping: ColumnMapping): CleanResult {
+const SHOWS_SEP = /\s*(?:\n|;|\||,)\s*/
+
+/**
+ * Applique le mapping : nettoie chaque cellule, retire lignes vides / en-têtes répétés, signale les lignes inexploitables.
+ * `showCols` = colonnes « salon » (une croix = l'entreprise y était ou y sera) : leur intitulé devient une pastille.
+ */
+export function cleanRows(
+  table: RawTable,
+  mapping: ColumnMapping,
+  showCols: readonly number[] = [],
+): CleanResult {
   const rows: CleanRow[] = []
   const errors: RowError[] = []
   const removed: RemovedCounts = { empty: 0, repeatedHeader: 0 }
@@ -124,6 +133,16 @@ export function cleanRows(table: RawTable, mapping: ColumnMapping): CleanResult 
     const url = normalizeUrl(get('website'))
     if (url.invalid) warnings.push('invalid_url')
     const priority = normalizePriority(get('priority'))
+    const shows = new Map<string, string>() // clé normalisée → libellé, sans répétition
+    for (const col of showCols) {
+      const label = cleanCell(table.headers[col] ?? '')
+      if (label && isCross(raw[col] ?? '')) shows.set(normalizeName(label), label)
+    }
+    // La première graphie d'un salon l'emporte (« NRF 09/26 » puis « nrf 09/26 » = un seul salon).
+    for (const label of parts(cell('shows'), SHOWS_SEP)) {
+      const key = normalizeName(label)
+      if (!isCross(label) && !shows.has(key)) shows.set(key, label)
+    }
     const extracted = extractContacts(cell)
     warnings.push(...extracted.warnings)
 
@@ -140,6 +159,7 @@ export function cleanRows(table: RawTable, mapping: ColumnMapping): CleanResult 
         city: cleanCell(get('city')),
         priority,
         tag: cleanCell(get('tag')),
+        shows: [...shows.values()],
         comment: cleanCell(cell('comment'), true),
       },
       contacts: extracted.contacts,

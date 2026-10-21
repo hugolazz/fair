@@ -6,6 +6,8 @@ export type Filters = {
   priorities: (Priority | 'none')[]
   /** Au moins un de ces tags (vide = indifférent). */
   tagIds: string[]
+  /** Au moins un de ces salons (vide = indifférent). */
+  showIds: string[]
   assignee: 'any' | 'none' | string
   goal: 'any' | 'none' | Goal
 }
@@ -14,6 +16,7 @@ export const emptyFilters: Filters = {
   search: '',
   priorities: [],
   tagIds: [],
+  showIds: [],
   assignee: 'any',
   goal: 'any',
 }
@@ -23,6 +26,7 @@ export function countActiveFilters(f: Filters): number {
     (f.search.trim() ? 1 : 0) +
     (f.priorities.length ? 1 : 0) +
     (f.tagIds.length ? 1 : 0) +
+    (f.showIds.length ? 1 : 0) +
     (f.assignee !== 'any' ? 1 : 0) +
     (f.goal !== 'any' ? 1 : 0)
   )
@@ -33,10 +37,12 @@ export function filterTargets(targets: Target[], f: Filters): Target[] {
   const terms = buildSearchKey([f.search]).split(/\s+/).filter(Boolean)
   const prios = new Set(f.priorities)
   const tags = new Set(f.tagIds)
+  const shows = new Set(f.showIds)
   return targets.filter((t) => {
     if (terms.length && !terms.every((w) => t.searchKey.includes(w))) return false
     if (prios.size && !prios.has(t.priority ?? 'none')) return false
     if (tags.size && !t.tagIds.some((id) => tags.has(id))) return false
+    if (shows.size && !t.tagIds.some((id) => shows.has(id))) return false
     if (f.assignee === 'none' && t.assigneeIds.length > 0) return false
     if (f.assignee !== 'any' && f.assignee !== 'none' && !t.assigneeIds.includes(f.assignee))
       return false

@@ -175,7 +175,7 @@ export async function fetchExportData(
   const tagRows = await paged((from, to) =>
     client
       .from('tags')
-      .select('id, label, color')
+      .select('id, label, color, kind')
       .eq('scope', 'company')
       .is('deleted_at', null)
       .order('id')
@@ -337,7 +337,12 @@ export async function fetchExportData(
       timezone: str(e.timezone) ?? 'Europe/Paris',
     },
     members: userIds.map((userId) => ({ userId, name: names.get(userId) ?? '—' })),
-    tags: tagRows.map((r) => ({ id: String(r.id), label: String(r.label), color: str(r.color) })),
+    tags: tagRows.map((r) => ({
+      id: String(r.id),
+      label: String(r.label),
+      color: str(r.color),
+      kind: r.kind === 'show' ? ('show' as const) : ('type' as const),
+    })),
     targets,
     contacts,
     meetings,

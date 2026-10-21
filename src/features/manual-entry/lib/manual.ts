@@ -136,6 +136,7 @@ export function toCleanRow(f: CompanyForm): CleanRow {
       city: f.city.trim(),
       priority: f.priority || null,
       tag: f.tag.trim(),
+      shows: [],
       comment: f.history.trim(),
     },
     contacts: contact ? [contact] : [],

@@ -21,6 +21,7 @@ import { PriorityPicker } from './atoms'
 import { ContactsEditor } from './contacts-editor'
 import { isContested } from './lib/misc'
 import { PlanningSection } from './planning-section'
+import { ShowsEditor } from './shows-editor'
 import { TagManagerDialog } from './tag-manager-dialog'
 import { useAssignFlow } from './use-assign-flow'
 import type { TargetsApi } from './use-targets'
@@ -263,6 +264,10 @@ function EditBody({
             )
           })}
         </div>
+      </Section>
+
+      <Section title={t('shows.title')}>
+        <ShowsEditor target={target} api={api} admin={admin} />
       </Section>
 
       <Section title={t('sheet.assignees')}>

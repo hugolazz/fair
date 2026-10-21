@@ -24,6 +24,7 @@
     "stand": "Stand",
     "industry": "Secteur",
     "tags": "Tags",
+    "shows": "Salons",
     "goal": "Objectif",
     "assignees": "Assigné à",
     "meeting": "RDV",
@@ -54,7 +55,24 @@
     "count": "{{count}} sur {{total}} entreprises",
     "empty": "Aucune entreprise ne correspond à ces filtres.",
     "none": "Aucun participant : importez un fichier pour commencer.",
-    "tagsLabel": "Tags (au moins un)"
+    "tagsLabel": "Tags (au moins un)",
+    "show": "Salon",
+    "showsLabel": "Salons (au moins un)"
+  },
+  "shows": {
+    "title": "Salons",
+    "past": " (était présent)",
+    "upcoming": " (sera présent)",
+    "legend": "Coche : était présent. Horloge, pointillés : sera présent.",
+    "more": "+{{count}}",
+    "none": "Aucun salon pour cette entreprise.",
+    "edit": "Salons de l'entreprise",
+    "new": "Ajouter un salon",
+    "newPlaceholder": "Ex. NRF 09/26",
+    "add": "Ajouter",
+    "duplicate": "Ce salon existe déjà.",
+    "error": "Le salon n'a pas pu être ajouté.",
+    "hint": "Ajoutez la date au nom (09/26) pour savoir si l'entreprise y était ou y sera."
   },
   "select": {
     "mode": "Sélectionner",

@@ -26,7 +26,7 @@ import { useReadySession } from '@/features/auth-team/session'
 import { cn } from '@/lib/cn'
 import { newId } from '@/lib/ids'
 import { defaultDecisions } from './lib/dedupe'
-import { resolveMapping, toStoredMapping } from './lib/mapping'
+import { detectShowColumns, resolveMapping, toStoredMapping } from './lib/mapping'
 import { buildTable } from './lib/parse'
 import { buildPlan } from './lib/plan'
 import type { Analysis, ParseInput } from './lib/runner'
@@ -59,6 +59,8 @@ export default function ImportPage() {
   const [stored, setStored] = useState<StoredMapping | null>(null)
   const [table, setTable] = useState<RawTable>()
   const [mapping, setMapping] = useState<ColumnMapping>({})
+  // Colonnes de salons cochées (croix = présent) : proposées d'office, décochables à l'étape des colonnes.
+  const [showCols, setShowCols] = useState<number[]>([])
   const [restored, setRestored] = useState(0)
   const [context, setContext] = useState<Context>()
   const [analysis, setAnalysis] = useState<Analysis>()
@@ -105,6 +107,7 @@ export default function ImportPage() {
       setFirstRowIsHeader(true)
       setTable(tbl)
       setMapping(resolved.mapping)
+      setShowCols(detectShowColumns(tbl, resolved.mapping))
       setRestored(resolved.restored)
       setStage('mapping')
     } catch (e) {
@@ -124,6 +127,7 @@ export default function ImportPage() {
       setFirstRowIsHeader(value)
       setTable(tbl)
       setMapping(resolved.mapping)
+      setShowCols(detectShowColumns(tbl, resolved.mapping))
       setRestored(resolved.restored)
     } catch (e) {
       setError(errorText(e, t('errors.parse_failed')))
@@ -147,7 +151,9 @@ export default function ImportPage() {
         setError(t('errors.load'))
         return
       }
-      const result = await worker.analyze(table, mapping, ctx.known)
+      // Une colonne devenue un champ (ou décochée) n'est plus une colonne de salon.
+      const shows = detectShowColumns(table, mapping).filter((c) => showCols.includes(c))
+      const result = await worker.analyze(table, mapping, shows, ctx.known)
       setContext(ctx)
       setAnalysis(result)
       setDecisions(defaultDecisions(result.groups))
@@ -266,6 +272,8 @@ export default function ImportPage() {
           busy={busy}
           error={error}
           onFirstRowIsHeader={onFirstRowIsHeader}
+          showCols={showCols}
+          onShowColsChange={setShowCols}
           onMappingChange={setMapping}
           onContinue={() => void onContinue()}
         />

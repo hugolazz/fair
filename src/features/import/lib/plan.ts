@@ -26,6 +26,8 @@ type Slot = {
   stand: string
   priority: Priority | null
   tag: string
+  /** Salons de cette société (clé normalisée → libellé). */
+  shows: Map<string, string>
   /** Commentaires des lignes de cette société (sans répétition). */
   comment: string
   rows: CleanRow[]
@@ -84,6 +86,7 @@ export function buildPlan(input: PlanInput): ImportPlan {
       stand: '',
       priority: null,
       tag: '',
+      shows: new Map(),
       comment: '',
       rows: [],
     }
@@ -103,6 +106,7 @@ export function buildPlan(input: PlanInput): ImportPlan {
       stand: '',
       priority: null,
       tag: '',
+      shows: new Map(),
       comment: '',
       rows: [],
     }
@@ -130,6 +134,10 @@ export function buildPlan(input: PlanInput): ImportPlan {
     if (!slot.stand && row.company.stand) slot.stand = row.company.stand
     if (!slot.priority && row.company.priority) slot.priority = row.company.priority
     if (!slot.tag && row.company.tag) slot.tag = row.company.tag
+    for (const label of row.company.shows) {
+      const key = normalizeName(label)
+      if (!slot.shows.has(key)) slot.shows.set(key, label)
+    }
     slot.comment = mergeHistory(slot.comment, row.company.comment)
     slot.rows.push(row)
   }
@@ -227,7 +235,10 @@ export function buildPlan(input: PlanInput): ImportPlan {
         rowNumbers,
       })
     }
-    if (slot.tag) companyTags.push({ company_id: companyId, label: slot.tag, rowNumbers })
+    if (slot.tag)
+      companyTags.push({ company_id: companyId, label: slot.tag, kind: 'type', rowNumbers })
+    for (const label of slot.shows.values())
+      companyTags.push({ company_id: companyId, label, kind: 'show', rowNumbers })
 
     const seen = new Set<string>()
     for (const row of slot.rows) {

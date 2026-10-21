@@ -36,6 +36,19 @@ describe('filterTargets', () => {
     expect(filterTargets(data, emptyFilters)).toHaveLength(4)
     expect(countActiveFilters(emptyFilters)).toBe(0)
   })
+  it('filtre par salon : au moins un des salons choisis', () => {
+    const withShows = [
+      target('1', 'Carrefour', { tagIds: ['client', 'nrf'] }),
+      target('2', 'Décathlon', { tagIds: ['tfr'] }),
+      target('3', 'Zalando', { tagIds: ['client'] }),
+    ]
+    expect(ids(filterTargets(withShows, { ...emptyFilters, showIds: ['nrf'] }))).toEqual(['1'])
+    expect(ids(filterTargets(withShows, { ...emptyFilters, showIds: ['nrf', 'tfr'] }))).toEqual([
+      '1',
+      '2',
+    ])
+    expect(countActiveFilters({ ...emptyFilters, showIds: ['nrf'] })).toBe(1)
+  })
   it('recherche sans casse ni accents, sur le nom, le stand, le secteur et la ville', () => {
     expect(ids(filterTargets(data, { ...emptyFilters, search: 'DECATHLON' }))).toEqual(['2'])
     expect(ids(filterTargets(data, { ...emptyFilters, search: 'b12' }))).toEqual(['1'])

@@ -13,6 +13,7 @@ type RowOpts = {
   linkedin?: string
   priority?: 'A' | 'B' | 'C'
   tag?: string
+  shows?: string[]
   comment?: string
 }
 
@@ -32,6 +33,7 @@ export function row(rowNumber: number, name: string, o: RowOpts = {}): CleanRow 
       city: '',
       priority: o.priority ?? null,
       tag: o.tag ?? '',
+      shows: o.shows ?? [],
       comment: o.comment ?? '',
     },
     contacts: hasContact

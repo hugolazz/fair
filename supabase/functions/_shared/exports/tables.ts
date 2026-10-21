@@ -1,4 +1,4 @@
-import { memberNames, showsNews } from './select.ts'
+import { memberNames, showsNews, usesShows } from './select.ts'
 import { statusLabel } from './labels.ts'
 import { formatDate, formatDateTime, wallClock } from './format.ts'
 import type { ContactRec, ExportData, MeetingRec, Priority } from './types.ts'
@@ -48,12 +48,17 @@ export const SALON_COLUMNS: Column[] = [
 ]
 
 const NEWS_COLUMN = col('news', 'Actualité', 'text', 12)
+const SHOWS_COLUMN = col('shows', 'Salons', 'text', 34)
 
-/** Les colonnes de l'export : celles du salon, plus « Actualité » (juste après « À recontacter ») si elle est utilisée (voir `showsNews`). */
-export function salonColumns(withNews: boolean): Column[] {
-  if (!withNews) return SALON_COLUMNS
-  const at = SALON_COLUMNS.findIndex((c) => c.key === 'recontact') + 1
-  return [...SALON_COLUMNS.slice(0, at), NEWS_COLUMN, ...SALON_COLUMNS.slice(at)]
+/**
+ * Les colonnes de l'export : celles du salon, plus « Salons » (juste après « Commentaire », donc après les 14 colonnes
+ * de l'import) si des entreprises en ont, et « Actualité » (juste après « À recontacter ») si elle est utilisée.
+ */
+export function salonColumns(withNews: boolean, withShows = false): Column[] {
+  const out = [...SALON_COLUMNS]
+  if (withNews) out.splice(out.findIndex((c) => c.key === 'recontact') + 1, 0, NEWS_COLUMN)
+  if (withShows) out.splice(IMPORT_COLUMNS.length, 0, SHOWS_COLUMN)
+  return out
 }
 
 /** Les colonnes du fichier d'import : les 14 premières de l'export (même intitulés, donc mêmes réglages de mapping). */
@@ -89,7 +94,8 @@ function contactNews(c: ContactRec | null, meetings: MeetingRec[]): string | nul
 export function buildSalonTable(data: ExportData): Table {
   const tz = data.event.timezone
   const owner = memberNames(data)
-  const tagLabel = new Map(data.tags.map((t) => [t.id, t.label]))
+  const tagLabel = new Map(data.tags.filter((t) => t.kind === 'type').map((t) => [t.id, t.label]))
+  const showLabel = new Map(data.tags.filter((t) => t.kind === 'show').map((t) => [t.id, t.label]))
 
   const contactsOf = new Map<string, ContactRec[]>()
   for (const c of data.contacts)
@@ -131,6 +137,11 @@ export function buildSalonTable(data: ExportData): Table {
           .map((id) => tagLabel.get(id) ?? '')
           .filter(Boolean)
           .join(', ') || null,
+      shows:
+        t.tagIds
+          .map((id) => showLabel.get(id) ?? '')
+          .filter(Boolean)
+          .join(', ') || null,
       history: orNull(t.history),
       assignees: t.assigneeIds.map(owner).join(', ') || null,
       status: last ? statusLabel(last.status) : 'Pas de rencontre',
@@ -157,7 +168,12 @@ export function buildSalonTable(data: ExportData): Table {
       })
     }
   }
-  return { id: 'salon', title: 'Salon', columns: salonColumns(showsNews(data)), rows }
+  return {
+    id: 'salon',
+    title: 'Salon',
+    columns: salonColumns(showsNews(data), usesShows(data)),
+    rows,
+  }
 }
 
 /** Valeur d'une cellule en texte (CSV, aperçus). */

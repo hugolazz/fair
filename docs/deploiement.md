@@ -53,6 +53,7 @@ Sans la CLI : coller les fichiers dans _SQL Editor_, **dans l'ordre numérique**
 | `20261002000017_leave_team.sql`              | quitter l'équipe (`leave_team`)                                                |
 | `20261002000018_meeting_news.sql`            | case « Actualité ? » : `teams.news_enabled` et `meetings.news`                 |
 | `20261002000019_retire_orphan_companies.sql` | un salon supprimé retire aussi ses entreprises qui ne sont nulle part ailleurs |
+| `20261002000020_show_tags.sql`               | pastilles de salons : `tags.kind` (`type` ou `show`)                           |
 
 Contrôle après coup, dans _SQL Editor_ :
 

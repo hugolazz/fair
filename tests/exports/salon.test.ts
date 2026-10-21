@@ -205,6 +205,39 @@ describe('table du salon', () => {
     expect(without.pages.join(' ')).toContain('Recontacter')
   })
 
+  it('« Salons » : une colonne dans l’Excel et le CSV seulement si des entreprises ont des salons', () => {
+    expect(buildSalonTable(sampleData()).columns.map((c) => c.key)).not.toContain('shows')
+
+    const d = sampleData()
+    d.tags.push(
+      { id: 's1', label: 'NRF 09/26', color: '#1d4ed8', kind: 'show' },
+      { id: 's2', label: 'One to One Monaco (03/27)', color: '#6d28d9', kind: 'show' },
+    )
+    d.targets.find((t) => t.name === 'Carrefour')!.tagIds.push('s1', 's2')
+    const table = buildSalonTable(d)
+    const keys = table.columns.map((c) => c.key)
+    // Juste après « Commentaire » : les 14 premières colonnes restent celles de l'import.
+    expect(keys.slice(0, 14)).toEqual(SALON_COLUMNS.slice(0, 14).map((c) => c.key))
+    expect(keys[14]).toBe('shows')
+    expect(table.columns[14]!.label).toBe('Salons')
+    const carrefour = table.rows.map((r) => r.cells).find((r) => r.name === 'Carrefour')!
+    expect(carrefour.shows).toBe('NRF 09/26, One to One Monaco (03/27)')
+    // Les salons ne se mélangent pas aux typologies de la colonne « Type ».
+    expect(carrefour.tags).toBe('Client')
+    expect(table.rows.map((r) => r.cells).find((r) => r.name === 'Décathlon')!.shows).toBeNull()
+  })
+
+  it('les salons ne figurent pas dans les PDF', async () => {
+    const d = sampleData()
+    d.tags.push({ id: 's1', label: 'NRF 09/26', color: '#1d4ed8', kind: 'show' })
+    d.targets.find((t) => t.name === 'Carrefour')!.tagIds.push('s1')
+    const header = parseCsv(buildSalonCsv(d))[0]!
+    expect(header).toContain('Salons')
+    const pdf = await readPdf((await generateExport(d, 'pdf')).bytes)
+    expect(pdf.pages.join(' ')).not.toContain('NRF 09/26')
+    expect(pdf.pages.join(' ')).not.toContain('Salons')
+  })
+
   it('signale les contacts désinscrits', () => {
     expect(of('Carrefour').map((r) => r.optOut)).toEqual([null, 'Oui'])
   })

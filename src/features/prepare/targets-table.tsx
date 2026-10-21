@@ -13,6 +13,7 @@ import { cn } from '@/lib/cn'
 import { AssignPicker } from './assign-picker'
 import { Select } from '@/components/ui/select'
 import { PriorityBadge } from './atoms'
+import { ShowPills } from './show-pills'
 import { TagPicker } from './tag-picker'
 import { formatSlot } from './lib/format'
 import type { Sort, SortKey } from './lib/sort'
@@ -21,6 +22,7 @@ import { useVirtualRows } from './use-virtual-rows'
 export type ListProps = {
   rows: Target[]
   tags: Tag[]
+  shows: Tag[]
   selected: Set<string>
   openId: string | undefined
   meId: string
@@ -44,10 +46,10 @@ type Props = ListProps & {
 
 const ROW_HEIGHT = 52
 const HEADER_HEIGHT = 48 // en-tête collant (h-12)
-// case · prio · entreprise · stand · secteur · tags · assignés · rdv · contacts
+// case · prio · entreprise · stand · secteur · tags · salons · assignés · rdv · contacts
 const GRID =
-  'grid grid-cols-[2.75rem_3rem_minmax(12rem,2.4fr)_4.5rem_minmax(7rem,1.2fr)_minmax(7rem,1.4fr)_minmax(6rem,1fr)_8rem_4.5rem] items-center'
-const MIN_WIDTH = 'min-w-[44rem]'
+  'grid grid-cols-[2.75rem_3rem_minmax(12rem,2.4fr)_4.5rem_minmax(7rem,1.2fr)_minmax(7rem,1.4fr)_minmax(8rem,1.6fr)_minmax(6rem,1fr)_8rem_4.5rem] items-center'
+const MIN_WIDTH = 'min-w-[52rem]'
 
 const COLUMNS: { key: SortKey | null; label: string; className?: string }[] = [
   { key: 'priority', label: 'priority' },
@@ -55,6 +57,7 @@ const COLUMNS: { key: SortKey | null; label: string; className?: string }[] = [
   { key: 'stand', label: 'stand' },
   { key: 'industry', label: 'industry' },
   { key: null, label: 'tags' },
+  { key: null, label: 'shows' },
   { key: 'assignee', label: 'assignees' },
   { key: 'meeting', label: 'meeting' },
   { key: null, label: 'contacts' },
@@ -211,6 +214,9 @@ export function TargetsTable(p: Props) {
                     tagById={tagById}
                     onToggle={(tagId, on) => p.onToggleTag(row.id, tagId, on)}
                   />
+                </div>
+                <div role="cell" className="min-w-0 px-2">
+                  <ShowPills tagIds={row.tagIds} shows={p.shows} compact max={2} />
                 </div>
                 <div role="cell" className="min-w-0 px-2">
                   <AssignPicker

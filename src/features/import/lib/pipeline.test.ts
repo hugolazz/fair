@@ -17,7 +17,14 @@ async function run(file: string, knownCompanies = [known('k0', 'Zzz')]) {
   if (!parsed.ok || parsed.type !== 'parsed') throw new Error('parse failed')
   const table = buildTable(parsed.grid, true)
   const { mapping } = resolveMapping(table)
-  const res = await handleRequest({ id: 2, type: 'analyze', table, mapping, known: knownCompanies })
+  const res = await handleRequest({
+    id: 2,
+    type: 'analyze',
+    table,
+    mapping,
+    showCols: [],
+    known: knownCompanies,
+  })
   if (!res.ok || res.type !== 'analyzed') throw new Error('analyze failed')
   return { table, analysis: res.analysis }
 }

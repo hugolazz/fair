@@ -135,6 +135,7 @@ export default function PreparePage() {
   const common = {
     rows,
     tags: api.tags,
+    shows: api.shows,
     selected,
     openId,
     meId,
@@ -176,6 +177,7 @@ export default function PreparePage() {
         filters={filters}
         onChange={changeFilters}
         tags={api.tags}
+        shows={api.shows}
         members={api.members}
         meId={meId}
         total={total}

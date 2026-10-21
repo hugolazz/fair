@@ -1,0 +1,62 @@
+import { describe, expect, it } from 'vitest'
+import { SHOW_COLORS, showColorFor, type Tag } from '@/db/schemas/prepare'
+import { showShortName, showsOf, showTiming } from './shows'
+
+const today = new Date(2026, 9, 21) // 21 octobre 2026
+
+describe('showTiming', () => {
+  it('lit le mois et l’année du libellé : passé, ou à venir', () => {
+    expect(showTiming('NRF 09/26', today)).toBe('past')
+    expect(showTiming('Tech For Retail 03/26', today)).toBe('past')
+    expect(showTiming('One to One Monaco (03/27)', today)).toBe('upcoming')
+    expect(showTiming('Retail 01/2027', today)).toBe('upcoming')
+  })
+
+  it('le mois en cours compte comme à venir (le salon n’est pas fini)', () => {
+    expect(showTiming('Salon 10/26', today)).toBe('upcoming')
+    expect(showTiming('Salon 09/26', today)).toBe('past')
+  })
+
+  it('lit aussi une date complète', () => {
+    expect(showTiming('Forum 12/05/2027', today)).toBe('upcoming')
+    expect(showTiming('Forum 20/10/2026', today)).toBe('past')
+    expect(showTiming('Forum 21/10/2026', today)).toBe('upcoming')
+  })
+
+  it('rend null sans date lisible dans le nom', () => {
+    expect(showTiming('NRF', today)).toBeNull()
+    expect(showTiming('Salon 99/26', today)).toBeNull() // mois invalide
+    expect(showTiming('Salon 2026', today)).toBeNull()
+  })
+})
+
+describe('showShortName', () => {
+  it('retire la date du nom', () => {
+    expect(showShortName('NRF 09/26')).toBe('NRF')
+    expect(showShortName(' One to One Monaco (03/27)')).toBe('One to One Monaco')
+    expect(showShortName('Forum 12/05/2027')).toBe('Forum')
+  })
+
+  it('garde le libellé s’il ne reste rien', () => {
+    expect(showShortName('09/26')).toBe('09/26')
+    expect(showShortName('NRF')).toBe('NRF')
+  })
+})
+
+describe('showColorFor', () => {
+  it('est stable (mêmes couleurs partout), insensible à la casse et aux accents', () => {
+    expect(showColorFor('NRF 09/26')).toBe(showColorFor('nrf 09/26'))
+    expect(showColorFor('Salon Été 26')).toBe(showColorFor('salon ete 26'))
+    expect(SHOW_COLORS).toContain(showColorFor('Autre salon'))
+  })
+})
+
+describe('showsOf', () => {
+  const tag = (id: string, label: string): Tag => ({ id, label, color: '#000000', kind: 'show' })
+  const shows = [tag('a', 'One to One Monaco (03/27)'), tag('b', 'NRF 09/26'), tag('c', 'Alpha')]
+
+  it('ne garde que les salons de l’entreprise, du plus ancien au plus récent, sans date en dernier', () => {
+    expect(showsOf(['a', 'b', 'c', 'x'], shows).map((s) => s.id)).toEqual(['b', 'a', 'c'])
+    expect(showsOf(['x'], shows)).toEqual([])
+  })
+})

@@ -119,7 +119,7 @@ function entreprises(w: PdfWriter, data: ExportData) {
   if (targets.length === 0) return none(w, 'Aucune entreprise.')
   const owner = memberNames(data)
   const news = showsNews(data)
-  const tagLabel = new Map(data.tags.map((t) => [t.id, t.label]))
+  const tagLabel = new Map(data.tags.filter((t) => t.kind === 'type').map((t) => [t.id, t.label]))
   const meetingsOf = new Map<string, MeetingRec[]>()
   for (const m of data.meetings)
     meetingsOf.set(m.targetId, [...(meetingsOf.get(m.targetId) ?? []), m])

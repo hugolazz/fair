@@ -81,9 +81,10 @@ export function useImportWorker() {
     async analyze(
       table: RawTable,
       mapping: ColumnMapping,
+      showCols: number[],
       known: KnownCompany[],
     ): Promise<Analysis> {
-      const res = await call((id) => ({ id, type: 'analyze', table, mapping, known }))
+      const res = await call((id) => ({ id, type: 'analyze', table, mapping, showCols, known }))
       if (!res.ok) throw new ImportError(res.code)
       if (res.type !== 'analyzed') throw new ImportError('parse_failed')
       return res.analysis

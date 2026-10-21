@@ -13,6 +13,7 @@ import {
   type MeetingStatus,
   type Priority,
   type Tag,
+  type TagKind,
   type Target,
   type TargetContact,
 } from '../schemas/prepare'
@@ -38,7 +39,7 @@ const TARGET_SELECT =
 export async function fetchTags(): Promise<Tag[]> {
   const { data, error } = await supabase
     .from('tags')
-    .select('id, label, color')
+    .select('id, label, color, kind')
     .eq('scope', 'company')
     .is('deleted_at', null)
     .order('label')
@@ -47,13 +48,15 @@ export async function fetchTags(): Promise<Tag[]> {
     id: t.id as string,
     label: t.label as string,
     color: (t.color as string | null) ?? '#475569',
+    kind: t.kind === 'show' ? ('show' as const) : ('type' as const),
   }))
 }
 
 /** Crée les tags par défaut (client, prospect, partenaire, concurrent, veille) si l'équipe n'en a aucun. */
 export async function ensureDefaultTags(teamId: string): Promise<Tag[]> {
   const existing = await fetchTags()
-  if (existing.length > 0) return existing
+  // Les pastilles de salons ne comptent pas : une équipe qui n'a que des salons reçoit quand même les typologies.
+  if (existing.some((t) => t.kind === 'type')) return existing
   const { error } = await supabase.from('tags').insert(
     DEFAULT_TAGS.map((t) => ({
       id: newId(),
@@ -264,13 +267,18 @@ export async function updateTargets(ids: string[], patch: TargetPatch): Promise<
 
 // --- Tags -------------------------------------------------------------------------------------------------------------
 
-export async function createTag(teamId: string, label: string, color: string): Promise<Tag> {
+export async function createTag(
+  teamId: string,
+  label: string,
+  color: string,
+  kind: TagKind = 'type',
+): Promise<Tag> {
   const id = newId()
   const { error } = await supabase
     .from('tags')
-    .insert({ id, team_id: teamId, scope: 'company', label, color })
+    .insert({ id, team_id: teamId, scope: 'company', label, color, kind })
   if (error) throw error
-  return { id, label, color }
+  return { id, label, color, kind }
 }
 
 export async function updateTag(id: string, label: string, color: string): Promise<void> {

@@ -13,6 +13,9 @@ Trois formats, aucun filtre, aucun réglage. Le fichier est **celui qu'on a impo
 | 1 à 14, **reprise de l'import** | Société · Site web · Stand · Secteur · Pays · Ville · Priorité (A / B / C) · Type (tags) · Contact · Fonction · E-mail · Téléphone · LinkedIn · Commentaire (= historique de l'entreprise)                                                        |
 | 15 à 22, **pendant le salon**   | Commerciaux · Statut de la rencontre · Date de la rencontre · Intérêt (1-5) · À recontacter (Oui / Non, propre à chaque contact) · **Actualité** (facultative, voir plus bas) · Prochaine étape · Notes du salon (datées et signées) · Désinscrit |
 
+La colonne **Salons** (« NRF 09/26, One to One Monaco (03/27) ») vient juste après « Commentaire » dans l'Excel et le CSV, uniquement si des
+entreprises ont des salons (pastilles de la fiche) ; elle ne figure pas dans les PDF. Elle se réimporte (intitulé « Salons »).
+
 La colonne **Actualité** (Oui / Non, comme « À recontacter ») n'existe que si l'équipe a activé la case « Actualité ? » dans _Réglages → Équipe_, ou si au
 moins une rencontre l'a cochée (les réponses déjà saisies ne disparaissent pas quand on désactive l'option). Dans les PDF (tableaux Entreprises et
 Rencontres), la colonne « Recontacter » est toujours présente et « Actualité » suit la même règle ; le tableau « Rencontres » n'a pas de

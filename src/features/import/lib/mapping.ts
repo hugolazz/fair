@@ -158,6 +158,7 @@ const SYNONYMS: Record<ImportField, string[]> = {
     'history',
   ],
   tag: ['type', 'typologie', 'tag', 'tags', 'type de compte', 'type d entreprise', 'relation'],
+  shows: ['salons', 'salon', 'salons visites', 'evenements', 'events', 'shows'],
 }
 
 /** Note de 0 à 1 : intitulé identique à un synonyme = 1 ; synonyme contenu dans l'intitulé = plus faible. */
@@ -169,6 +170,8 @@ function headerScore(header: string, field: ImportField): number {
   for (const syn of SYNONYMS[field]) {
     // « Name » seul est ambigu : plutôt la société que le contact.
     if (n === syn) return syn !== 'name' ? 1 : field === 'companyName' ? 0.5 : 0.45
+    // « Salons » (liste) : intitulé exact seulement, car « Salon passé 09/20 » est une colonne de croix, pas une liste.
+    if (field === 'shows') continue
     const st = syn.split(' ')
     if (st.every((t) => tokens.includes(t)))
       best = Math.max(best, 0.6 + 0.3 * (st.length / tokens.length))
@@ -287,4 +290,26 @@ export function toStoredMapping(
     if (col !== undefined && table.headers[col]) columns[field] = table.headers[col]
   }
   return { firstRowIsHeader, columns }
+}
+
+// Colonnes « salon » : un fichier peut avoir une colonne par salon (« NRF 09/26 », « One to One Monaco (03/27) »…) ; une
+// croix en face d'une entreprise veut dire qu'elle y était ou qu'elle y sera.
+const CROSSES = new Set(['x', '×', '✓', '✔', '✔️', '✅', 'oui', 'yes', 'y', '1', 'vrai', 'true'])
+
+/** Cellule « cochée » d'une colonne salon (croix, coche, oui…). */
+export const isCross = (v: string): boolean => CROSSES.has(v.trim().toLowerCase())
+
+/**
+ * Colonnes qui ressemblent à des colonnes salon : pas déjà utilisées par un champ, un intitulé, et des cellules
+ * remplies uniquement de croix (au moins une).
+ */
+export function detectShowColumns(table: RawTable, mapping: ColumnMapping): number[] {
+  const used = new Set(Object.values(mapping))
+  const cols: number[] = []
+  table.headers.forEach((header, col) => {
+    if (used.has(col) || !header.trim()) return
+    const filled = table.rows.map((r) => (r[col] ?? '').trim()).filter(Boolean)
+    if (filled.length > 0 && filled.every(isCross)) cols.push(col)
+  })
+  return cols
 }

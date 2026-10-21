@@ -17,6 +17,7 @@ import {
   type MeetingReportPatch,
 } from '@/db/repositories/targets'
 import { listMembers } from '@/db/repositories/teams'
+import { showColorFor } from '@/db/schemas/prepare'
 import type { Goal, Priority, Tag, Target, TeamMember } from '@/db/schemas/prepare'
 
 type Data = { targets: Target[]; tags: Tag[]; members: TeamMember[] }
@@ -204,6 +205,25 @@ export function useTargets(eventId: string, teamId: string) {
         }
       },
 
+      /** Nouveau salon (pastille) : couleur automatique, calculée sur le libellé. */
+      createShow: async (label: string): Promise<Tag | null> => {
+        try {
+          const tag = await createTagRemote(teamId, label, showColorFor(label), 'show')
+          setData((d) =>
+            d
+              ? {
+                  ...d,
+                  tags: [...d.tags, tag].sort((a, b) => a.label.localeCompare(b.label, 'fr')),
+                }
+              : d,
+          )
+          return tag
+        } catch {
+          setActionError(true)
+          return null
+        }
+      },
+
       updateTag: (id: string, label: string, color: string) =>
         run(
           (d) => ({ ...d, tags: d.tags.map((t) => (t.id === id ? { ...t, label, color } : t)) }),
@@ -316,9 +336,14 @@ export function useTargets(eventId: string, teamId: string) {
     return (userId: string) => map.get(userId) ?? '?'
   }, [data?.members])
 
+  // Typologies (Client, Prospect…) d'un côté, pastilles de salons de l'autre : mêmes liens, deux usages.
+  const tags = useMemo(() => (data?.tags ?? []).filter((t) => t.kind === 'type'), [data?.tags])
+  const shows = useMemo(() => (data?.tags ?? []).filter((t) => t.kind === 'show'), [data?.tags])
+
   return {
     targets: data?.targets,
-    tags: data?.tags ?? [],
+    tags,
+    shows,
     members: data?.members ?? [],
     memberName,
     loading: !data && !error,

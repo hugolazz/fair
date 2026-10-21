@@ -109,14 +109,28 @@ describe('plan d’import enrichi', () => {
     ])
     expect(p.eventCompanies[0]!.priority).toBe('A')
     expect(p.companyTags).toEqual([
-      { company_id: p.companies[0]!.id, label: 'Client', rowNumbers: [2] },
+      { company_id: p.companies[0]!.id, label: 'Client', kind: 'type', rowNumbers: [2] },
     ])
     expect(p.contacts[0]!.linkedin_url).toBe('https://www.linkedin.com/in/ada')
   })
   it('sur une société déjà connue, rattache la typologie à la société existante', () => {
     const p = plan([row(2, 'Acme', { domain: 'acme.com', priority: 'B', tag: 'Prospect' })])
-    expect(p.companyTags).toEqual([{ company_id: 'k1', label: 'Prospect', rowNumbers: [2] }])
+    expect(p.companyTags).toEqual([
+      { company_id: 'k1', label: 'Prospect', kind: 'type', rowNumbers: [2] },
+    ])
     expect(p.eventCompanies[0]!.priority).toBe('B')
+  })
+  it('pose les salons de la ligne sur l’entreprise, une seule fois chacun', () => {
+    const p = plan([
+      row(2, 'Nouvelle Co', { shows: ['NRF 09/26', 'One to One Monaco (03/27)'], tag: 'Client' }),
+      row(3, 'Nouvelle Co', { shows: ['nrf 09/26'] }), // même société (fusion dans le fichier), même salon
+    ])
+    const id = p.companies[0]!.id
+    expect(p.companyTags.map((t) => [t.company_id, t.label, t.kind])).toEqual([
+      [id, 'Client', 'type'],
+      [id, 'NRF 09/26', 'show'],
+      [id, 'One to One Monaco (03/27)', 'show'],
+    ])
   })
   it('sans colonnes ajoutées, rien de plus n’est écrit', () => {
     const p = plan([row(2, 'Simple SA')])

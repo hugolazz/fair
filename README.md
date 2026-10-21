@@ -33,6 +33,8 @@ L'appli est utilisée connectée (pas de mode hors-ligne ni de mode terrain).
   activée par l'équipe dans les réglages.
 - **Préparation** : priorités A/B/C, objectifs, tags, commentaires, assignations (alerte si deux commerciaux visent la même
   entreprise), rendez-vous avec rappel et export `.ics`, **Ma liste** triée par priorité.
+- **Salons des entreprises** : les colonnes de salons du fichier d'import (une croix = l'entreprise y était ou y sera) deviennent des
+  pastilles de couleur sur la fiche et dans le tableau, avec un filtre ; leur date (« NRF 09/26 ») dit passé ou à venir.
 - **Vue équipe** : qui a rencontré quelle entreprise, qui doit encore la voir, risque de doublon de relance.
 - **Plan du salon** : image ou PDF, pins de stands reliés aux entreprises, mode « Je suis ici ».
 - **Compte-rendu et notes** par rencontre, **historique** de l'entreprise sur les autres salons.

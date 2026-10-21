@@ -18,7 +18,14 @@ export type ParseInput =
 
 export type WorkerRequest =
   | { id: number; type: 'parse'; input: ParseInput }
-  | { id: number; type: 'analyze'; table: RawTable; mapping: ColumnMapping; known: KnownCompany[] }
+  | {
+      id: number
+      type: 'analyze'
+      table: RawTable
+      mapping: ColumnMapping
+      showCols: number[]
+      known: KnownCompany[]
+    }
 
 export type Analysis = {
   rows: CleanRow[]
@@ -42,7 +49,7 @@ export async function handleRequest(req: WorkerRequest): Promise<WorkerResponse>
           : parseDelimited(req.input.text)
       return { id: req.id, ok: true, type: 'parsed', grid }
     }
-    const { rows, errors, removed } = cleanRows(req.table, req.mapping)
+    const { rows, errors, removed } = cleanRows(req.table, req.mapping, req.showCols)
     return {
       id: req.id,
       ok: true,

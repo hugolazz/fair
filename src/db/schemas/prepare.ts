@@ -7,7 +7,30 @@ export type Priority = (typeof PRIORITIES)[number]
 export const GOALS = ['demo', 'intro_decision_maker', 'watch', 'other'] as const
 export type Goal = (typeof GOALS)[number]
 
-export type Tag = { id: string; label: string; color: string }
+/** `type` = typologie de l'entreprise (Client, Prospect…) ; `show` = salon où elle était ou sera (pastille de couleur). */
+export type TagKind = 'type' | 'show'
+
+export type Tag = { id: string; label: string; color: string; kind: TagKind }
+
+/** Couleurs automatiques des pastilles de salon (teintes foncées : le libellé reste toujours écrit). */
+export const SHOW_COLORS = [
+  '#0f766e',
+  '#1d4ed8',
+  '#6d28d9',
+  '#be123c',
+  '#b45309',
+  '#15803d',
+  '#a21caf',
+  '#0e7490',
+] as const
+
+/** Couleur d'un salon, stable : la même d'une fiche à l'autre, calculée sur son libellé. */
+export function showColorFor(label: string): string {
+  const key = stripDiacritics(label).toLowerCase().replace(/\s+/g, ' ').trim()
+  let h = 5381
+  for (let i = 0; i < key.length; i++) h = ((h << 5) + h + key.charCodeAt(i)) >>> 0
+  return SHOW_COLORS[h % SHOW_COLORS.length]!
+}
 
 /** Couleurs proposées pour les tags (le libellé reste toujours affiché : jamais la couleur seule). */
 export const TAG_COLORS = [

@@ -12,6 +12,7 @@ type Props = {
   filters: Filters
   onChange: (f: Filters) => void
   tags: Tag[]
+  shows: Tag[]
   members: TeamMember[]
   meId: string
   total: number
@@ -59,6 +60,7 @@ export function FilterBar({
   filters,
   onChange,
   tags,
+  shows,
   members,
   meId,
   total,
@@ -78,6 +80,7 @@ export function FilterBar({
   const togglePriority = (p: Priority | 'none') =>
     set({ priorities: toggleIn(filters.priorities, p) })
   const toggleTag = (id: string) => set({ tagIds: toggleIn(filters.tagIds, id) })
+  const toggleShow = (id: string) => set({ showIds: toggleIn(filters.showIds, id) })
   // Les mêmes choix d'assignation sur mobile (panneau) et sur bureau (bouton).
   const assigneeOptions = (
     <>
@@ -127,6 +130,19 @@ export function FilterBar({
           </Toggle>
         ))}
       </div>
+      {shows.length > 0 ? (
+        <div role="group" aria-label={t('filters.showsLabel')} className="flex flex-wrap gap-1.5">
+          {shows.map((show) => (
+            <Toggle
+              key={show.id}
+              pressed={filters.showIds.includes(show.id)}
+              onClick={() => toggleShow(show.id)}
+            >
+              {show.label}
+            </Toggle>
+          ))}
+        </div>
+      ) : null}
       <label className="flex items-center gap-2 text-sm">
         <span className="text-slate-700">{t('filters.assignee')}</span>
         <Select
@@ -255,6 +271,15 @@ export function FilterBar({
           selected={filters.tagIds}
           onToggle={toggleTag}
           onClear={() => set({ tagIds: [] })}
+        />
+      ) : null}
+      {shows.length > 0 ? (
+        <FilterMenu
+          label={t('filters.show')}
+          options={shows.map((show) => ({ key: show.id, label: show.label, color: show.color }))}
+          selected={filters.showIds}
+          onToggle={toggleShow}
+          onClear={() => set({ showIds: [] })}
         />
       ) : null}
       <Select

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { fixture } from '../../../../tests/fixtures/load'
 import type { RawTable } from '@/db/schemas/import'
-import { detectMapping, normHeader, resolveMapping, toStoredMapping } from './mapping'
+import {
+  detectMapping,
+  detectShowColumns,
+  isCross,
+  normHeader,
+  resolveMapping,
+  toStoredMapping,
+} from './mapping'
 import { buildTable, parseFile } from './parse'
 
 const table = (headers: string[], rows: string[][] = []): RawTable => ({
@@ -148,5 +155,44 @@ describe('sur les fichiers d’exemple', () => {
   ])('détecte les colonnes de %s', async (file, expected) => {
     const t = buildTable(await parseFile(file, fixture(file)), true)
     expect(detectMapping(t)).toEqual(expected)
+  })
+})
+
+describe('colonnes de salons', () => {
+  const headers = ['Société', 'Site', 'NRF 09/26', ' One to One Monaco (03/27)', 'Commentaire']
+  const rows = [
+    ['Carrefour', 'carrefour.com', 'x', '', 'RAS'],
+    ['Auchan', 'auchan.fr', 'X', 'x', ''],
+    ['Fnac', 'fnac.com', '', '✓', ''],
+  ]
+
+  it('une croix est une croix : x, coche, oui…', () => {
+    for (const v of ['x', ' X ', '×', '✓', '✔', 'oui', 'Oui', '1', 'yes'])
+      expect(isCross(v)).toBe(true)
+    for (const v of ['', 'non', 'peut-être', 'NRF', '0']) expect(isCross(v)).toBe(false)
+  })
+
+  it('reconnaît les colonnes qui ne contiennent que des croix', () => {
+    const t = table(headers, rows)
+    expect(detectShowColumns(t, detectMapping(t))).toEqual([2, 3])
+  })
+
+  it('ignore une colonne déjà mappée, vide, sans titre ou avec autre chose que des croix', () => {
+    const t = table(
+      ['Société', 'Priorité', 'Vide', '', 'Mixte'],
+      [
+        ['A', 'x', '', 'x', 'x'],
+        ['B', 'x', '', 'x', 'bonjour'],
+      ],
+    )
+    // « Priorité » est mappée sur un champ ; « Vide » n'a aucune croix ; « » n'a pas de titre ; « Mixte » a du texte.
+    expect(detectShowColumns(t, { companyName: 0, priority: 1 })).toEqual([])
+  })
+
+  it('une colonne « Salons » (liste) est un champ à part entière, mais pas une colonne de croix nommée d’après un salon', () => {
+    expect(detectMapping(table(['Société', 'Salons'])).shows).toBe(1)
+    const crosses = table(['Société', 'Salon passé 09/20'], [['A', 'x']])
+    expect(detectMapping(crosses).shows).toBeUndefined()
+    expect(detectShowColumns(crosses, detectMapping(crosses))).toEqual([1])
   })
 })

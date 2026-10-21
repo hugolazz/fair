@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Priority } from './prepare'
+import type { Priority, TagKind } from './prepare'
 
 // Types et schémas partagés par l'import de participants (UI, worker et dépôt).
 
@@ -19,6 +19,7 @@ export const IMPORT_FIELDS = [
   'contactLinkedin',
   'priority',
   'tag',
+  'shows',
   'comment',
 ] as const
 export type ImportField = (typeof IMPORT_FIELDS)[number]
@@ -50,6 +51,8 @@ export type CompanyDraft = {
   priority: Priority | null
   /** Typologie (client, prospect, concurrent…) : le libellé d'un tag de l'équipe. */
   tag: string
+  /** Salons où l'entreprise était ou sera : libellés des colonnes cochées et de la colonne « Salons » (pastilles). */
+  shows: string[]
   /** Historique avec l'entreprise (colonne « Commentaire » du fichier), texte libre. */
   comment: string
 }
@@ -144,8 +147,16 @@ export type EventCompanyWrite = {
   rowNumbers: number[]
 }
 
-/** Typologie à poser sur une société (au niveau de l'entreprise : elle suit d'un salon à l'autre). */
-export type CompanyTagWrite = { company_id: string; label: string; rowNumbers: number[] }
+/**
+ * Tag à poser sur une société (au niveau de l'entreprise : il suit d'un salon à l'autre) : une typologie (client,
+ * prospect…) ou un salon (pastille).
+ */
+export type CompanyTagWrite = {
+  company_id: string
+  label: string
+  kind: TagKind
+  rowNumbers: number[]
+}
 
 export type ContactWrite = {
   id: string

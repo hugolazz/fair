@@ -503,3 +503,43 @@ describe('case « Actualité ? » (réglage d’équipe)', () => {
     expect((await news())[0]!.news).toBe(true)
   })
 })
+
+describe('tags : typologie ou salon', () => {
+  it('un tag est une typologie par défaut ; seul un admin crée un salon, et le type est contrôlé', async () => {
+    const id = randomUUID()
+    await rows(
+      admin,
+      `insert into tags (id, team_id, label, scope) values ($1, $2, 'Typologie test', 'company')`,
+      [id, team],
+    )
+    expect(
+      (
+        (await rows(admin, 'select kind from tags where id = $1', [id])) as unknown as {
+          kind: string
+        }[]
+      )[0]!.kind,
+    ).toBe('type')
+
+    await expect(
+      rows(
+        admin,
+        `insert into tags (id, team_id, label, scope, kind) values ($1, $2, 'NRF 09/26', 'company', 'show')`,
+        [randomUUID(), team],
+      ),
+    ).resolves.toBeTruthy()
+    await expect(
+      rows(
+        admin,
+        `insert into tags (id, team_id, label, scope, kind) values ($1, $2, 'Autre', 'company', 'inconnu')`,
+        [randomUUID(), team],
+      ),
+    ).rejects.toThrow()
+    await expect(
+      rows(
+        amy,
+        `insert into tags (id, team_id, label, scope, kind) values ($1, $2, 'Salon de Amy', 'company', 'show')`,
+        [randomUUID(), team],
+      ),
+    ).rejects.toThrow(RLS)
+  })
+})

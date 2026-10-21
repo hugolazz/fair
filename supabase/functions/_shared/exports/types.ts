@@ -38,7 +38,8 @@ export type EventInfo = {
 }
 
 export type Member = { userId: string; name: string }
-export type Tag = { id: string; label: string; color: string | null }
+/** `type` = typologie (Client, Prospect…) ; `show` = salon où l'entreprise était ou sera (pastille). */
+export type Tag = { id: string; label: string; color: string | null; kind: 'type' | 'show' }
 
 /** Une entreprise ciblée sur le salon (`event_companies` + entreprise). */
 export type TargetRec = {
