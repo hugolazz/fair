@@ -6,7 +6,7 @@ import { login, openEdit, resetBackend, seedEvent, USERS } from './support'
 // pastilles de couleur sur la fiche de l'entreprise et dans le tableau, avec un filtre. Les dates des salons sont
 // éloignées (2020, 2099) pour que « passé » et « à venir » ne changent jamais avec l'horloge.
 const CSV = [
-  'Société;Site;Stand;Salon passé 09/20;Salon futur (03/99)',
+  'Société;Site;Stand;Tech For Retail 09/20;Salon futur (03/99)',
   'Carrefour;carrefour.com;B12;x;x',
   'Auchan;auchan.fr;C05;x;',
   'Fnac;fnac.com;D01;;',
@@ -28,7 +28,7 @@ test('les colonnes de salons de l’import deviennent des pastilles, filtrables 
   await expect(page.getByRole('heading', { name: 'Associez vos colonnes' })).toBeVisible()
   // Les deux colonnes de croix sont proposées d'office, avec le nombre d'entreprises cochées.
   const group = page.getByRole('group', { name: 'Colonnes à transformer en pastilles de salons' })
-  await expect(group.getByLabel('Salon passé 09/20 (2 entreprise(s) cochée(s))')).toBeChecked()
+  await expect(group.getByLabel('Tech For Retail 09/20 (2 entreprise(s) cochée(s))')).toBeChecked()
   await expect(group.getByLabel('Salon futur (03/99) (1 entreprise(s) cochée(s))')).toBeChecked()
   await page.getByRole('button', { name: 'Continuer' }).click()
   await page.getByRole('button', { name: "Confirmer l'import" }).click()
@@ -39,9 +39,22 @@ test('les colonnes de salons de l’import deviennent des pastilles, filtrables 
   const table = page.getByRole('table')
   await expect(table.getByRole('columnheader', { name: 'Salons' })).toBeVisible()
   const carrefour = page.getByRole('row', { name: /Carrefour/ })
-  await expect(carrefour.getByText('Salon passé')).toBeVisible()
-  await expect(carrefour.getByText('Salon futur')).toBeVisible()
-  await expect(page.getByRole('row', { name: /Fnac/ }).getByText('Salon passé')).toHaveCount(0)
+  await expect(carrefour.getByText('TFR', { exact: true })).toBeVisible() // « Tech For Retail » abrégé
+  await expect(carrefour.getByText('Salon futur', { exact: true })).toBeVisible()
+  await expect(
+    page.getByRole('row', { name: /Fnac/ }).getByText('TFR', { exact: true }),
+  ).toHaveCount(0)
+  // Les pastilles restent dans leur colonne : elles ne chevauchent jamais les colonnes voisines.
+  const overflowing = await page.evaluate(() =>
+    [...document.querySelectorAll('[data-show-pill]')]
+      .filter((pill) => {
+        const cell = pill.closest('[role=cell]')!.getBoundingClientRect()
+        const r = pill.getBoundingClientRect()
+        return r.right > cell.right + 0.5 || r.left < cell.left - 0.5
+      })
+      .map((pill) => pill.textContent),
+  )
+  expect(overflowing).toEqual([])
 
   // --- Filtre par salon ---
   await page.getByRole('button', { name: 'Salon', exact: true }).click()
@@ -58,7 +71,7 @@ test('les colonnes de salons de l’import deviennent des pastilles, filtrables 
   // --- Fiche : libellés entiers, « était présent » et « sera présent » (aussi pour les lecteurs d'écran) ---
   await page.getByRole('button', { name: 'Carrefour' }).first().click()
   const sheet = page.getByRole('dialog', { name: 'Carrefour' })
-  await expect(sheet.getByText('Salon passé 09/20')).toBeVisible()
+  await expect(sheet.getByText('Tech For Retail 09/20')).toBeVisible()
   await expect(sheet.getByText('Salon futur (03/99)')).toBeVisible()
   await expect(sheet.getByText('(était présent)')).toBeAttached()
   await expect(sheet.getByText('(sera présent)')).toBeAttached()
@@ -73,7 +86,7 @@ test('les colonnes de salons de l’import deviennent des pastilles, filtrables 
   // --- Modifier la fiche : retirer un salon, en ajouter un nouveau (admin) ---
   const edit = await openEdit(page)
   const salons = edit.getByRole('group', { name: "Salons de l'entreprise" })
-  await salons.getByRole('button', { name: 'Salon passé 09/20' }).click()
+  await salons.getByRole('button', { name: 'Tech For Retail 09/20' }).click()
   await edit.getByLabel('Ajouter un salon').fill('Salon bonus 01/99')
   await edit.getByRole('button', { name: 'Ajouter', exact: true }).click()
   await expect(salons.getByRole('button', { name: 'Salon bonus 01/99' })).toHaveAttribute(
@@ -82,5 +95,5 @@ test('les colonnes de salons de l’import deviennent des pastilles, filtrables 
   )
   await page.keyboard.press('Escape')
   await expect(sheet.getByText('Salon bonus 01/99')).toBeVisible()
-  await expect(sheet.getByText('Salon passé 09/20')).toHaveCount(0)
+  await expect(sheet.getByText('Tech For Retail 09/20')).toHaveCount(0)
 })

@@ -11,7 +11,7 @@ import { useAsync } from '@/lib/use-async'
 import { PriorityBadge, TagChip } from './atoms'
 import { EditTargetDialog } from './edit-target-dialog'
 import { HistorySection } from './history-section'
-import { showsOf, showTiming } from './lib/shows'
+import { showsOf } from './lib/shows'
 import { MeetingNotepad } from './meeting-notepad'
 import { ShowPills } from './show-pills'
 import type { TargetsApi } from './use-targets'
@@ -130,9 +130,6 @@ function Body({
           <div className="flex flex-col gap-1.5 border-t border-slate-200 pt-2">
             <span className="text-xs font-medium text-slate-600">{t('shows.title')}</span>
             <ShowPills tagIds={target.tagIds} shows={api.shows} />
-            {shown.some((s) => showTiming(s.label)) ? (
-              <span className="text-xs text-slate-600">{t('shows.legend')}</span>
-            ) : null}
           </div>
         ) : null}
         <div className="flex flex-wrap gap-x-4">

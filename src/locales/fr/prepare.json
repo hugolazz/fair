@@ -63,7 +63,6 @@
     "title": "Salons",
     "past": " (était présent)",
     "upcoming": " (sera présent)",
-    "legend": "Coche : était présent. Horloge, pointillés : sera présent.",
     "more": "+{{count}}",
     "none": "Aucun salon pour cette entreprise.",
     "edit": "Salons de l'entreprise",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SHOW_COLORS, showColorFor, type Tag } from '@/db/schemas/prepare'
-import { showShortName, showsOf, showTiming } from './shows'
+import { showAbbrev, showShortName, showsOf, showTiming } from './shows'
 
 const today = new Date(2026, 9, 21) // 21 octobre 2026
 
@@ -58,5 +58,28 @@ describe('showsOf', () => {
   it('ne garde que les salons de l’entreprise, du plus ancien au plus récent, sans date en dernier', () => {
     expect(showsOf(['a', 'b', 'c', 'x'], shows).map((s) => s.id)).toEqual(['b', 'a', 'c'])
     expect(showsOf(['x'], shows)).toEqual([])
+  })
+})
+
+describe('showAbbrev', () => {
+  it('abrège les noms à plusieurs mots en initiales', () => {
+    expect(showAbbrev('Tech For Retail 03/26')).toBe('TFR')
+    expect(showAbbrev('One to One Monaco (03/27)')).toBe('OOM')
+    expect(showAbbrev("Retail's Big Show 01/27")).toBe('RBS')
+    expect(showAbbrev('All4Customer Cannes')).toBe('AC')
+  })
+
+  it('garde les noms d’un seul mot tels quels', () => {
+    expect(showAbbrev('NRF 09/26')).toBe('NRF')
+    expect(showAbbrev('Paris')).toBe('Paris')
+  })
+
+  it('garde le nom (sans date) quand il ne resterait pas deux lettres', () => {
+    expect(showAbbrev('Salon passé 09/20')).toBe('Salon passé')
+    expect(showAbbrev('salon de paris')).toBe('salon de paris')
+  })
+
+  it('plafonne à quatre lettres', () => {
+    expect(showAbbrev('Alpha Beta Gamma Delta Epsilon')).toBe('ABGD')
   })
 })

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { Tag } from '@/db/schemas/prepare'
 import { cn } from '@/lib/cn'
 import { Assignees, PriorityBadge, TagChip } from './atoms'
+import { ShowPills } from './show-pills'
 import { formatSlot } from './lib/format'
 import type { ListProps } from './targets-table'
 import { useVirtualRows } from './use-virtual-rows'
@@ -65,11 +66,16 @@ export function TargetsCards(p: Props) {
                         .filter(Boolean)
                         .join(' · ')}
                     </span>
-                    <span className="flex min-h-6 shrink-0 items-center gap-1 overflow-hidden">
-                      {row.tagIds.slice(0, 2).map((id) => {
-                        const tag = tagById.get(id)
-                        return tag ? <TagChip key={id} tag={tag} /> : null
-                      })}
+                    <span className="flex min-h-6 shrink-0 items-center justify-between gap-2 overflow-hidden">
+                      <span className="flex min-w-0 items-center gap-1 overflow-hidden">
+                        {row.tagIds.slice(0, 2).map((id) => {
+                          const tag = tagById.get(id)
+                          return tag ? <TagChip key={id} tag={tag} /> : null
+                        })}
+                      </span>
+                      <span className="flex max-w-[55%] min-w-0 shrink-0 justify-end">
+                        <ShowPills tagIds={row.tagIds} shows={p.shows} compact max={2} />
+                      </span>
                     </span>
                     <span className="flex items-center justify-between gap-2 text-sm text-slate-700">
                       <Assignees target={row} nameOf={p.nameOf} meId={p.meId} compact />

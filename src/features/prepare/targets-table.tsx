@@ -46,21 +46,19 @@ type Props = ListProps & {
 
 const ROW_HEIGHT = 52
 const HEADER_HEIGHT = 48 // en-tête collant (h-12)
-// case · prio · entreprise · stand · secteur · tags · salons · assignés · rdv · contacts
+// case · prio · entreprise · stand · tags · salons · assignés · rdv
 const GRID =
-  'grid grid-cols-[2.75rem_3rem_minmax(12rem,2.4fr)_4.5rem_minmax(7rem,1.2fr)_minmax(7rem,1.4fr)_minmax(8rem,1.6fr)_minmax(6rem,1fr)_8rem_4.5rem] items-center'
-const MIN_WIDTH = 'min-w-[52rem]'
+  'grid grid-cols-[2.75rem_3rem_minmax(12rem,2.4fr)_4.5rem_minmax(7rem,1.4fr)_minmax(9rem,1.8fr)_minmax(6rem,1fr)_8rem] items-center'
+const MIN_WIDTH = 'min-w-[46rem]'
 
 const COLUMNS: { key: SortKey | null; label: string; className?: string }[] = [
   { key: 'priority', label: 'priority' },
   { key: 'name', label: 'company' },
   { key: 'stand', label: 'stand' },
-  { key: 'industry', label: 'industry' },
   { key: null, label: 'tags' },
   { key: null, label: 'shows' },
   { key: 'assignee', label: 'assignees' },
   { key: 'meeting', label: 'meeting' },
-  { key: null, label: 'contacts' },
 ]
 
 /** Tableau dense (desktop) : tri par colonne, sélection (Maj pour une plage), édition rapide de la priorité et de l'objectif. */
@@ -204,9 +202,6 @@ export function TargetsTable(p: Props) {
                 <div role="cell" className="truncate px-2">
                   {row.stand}
                 </div>
-                <div role="cell" className="truncate px-2 text-slate-700">
-                  {row.industry}
-                </div>
                 <div role="cell" className="min-w-0 px-2">
                   <TagPicker
                     target={row}
@@ -231,9 +226,6 @@ export function TargetsTable(p: Props) {
                 </div>
                 <div role="cell" className="truncate px-2 text-slate-700">
                   {next ? formatSlot(next.plannedAt) : ''}
-                </div>
-                <div role="cell" className="px-2 text-slate-700 tabular-nums">
-                  {row.contactCount || ''}
                 </div>
               </div>
             )

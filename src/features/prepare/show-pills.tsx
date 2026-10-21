@@ -2,7 +2,7 @@ import { Check, Clock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { Tag } from '@/db/schemas/prepare'
 import { cn } from '@/lib/cn'
-import { showShortName, showsOf, showTiming } from './lib/shows'
+import { showAbbrev, showsOf, showTiming } from './lib/shows'
 
 /**
  * Un salon où l'entreprise était (coche, pastille pleine) ou sera (horloge, pastille en pointillés). Le libellé est
@@ -15,7 +15,7 @@ export function ShowPill({ tag, compact = false }: { tag: Tag; compact?: boolean
   return (
     <span
       className={cn(
-        'inline-flex max-w-full items-center gap-1 rounded-full border font-medium whitespace-nowrap',
+        'inline-flex max-w-full min-w-0 shrink items-center gap-1 rounded-full border font-medium whitespace-nowrap',
         compact ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-[13px]',
         timing === 'upcoming' ? 'border-dashed' : 'border-transparent',
       )}
@@ -26,9 +26,19 @@ export function ShowPill({ tag, compact = false }: { tag: Tag; compact?: boolean
         borderColor: timing === 'upcoming' ? tag.color : undefined,
       }}
       title={compact ? tag.label : undefined}
+      data-show-pill=""
     >
       {Icon ? <Icon aria-hidden className="size-3.5 shrink-0" /> : null}
-      <span className="truncate">{compact ? showShortName(tag.label) : tag.label}</span>
+      {compact ? (
+        <>
+          <span aria-hidden className="truncate">
+            {showAbbrev(tag.label)}
+          </span>
+          <span className="sr-only">{tag.label}</span>
+        </>
+      ) : (
+        <span className="truncate">{tag.label}</span>
+      )}
       {timing ? (
         <span className="sr-only">{timing === 'past' ? t('shows.past') : t('shows.upcoming')}</span>
       ) : null}
@@ -54,13 +64,18 @@ export function ShowPills({
   const shown = max === undefined ? list : list.slice(0, max)
   const hidden = list.slice(shown.length)
   return (
-    <span className={cn('flex min-w-0 items-center', compact ? 'gap-1' : 'flex-wrap gap-2')}>
+    <span
+      className={cn(
+        'flex min-w-0 items-center',
+        compact ? 'gap-1 overflow-hidden' : 'flex-wrap gap-2',
+      )}
+    >
       {shown.map((tag) => (
         <ShowPill key={tag.id} tag={tag} compact={compact} />
       ))}
       {hidden.length > 0 ? (
         <span
-          className="text-xs font-medium whitespace-nowrap text-slate-600"
+          className="shrink-0 text-xs font-medium whitespace-nowrap text-slate-600"
           title={hidden.map((tag) => tag.label).join(', ')}
         >
           {t('shows.more', { count: hidden.length })}

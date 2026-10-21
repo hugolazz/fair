@@ -59,6 +59,23 @@ export function showShortName(label: string): string {
   return short || label
 }
 
+/**
+ * Abréviation d'un salon pour les pastilles étroites : un nom d'un seul mot reste tel quel (« NRF »), un nom de
+ * plusieurs mots passe en initiales des mots à majuscule (« Tech For Retail » → « TFR », « One to One Monaco » →
+ * « OOM »). S'il en sortirait moins de deux lettres, on garde le nom (sans sa date).
+ */
+export function showAbbrev(label: string): string {
+  const base = showShortName(label)
+  const words = base.split(/\s+/).filter(Boolean)
+  if (words.length < 2) return base
+  const initials = words
+    .filter((w) => /^(\p{Lu}|\d)/u.test(w))
+    .map((w) => w[0]!.toUpperCase())
+    .join('')
+    .slice(0, 4)
+  return initials.length >= 2 ? initials : base
+}
+
 /** Les pastilles « salon » d'une entreprise, du plus ancien au plus récent (sans date : à la fin, par nom). */
 export function showsOf(tagIds: readonly string[], shows: readonly Tag[]): Tag[] {
   const ids = new Set(tagIds)
