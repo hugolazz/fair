@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import {
   addMeetingNote,
+  deleteMeetingNote,
   fetchMeetingNotes,
   updateMeetingNote,
   updateMeetingReport,
@@ -51,6 +52,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   const mine = [...(notes.data ?? [])].reverse().find((n) => n.authorId === meId)
   const [draft, setDraft] = useState('')
   const [saved, setSaved] = useState(false)
+  const [removed, setRemoved] = useState(false) // champ vidé : la note a été supprimée
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(false)
   const [addingContact, setAddingContact] = useState(false)
@@ -173,7 +175,8 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
 
   /**
    * Enregistre le texte le plus récent. Un enregistrement déjà en cours reprend seul ce qui a été tapé entre-temps ;
-   * un texte vide n'écrase rien (la note existante reste). Écrire une note = avoir rencontré l'entreprise.
+   * un champ vidé supprime la note (une note vide n'aurait rien à faire dans les exports). Écrire une note = avoir
+   * rencontré l'entreprise.
    */
   async function persist() {
     if (running.current) return
@@ -181,11 +184,19 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
     try {
       for (;;) {
         const body = draftRef.current.trim()
-        if (!body || body === lastSaved.current) break
+        if (body === lastSaved.current) break
         if (mounted.current) {
           setSaving(true)
           setSaved(false)
+          setRemoved(false)
           setError(false)
+        }
+        if (!body) {
+          if (noteId.current) await deleteMeetingNote(noteId.current)
+          noteId.current = undefined
+          lastSaved.current = ''
+          if (mounted.current) setRemoved(true)
+          continue
         }
         const meetingId = await ensureMeeting()
         if (!markedDone.current && meeting?.status !== 'done') {
@@ -252,6 +263,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
             draftRef.current = e.target.value
             setDraft(e.target.value)
             setSaved(false)
+            setRemoved(false)
             window.clearTimeout(timer.current)
             timer.current = window.setTimeout(() => void persistRef.current(), AUTOSAVE_DELAY_MS)
           }}
@@ -273,6 +285,8 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
       >
         {saving ? (
           <span className="font-normal text-slate-600">{t('notepad.saving')}</span>
+        ) : removed ? (
+          t('notepad.removed')
         ) : saved ? (
           t('notepad.saved')
         ) : done ? (

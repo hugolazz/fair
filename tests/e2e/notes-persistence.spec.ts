@@ -166,3 +166,41 @@ test('la note s’enregistre toute seule : à la pause, à la fermeture de la fi
   const notes = await sql<{ body: string }>('select body from notes where deleted_at is null')
   expect(notes.map((n) => n.body)).toEqual([expected])
 })
+
+test('vider le champ supprime la note : elle ne revient pas, et on peut en écrire une nouvelle', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId } = await seedEvent('Salon vidé', [{ name: 'Bolt', stand: 'B2' }])
+  await login(page, USERS.admin)
+  await page.goto(`/events/${eventId}/participants`)
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Bolt' })
+  const field = sheet.getByLabel('Note de la rencontre')
+
+  await field.fill('À supprimer.')
+  await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+
+  // Tout effacer : la note est supprimée, y compris en fermant la fiche tout de suite.
+  await field.fill('')
+  await expect(sheet.getByText('Note supprimée.')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.reload()
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue('')
+  expect(await sql('select id from notes where deleted_at is null')).toEqual([])
+
+  // On peut écrire de nouveau : une nouvelle note, une seule.
+  await sheet.getByLabel('Note de la rencontre').fill('Nouvelle note.')
+  await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+  const notes = await sql<{ body: string }>('select body from notes where deleted_at is null')
+  expect(notes.map((n) => n.body)).toEqual(['Nouvelle note.'])
+
+  // Vider puis fermer aussitôt (avant la pause) : la suppression part quand même.
+  await sheet.getByLabel('Note de la rencontre').fill('')
+  await page.keyboard.press('Escape')
+  await expect(sheet).toBeHidden()
+  await expect
+    .poll(async () => (await sql('select id from notes where deleted_at is null')).length)
+    .toBe(0)
+})

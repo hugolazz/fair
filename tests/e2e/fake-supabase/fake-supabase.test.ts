@@ -184,6 +184,10 @@ describe('faux Supabase', () => {
     await targets.updateMeetingNote(note.id, 'Version corrigée')
     const notes = await targets.fetchMeetingNotes(meetingId)
     expect(notes.map((n) => n.body)).toEqual(['Version corrigée'])
+
+    // Champ vidé : la note est supprimée (suppression logique), elle n'apparaît plus.
+    await targets.deleteMeetingNote(note.id)
+    expect(await targets.fetchMeetingNotes(meetingId)).toEqual([])
   })
 
   it('l’historique saisi suit l’entreprise ; un salon supprimé disparaît de l’historique', async () => {

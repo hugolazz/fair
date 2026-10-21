@@ -483,6 +483,17 @@ export async function updateMeetingNote(id: string, body: string): Promise<void>
   if (!data?.length) throw new Error('not allowed or not found')
 }
 
+/** Suppression logique de sa note (champ vidé) : elle disparaît de la fiche et des exports. */
+export async function deleteMeetingNote(id: string): Promise<void> {
+  const { data, error } = await supabase
+    .from('notes')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
+}
+
 export async function deleteMeeting(id: string): Promise<void> {
   const { data, error } = await supabase
     .from('meetings')
