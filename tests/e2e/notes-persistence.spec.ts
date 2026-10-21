@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { login, resetBackend, seedEvent, USERS } from './support'
+import { login, resetBackend, seedEvent, sql, USERS } from './support'
 
 // Régression : une note et « À recontacter » saisis sur une entreprise sans rencontre créaient la rencontre en base, mais
 // l'état local de la page l'oubliait : en rouvrant la fiche, le champ était vide et la case décochée.
-test('« À recontacter » marque la rencontre comme terminée ; le bouton « Rencontre terminée » reste visible', async ({
+test('« À recontacter » marque la rencontre comme terminée, sans bouton : la ligne d’état le dit', async ({
   page,
 }) => {
   await resetBackend('team')
@@ -12,23 +12,17 @@ test('« À recontacter » marque la rencontre comme terminée ; le bouton « Re
   await page.goto(`/events/${eventId}/participants`)
   await page.getByRole('button', { name: 'Bolt' }).first().click()
   const sheet = page.getByRole('dialog', { name: 'Bolt' })
-  const finish = sheet.getByRole('button', { name: 'Rencontre terminée' })
 
-  // Visible dès le départ, même sans rencontre, et pas encore « terminée ».
-  await expect(finish).toBeVisible()
-  await expect(finish).toHaveAttribute('aria-pressed', 'false')
+  // Plus de boutons « Enregistrer la note » ni « Rencontre terminée » : tout se fait tout seul.
+  await expect(sheet.getByRole('button', { name: 'Enregistrer la note' })).toHaveCount(0)
+  await expect(sheet.getByRole('button', { name: 'Rencontre terminée' })).toHaveCount(0)
+  await expect(sheet.getByText('Rencontre marquée comme terminée.')).toHaveCount(0)
 
   // Cocher « à recontacter » termine la rencontre ; décocher ne la rouvre pas.
   await sheet.getByLabel('À recontacter après le salon').check()
-  await expect(finish).toHaveAttribute('aria-pressed', 'true')
+  await expect(sheet.getByText('Rencontre marquée comme terminée.')).toBeVisible()
   await sheet.getByLabel('À recontacter après le salon').uncheck()
-  await expect(finish).toHaveAttribute('aria-pressed', 'true')
-
-  // Le bouton se clique encore : il rouvre la rencontre, puis la termine de nouveau.
-  await finish.click()
-  await expect(finish).toHaveAttribute('aria-pressed', 'false')
-  await finish.click()
-  await expect(finish).toHaveAttribute('aria-pressed', 'true')
+  await expect(sheet.getByText('Rencontre marquée comme terminée.')).toBeVisible()
 })
 
 test('l’intérêt se donne d’un appui dans le bloc-notes, se retire en retouchant la note, et reste enregistré', async ({
@@ -46,10 +40,7 @@ test('l’intérêt se donne d’un appui dans le bloc-notes, se retire en retou
   // Sans rencontre, un appui crée la rencontre, donne la note et la marque comme terminée.
   await four.click()
   await expect(four).toHaveAttribute('aria-pressed', 'true')
-  await expect(sheet.getByRole('button', { name: 'Rencontre terminée' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  )
+  await expect(sheet.getByText('Rencontre marquée comme terminée.')).toBeVisible()
 
   // Choisir une autre note remplace la première.
   await group.getByRole('button', { name: '2 sur 5' }).click()
@@ -78,8 +69,7 @@ test('note et « à recontacter » conservés en fermant puis rouvrant la fiche,
   await page.getByRole('button', { name: 'Acme' }).first().click()
   const sheet = page.getByRole('dialog', { name: 'Acme' })
   await sheet.getByLabel('Note de la rencontre').fill('Intéressée par une démo.')
-  await sheet.getByRole('button', { name: 'Enregistrer la note' }).click()
-  await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+  await expect(sheet.getByText('Note enregistrée.')).toBeVisible() // tout seul, sans bouton
   await sheet.getByLabel('À recontacter après le salon').check()
   await expect(sheet.getByLabel('À recontacter après le salon')).toBeChecked()
 
@@ -121,12 +111,11 @@ test('« Actualité ? » : une case activée dans les réglages de l’équipe, 
   await page.getByRole('button', { name: 'Bolt' }).first().click()
   const news = sheet.getByLabel('Actualité ?')
   await expect(news).not.toBeChecked() // décochée de base
-  const finish = sheet.getByRole('button', { name: 'Rencontre terminée' })
-  await expect(finish).toHaveAttribute('aria-pressed', 'false')
+  await expect(sheet.getByText('Rencontre marquée comme terminée.')).toHaveCount(0)
   await news.check()
   await expect(news).toBeChecked()
   // Comme « À recontacter » : cocher « Actualité ? » termine la rencontre.
-  await expect(finish).toHaveAttribute('aria-pressed', 'true')
+  await expect(sheet.getByText('Rencontre marquée comme terminée.')).toBeVisible()
 
   // La réponse est conservée en fermant puis rouvrant la fiche.
   await page.keyboard.press('Escape')
@@ -141,4 +130,39 @@ test('« Actualité ? » : une case activée dans les réglages de l’équipe, 
   await page.goto(`/events/${eventId}/participants`)
   await page.getByRole('button', { name: 'Bolt' }).first().click()
   await expect(sheet.getByLabel('Actualité ?')).toHaveCount(0)
+})
+
+test('la note s’enregistre toute seule : à la pause, à la fermeture de la fiche, sans jamais doubler la note', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId } = await seedEvent('Salon auto', [{ name: 'Bolt', stand: 'B2' }])
+  await login(page, USERS.admin)
+  await page.goto(`/events/${eventId}/participants`)
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Bolt' })
+  const field = sheet.getByLabel('Note de la rencontre')
+
+  // Après une courte pause : « Note enregistrée », et la rencontre est marquée terminée.
+  await field.fill('Premier jet.')
+  await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+
+  // Plusieurs frappes rapprochées : un seul texte final, une seule note.
+  await field.pressSequentially(' Suite de la discussion', { delay: 20 })
+  await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+
+  // Fermer la fiche tout de suite après avoir tapé (avant la pause) : le texte part quand même.
+  await field.pressSequentially(' Et la fin.')
+  await page.keyboard.press('Escape')
+  await expect(sheet).toBeHidden()
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const expected = 'Premier jet. Suite de la discussion Et la fin.'
+  await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue(expected)
+
+  // Côté serveur : une seule note pour cette rencontre, avec le texte complet.
+  await page.reload()
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue(expected)
+  const notes = await sql<{ body: string }>('select body from notes where deleted_at is null')
+  expect(notes.map((n) => n.body)).toEqual([expected])
 })

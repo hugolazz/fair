@@ -215,16 +215,14 @@ test.describe.serial('parcours complet', () => {
     await edit.getByLabel('Prochaine étape').blur()
     await page.keyboard.press('Escape')
 
-    // Prise de note pendant la rencontre : un champ, un bouton.
+    // Prise de note pendant la rencontre : un champ, enregistré tout seul (pas de bouton).
     await sheet.getByLabel('Note de la rencontre').fill('Très intéressée par le retail media.')
-    await sheet.getByRole('button', { name: 'Enregistrer la note' }).click()
     // La note reste dans le champ, enregistrée, et se modifie ; écrire une note marque l'entreprise comme rencontrée.
     await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
     await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue(
       'Très intéressée par le retail media.',
     )
     await sheet.getByLabel('Note de la rencontre').fill('Très intéressée, veut une démo.')
-    await sheet.getByRole('button', { name: 'Enregistrer la note' }).click()
     await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
     await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue(
       'Très intéressée, veut une démo.',
@@ -243,7 +241,6 @@ test.describe.serial('parcours complet', () => {
     await page.getByRole('button', { name: 'Décathlon' }).first().click()
     const sheet = page.getByRole('dialog')
     await sheet.getByLabel('Note de la rencontre').fill('Passé au stand, revenir demain.')
-    await sheet.getByRole('button', { name: 'Enregistrer la note' }).click()
     await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
     await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue(
       'Passé au stand, revenir demain.',
@@ -341,7 +338,7 @@ test.describe.serial('parcours complet', () => {
     await form.getByRole('button', { name: 'Enregistrer le contact' }).click()
     await expect(sheet.getByText('Contact ajouté : Grace Hopper.')).toBeVisible()
     await sheet.getByLabel('Note de la rencontre').fill('Intéressée par une démo.')
-    await sheet.getByRole('button', { name: 'Enregistrer la note' }).click()
+    await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
     await sheet.getByLabel('À recontacter après le salon').check()
     await expect(sheet.getByLabel('À recontacter après le salon')).toBeChecked()
     await expect(sheet.getByText('À recontacter', { exact: true }).first()).toBeVisible()

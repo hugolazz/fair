@@ -27,10 +27,15 @@ type Props = {
   onContactAdded: (contact: TargetContact) => void
 }
 
+/** Pause après la dernière frappe avant d'enregistrer la note toute seule. */
+const AUTOSAVE_DELAY_MS = 800
+
 /**
- * Prise de notes pendant la rencontre : un grand champ, un bouton. La rencontre est créée toute seule à la première
- * note (sans planification). On y donne aussi l'intérêt (1 à 5, un appui), avec qui on a parlé (contact en cases
- * séparées) et si la personne est à recontacter ; la prochaine étape reste dans « Modifier la fiche ».
+ * Prise de notes pendant la rencontre : un grand champ, enregistré tout seul (après une courte pause, en quittant le
+ * champ, en fermant la fiche ou en changeant d'application). La rencontre est créée toute seule à la première action
+ * (note, intérêt, case…) et marquée terminée : on y est, donc on a vu la personne. On y donne aussi l'intérêt (1 à 5,
+ * un appui), avec qui on a parlé (contact en cases séparées) et si la personne est à recontacter ; la prochaine étape
+ * reste dans « Modifier la fiche ».
  */
 export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }: Props) {
   const { t } = useTranslation('prepare')
@@ -46,7 +51,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   const mine = [...(notes.data ?? [])].reverse().find((n) => n.authorId === meId)
   const [draft, setDraft] = useState('')
   const [saved, setSaved] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState(false)
   const [addingContact, setAddingContact] = useState(false)
   const [metWith, setMetWith] = useState<string>()
@@ -57,6 +62,14 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   const creating = useRef<Promise<string>>(undefined)
   const seededFor = useRef<string>(undefined)
   const typed = useRef(false) // le chargement des notes n'écrase jamais un texte déjà tapé
+  // Enregistrement automatique : tout passe par des refs, car il se déclenche aussi à la fermeture de la fiche.
+  const draftRef = useRef('') // dernier texte tapé
+  const lastSaved = useRef('') // dernier texte enregistré (ou chargé)
+  const noteId = useRef<string>(undefined) // ma note, dès qu'elle existe : jamais deux notes pour un même texte
+  const markedDone = useRef(false)
+  const running = useRef(false)
+  const timer = useRef<number>(undefined)
+  const mounted = useRef(true)
 
   // Le champ est rempli une fois avec ma note existante ; la rencontre créée par nos soins ne l'efface pas.
   useEffect(() => {
@@ -64,8 +77,13 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
     const key = meeting?.id ?? 'none'
     if (seededFor.current === key) return
     seededFor.current = key
-    if (!typed.current) setDraft(mine?.body ?? '')
-  }, [notes.data, meeting?.id, mine?.body])
+    noteId.current = mine?.id
+    lastSaved.current = mine?.body ?? ''
+    if (!typed.current) {
+      draftRef.current = mine?.body ?? ''
+      setDraft(mine?.body ?? '')
+    }
+  }, [notes.data, meeting?.id, mine?.id, mine?.body])
 
   /** La rencontre en cours, créée à la volée (sans planification) si elle n'existe pas encore. */
   function ensureMeeting(): Promise<string> {
@@ -153,41 +171,63 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
     }
   }
 
-  async function save() {
-    const body = draft.trim()
-    if (!body) return
-    setBusy(true)
-    setError(false)
-    setSaved(false)
+  /**
+   * Enregistre le texte le plus récent. Un enregistrement déjà en cours reprend seul ce qui a été tapé entre-temps ;
+   * un texte vide n'écrase rien (la note existante reste). Écrire une note = avoir rencontré l'entreprise.
+   */
+  async function persist() {
+    if (running.current) return
+    running.current = true
     try {
-      const meetingId = await ensureMeeting()
-      // Écrire une note = avoir rencontré l'entreprise.
-      if (!meeting || meeting.status !== 'done') {
-        await api.actions.updateMeetingReport(target.id, meetingId, { status: 'done' })
+      for (;;) {
+        const body = draftRef.current.trim()
+        if (!body || body === lastSaved.current) break
+        if (mounted.current) {
+          setSaving(true)
+          setSaved(false)
+          setError(false)
+        }
+        const meetingId = await ensureMeeting()
+        if (!markedDone.current && meeting?.status !== 'done') {
+          await api.actions.updateMeetingReport(target.id, meetingId, { status: 'done' })
+        }
+        markedDone.current = true
+        if (noteId.current) await updateMeetingNote(noteId.current, body)
+        else noteId.current = (await addMeetingNote(membership.teamId, meetingId, meId, body)).id
+        lastSaved.current = body
+        if (mounted.current) setSaved(true)
       }
-      if (mine) await updateMeetingNote(mine.id, body)
-      else await addMeetingNote(membership.teamId, meetingId, meId, body)
-      setSaved(true)
-      notes.reload()
     } catch {
-      setError(true)
+      if (mounted.current) setError(true)
     } finally {
-      setBusy(false)
+      running.current = false
+      if (mounted.current) setSaving(false)
     }
+  }
+  const persistRef = useRef(persist)
+  persistRef.current = persist
+
+  /** Enregistre tout de suite ce qui est en attente (on quitte le champ, la fiche ou l'application). */
+  function flush() {
+    window.clearTimeout(timer.current)
+    void persistRef.current()
   }
 
-  /** Le bouton « Rencontre terminée » : crée la rencontre au besoin, puis la marque terminée (ou la rouvre). */
-  async function toggleDone() {
-    setError(false)
-    try {
-      const id = await ensureMeeting()
-      await api.actions.updateMeetingReport(target.id, id, {
-        status: meeting?.status === 'done' ? 'in_progress' : 'done',
-      })
-    } catch {
-      setError(true)
+  useEffect(() => {
+    mounted.current = true
+    const onHidden = () => {
+      if (document.hidden) flush()
     }
-  }
+    document.addEventListener('visibilitychange', onHidden)
+    window.addEventListener('pagehide', flush)
+    return () => {
+      document.removeEventListener('visibilitychange', onHidden)
+      window.removeEventListener('pagehide', flush)
+      // Fermer la fiche juste après avoir tapé : le texte part quand même.
+      flush()
+      mounted.current = false
+    }
+  }, [])
 
   const done = meeting?.status === 'done'
   // Les notes de mes collègues restent listées sous la mienne.
@@ -206,11 +246,16 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
         <span className="sr-only">{t('notepad.label')}</span>
         <textarea
           value={draft}
+          readOnly={!notes.data} // le temps de charger ma note : pas de texte tapé par-dessus
           onChange={(e) => {
             typed.current = true
+            draftRef.current = e.target.value
             setDraft(e.target.value)
             setSaved(false)
+            window.clearTimeout(timer.current)
+            timer.current = window.setTimeout(() => void persistRef.current(), AUTOSAVE_DELAY_MS)
           }}
+          onBlur={flush}
           placeholder={t('notepad.placeholder')}
           rows={4}
           className="focus-visible:outline-brand-600 min-h-28 w-full rounded-xl border border-slate-300 bg-white p-3 text-base"
@@ -221,35 +266,22 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
           {t('notepad.error')}
         </p>
       ) : null}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          className="min-h-12 flex-1"
-          disabled={busy || !draft.trim() || draft.trim() === mine?.body}
-          onClick={() => void save()}
-        >
-          {t('notepad.save')}
-        </Button>
-        <Button
-          variant={done ? 'primary' : 'secondary'}
-          className="min-h-12"
-          aria-pressed={done}
-          onClick={() => void toggleDone()}
-        >
-          <CheckCircle2 aria-hidden className="size-4" />
-          {t('notepad.finish')}
-        </Button>
-      </div>
-      {saved ? (
-        <p role="status" className="text-sm font-medium text-emerald-800">
-          {t('notepad.saved')}
-        </p>
-      ) : null}
-      {done && !saved ? (
-        <p role="status" className="flex items-center gap-1.5 text-sm font-medium text-emerald-800">
-          <CheckCircle2 aria-hidden className="size-4" />
-          {t('notepad.finished')}
-        </p>
-      ) : null}
+      <p
+        role="status"
+        aria-live="polite"
+        className="flex min-h-5 items-center gap-1.5 text-sm font-medium text-emerald-800"
+      >
+        {saving ? (
+          <span className="font-normal text-slate-600">{t('notepad.saving')}</span>
+        ) : saved ? (
+          t('notepad.saved')
+        ) : done ? (
+          <>
+            <CheckCircle2 aria-hidden className="size-4" />
+            {t('notepad.finished')}
+          </>
+        ) : null}
+      </p>
 
       <div role="group" aria-labelledby="notepad-interest" className="flex flex-col gap-1.5">
         <span id="notepad-interest" className="text-base font-medium">

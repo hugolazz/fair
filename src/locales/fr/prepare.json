@@ -139,8 +139,8 @@
   "notepad": {
     "title": "Notes de la rencontre",
     "label": "Note de la rencontre",
-    "placeholder": "Écrivez ici ce qui se dit pendant la rencontre…",
-    "save": "Enregistrer la note",
+    "placeholder": "Écrivez ici ce qui se dit pendant la rencontre… tout est enregistré automatiquement.",
+    "saving": "Enregistrement…",
     "interest": "Intérêt (sur 5)",
     "recontact": "À recontacter après le salon",
     "recontactBadge": "À recontacter",
@@ -148,7 +148,6 @@
     "yes": "Oui",
     "no": "Non",
     "saved": "Note enregistrée. Entreprise marquée comme rencontrée.",
-    "finish": "Rencontre terminée",
     "finished": "Rencontre marquée comme terminée.",
     "error": "La note n'a pas pu être enregistrée. Votre texte est conservé, réessayez."
   },
