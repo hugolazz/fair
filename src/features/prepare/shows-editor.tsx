@@ -1,9 +1,39 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import type { Target } from '@/db/schemas/prepare'
+import type { Tag, Target } from '@/db/schemas/prepare'
 import { cn } from '@/lib/cn'
+import { showAbbrev } from './lib/shows'
 import type { TargetsApi } from './use-targets'
+
+/** L'abréviation d'un salon : vide = automatique. S'enregistre en quittant le champ ou avec Entrée. */
+function AbbrevRow({ show, api }: { show: Tag; api: TargetsApi }) {
+  const { t } = useTranslation('prepare')
+  const [value, setValue] = useState(show.abbrev ?? '')
+  const auto = showAbbrev(show.label)
+
+  function commit() {
+    const clean = value.trim()
+    if (clean === (show.abbrev ?? '')) return
+    void api.actions.setShowAbbrev(show.id, clean === '' ? null : clean)
+  }
+
+  return (
+    <li className="flex items-center gap-3">
+      <span className="min-w-0 flex-1 truncate text-sm">{show.label}</span>
+      <input
+        aria-label={t('shows.abbrevFor', { label: show.label })}
+        placeholder={auto}
+        value={value}
+        maxLength={8}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), e.currentTarget.blur())}
+        className="min-h-11 w-28 shrink-0 rounded-lg border border-slate-300 px-3 text-center md:min-h-9"
+      />
+    </li>
+  )
+}
 
 /**
  * Salons de l'entreprise (« Modifier la fiche ») : on coche ceux où elle était ou sera. Un admin peut aussi ajouter un
@@ -76,6 +106,19 @@ export function ShowsEditor({
           })}
         </div>
       )}
+      {admin && api.shows.length > 0 ? (
+        <details className="rounded-lg border border-slate-200 p-3">
+          <summary className="min-h-9 cursor-pointer text-sm font-medium">
+            {t('shows.abbrevTitle')}
+          </summary>
+          <p className="mt-2 mb-3 text-xs text-slate-600">{t('shows.abbrevHelp')}</p>
+          <ul className="flex flex-col gap-2">
+            {api.shows.map((show) => (
+              <AbbrevRow key={`${show.id}:${show.abbrev ?? ''}`} show={show} api={api} />
+            ))}
+          </ul>
+        </details>
+      ) : null}
       {admin ? (
         <form
           className="flex flex-col gap-2"

@@ -328,6 +328,29 @@ describe('faux Supabase', () => {
     expect((await importRepo.fetchKnownCompanies()).map((c) => c.name)).toContain('Fantôme SAS')
   })
 
+  it('l’abréviation d’un salon se choisit (admin) et se retire ; un commercial ne peut pas', async () => {
+    const auth = await import('@/db/repositories/auth')
+    const teams = await import('@/db/repositories/teams')
+    const targets = await import('@/db/repositories/targets')
+
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    const me = (await auth.getSession())!.user.id
+    const teamId = (await teams.fetchMembership(me))!.teamId
+    const show = await targets.createTag(teamId, 'Tech For Retail 03/26', '#0f766e', 'show')
+    expect(show).toMatchObject({ kind: 'show', abbrev: null })
+    const abbrev = async () => (await targets.fetchTags()).find((t) => t.id === show.id)!.abbrev
+
+    await targets.updateShowAbbrev(show.id, 'TFR26')
+    expect(await abbrev()).toBe('TFR26')
+    await targets.updateShowAbbrev(show.id, null)
+    expect(await abbrev()).toBeNull()
+
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.marie, PASSWORD)
+    await expect(targets.updateShowAbbrev(show.id, 'XX')).rejects.toThrow()
+  })
+
   it('inscription : nom d’usage, recherche d’une équipe par son nom, adhésion, profil modifiable', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')

@@ -543,3 +543,40 @@ describe('tags : typologie ou salon', () => {
     ).rejects.toThrow(RLS)
   })
 })
+
+describe('abréviation d’un salon', () => {
+  it('se modifie par un admin seulement, entre 1 et 8 caractères, et se retire (null)', async () => {
+    const id = randomUUID()
+    await rows(
+      admin,
+      `insert into tags (id, team_id, label, scope, kind) values ($1, $2, 'Tech For Retail 03/26', 'company', 'show')`,
+      [id, team],
+    )
+    const abbrev = async () =>
+      (
+        (await rows(admin, 'select short_label from tags where id = $1', [id])) as unknown as {
+          short_label: string | null
+        }[]
+      )[0]!.short_label
+
+    expect(await abbrev()).toBeNull() // par défaut : abréviation automatique
+    expect(
+      await rows(admin, `update tags set short_label = 'TFR26' where id = $1 returning id`, [id]),
+    ).toHaveLength(1)
+    expect(await abbrev()).toBe('TFR26')
+
+    // Un commercial ne la change pas (la RLS renvoie 0 ligne), et la longueur est contrôlée.
+    expect(
+      await rows(amy, `update tags set short_label = 'XX' where id = $1 returning id`, [id]),
+    ).toHaveLength(0)
+    await expect(
+      rows(admin, `update tags set short_label = 'neuf lettres' where id = $1`, [id]),
+    ).rejects.toThrow()
+    await expect(
+      rows(admin, `update tags set short_label = '' where id = $1`, [id]),
+    ).rejects.toThrow()
+
+    await rows(admin, `update tags set short_label = null where id = $1`, [id])
+    expect(await abbrev()).toBeNull()
+  })
+})

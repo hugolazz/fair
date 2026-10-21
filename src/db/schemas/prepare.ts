@@ -10,7 +10,14 @@ export type Goal = (typeof GOALS)[number]
 /** `type` = typologie de l'entreprise (Client, Prospect…) ; `show` = salon où elle était ou sera (pastille de couleur). */
 export type TagKind = 'type' | 'show'
 
-export type Tag = { id: string; label: string; color: string; kind: TagKind }
+export type Tag = {
+  id: string
+  label: string
+  color: string
+  kind: TagKind
+  /** Abréviation choisie d'un salon (pastilles courtes) ; `null` = abréviation automatique. */
+  abbrev: string | null
+}
 
 /** Couleurs automatiques des pastilles de salon (teintes foncées : le libellé reste toujours écrit). */
 export const SHOW_COLORS = [

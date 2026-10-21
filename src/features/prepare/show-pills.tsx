@@ -2,7 +2,7 @@ import { Check, Clock } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { Tag } from '@/db/schemas/prepare'
 import { cn } from '@/lib/cn'
-import { showAbbrev, showsOf, showTiming } from './lib/shows'
+import { showPillText, showsOf, showTiming } from './lib/shows'
 
 /**
  * Un salon où l'entreprise était (coche, pastille pleine) ou sera (horloge, pastille en pointillés). Le libellé est
@@ -32,7 +32,7 @@ export function ShowPill({ tag, compact = false }: { tag: Tag; compact?: boolean
       {compact ? (
         <>
           <span aria-hidden className="truncate">
-            {showAbbrev(tag.label)}
+            {showPillText(tag)}
           </span>
           <span className="sr-only">{tag.label}</span>
         </>

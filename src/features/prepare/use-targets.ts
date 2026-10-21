@@ -10,6 +10,7 @@ import {
   saveMeeting as saveMeetingRemote,
   setCompanyTag,
   unassignTargets,
+  updateShowAbbrev as updateShowAbbrevRemote,
   updateTag as updateTagRemote,
   updateMeetingReport as updateMeetingReportRemote,
   updateTargets,
@@ -223,6 +224,13 @@ export function useTargets(eventId: string, teamId: string) {
           return null
         }
       },
+
+      /** Abréviation d'un salon (admins), appliquée tout de suite et annulée en cas d'échec. */
+      setShowAbbrev: (id: string, abbrev: string | null) =>
+        run(
+          (d) => ({ ...d, tags: d.tags.map((t) => (t.id === id ? { ...t, abbrev } : t)) }),
+          () => updateShowAbbrevRemote(id, abbrev),
+        ),
 
       updateTag: (id: string, label: string, color: string) =>
         run(

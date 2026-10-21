@@ -71,7 +71,10 @@
     "add": "Ajouter",
     "duplicate": "Ce salon existe déjà.",
     "error": "Le salon n'a pas pu être ajouté.",
-    "hint": "Ajoutez la date au nom (09/26) pour savoir si l'entreprise y était ou y sera."
+    "hint": "Ajoutez la date au nom (09/26) pour savoir si l'entreprise y était ou y sera.",
+    "abbrevTitle": "Abréviations des salons",
+    "abbrevHelp": "Affichées dans le tableau et sur les cartes, pour toutes les entreprises. Laissez vide pour l'abréviation automatique (les initiales du nom).",
+    "abbrevFor": "Abréviation de {{label}}"
   },
   "select": {
     "mode": "Sélectionner",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SHOW_COLORS, showColorFor, type Tag } from '@/db/schemas/prepare'
-import { showAbbrev, showShortName, showsOf, showTiming } from './shows'
+import { showAbbrev, showPillText, showShortName, showsOf, showTiming } from './shows'
 
 const today = new Date(2026, 9, 21) // 21 octobre 2026
 
@@ -52,7 +52,13 @@ describe('showColorFor', () => {
 })
 
 describe('showsOf', () => {
-  const tag = (id: string, label: string): Tag => ({ id, label, color: '#000000', kind: 'show' })
+  const tag = (id: string, label: string): Tag => ({
+    id,
+    label,
+    color: '#000000',
+    kind: 'show',
+    abbrev: null,
+  })
   const shows = [tag('a', 'One to One Monaco (03/27)'), tag('b', 'NRF 09/26'), tag('c', 'Alpha')]
 
   it('ne garde que les salons de l’entreprise, du plus ancien au plus récent, sans date en dernier', () => {
@@ -81,5 +87,14 @@ describe('showAbbrev', () => {
 
   it('plafonne à quatre lettres', () => {
     expect(showAbbrev('Alpha Beta Gamma Delta Epsilon')).toBe('ABGD')
+  })
+})
+
+describe('showPillText', () => {
+  it('l’abréviation choisie l’emporte, sinon l’abréviation automatique', () => {
+    const base = { label: 'Tech For Retail 03/26' }
+    expect(showPillText({ ...base, abbrev: null })).toBe('TFR')
+    expect(showPillText({ ...base, abbrev: 'TFR26' })).toBe('TFR26')
+    expect(showPillText({ ...base, abbrev: '  ' })).toBe('TFR') // vide : retour à l’automatique
   })
 })

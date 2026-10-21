@@ -76,6 +76,11 @@ export function showAbbrev(label: string): string {
   return initials.length >= 2 ? initials : base
 }
 
+/** Texte d'une pastille courte : l'abréviation choisie pour le salon, sinon l'abréviation automatique. */
+export function showPillText(tag: Pick<Tag, 'label' | 'abbrev'>): string {
+  return tag.abbrev?.trim() || showAbbrev(tag.label)
+}
+
 /** Les pastilles « salon » d'une entreprise, du plus ancien au plus récent (sans date : à la fin, par nom). */
 export function showsOf(tagIds: readonly string[], shows: readonly Tag[]): Tag[] {
   const ids = new Set(tagIds)

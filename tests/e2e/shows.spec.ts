@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { login, openEdit, resetBackend, seedEvent, USERS } from './support'
+import { login, openEdit, resetBackend, seedEvent, sql, USERS } from './support'
 
 // Pastilles « salons » : les colonnes de salons du fichier d'import (une croix = présent ou à venir) deviennent des
 // pastilles de couleur sur la fiche de l'entreprise et dans le tableau, avec un filtre. Les dates des salons sont
@@ -96,4 +96,64 @@ test('les colonnes de salons de l’import deviennent des pastilles, filtrables 
   await page.keyboard.press('Escape')
   await expect(sheet.getByText('Salon bonus 01/99')).toBeVisible()
   await expect(sheet.getByText('Tech For Retail 09/20')).toHaveCount(0)
+})
+
+test('un admin choisit l’abréviation d’un salon dans « Modifier la fiche », et peut revenir à l’automatique', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId, teamId, targetIds } = await seedEvent('Salon abréviations', [
+    { name: 'Bolt', stand: 'B2' },
+  ])
+  const [ec] = await sql<{ company_id: string }>(
+    'select company_id from event_companies where id = $1',
+    [targetIds['Bolt']],
+  )
+  const [tag] = await sql<{ id: string }>(
+    `insert into tags (id, team_id, label, scope, kind, color)
+     values (gen_random_uuid(), $1, 'Tech For Retail 03/26', 'company', 'show', '#0f766e') returning id`,
+    [teamId],
+  )
+  await sql(
+    `insert into taggings (tag_id, taggable_table, taggable_id, team_id) values ($1, 'companies', $2, $3)`,
+    [tag!.id, ec!.company_id, teamId],
+  )
+
+  await login(page, USERS.admin)
+  await page.goto(`/events/${eventId}/participants`)
+  const row = page.getByRole('row', { name: /Bolt/ })
+  await expect(row.getByText('TFR', { exact: true })).toBeVisible() // abréviation automatique
+
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Bolt' })
+  const edit = await openEdit(page)
+  await edit.getByText('Abréviations des salons').click()
+  const field = edit.getByLabel('Abréviation de Tech For Retail 03/26')
+  await expect(field).toHaveAttribute('placeholder', 'TFR') // l’automatique est proposée
+
+  // Une abréviation choisie remplace l’automatique dans la liste, pour toutes les entreprises.
+  await field.fill('TFR26')
+  await field.press('Enter')
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
+  await expect(sheet).toBeHidden()
+  await expect(row.getByText('TFR26', { exact: true })).toBeVisible()
+  expect(await sql('select short_label from tags where id = $1', [tag!.id])).toEqual([
+    { short_label: 'TFR26' },
+  ])
+
+  // Vider le champ : retour à l’abréviation automatique.
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const edit2 = await openEdit(page)
+  await edit2.getByText('Abréviations des salons').click()
+  const field2 = edit2.getByLabel('Abréviation de Tech For Retail 03/26')
+  await expect(field2).toHaveValue('TFR26')
+  await field2.fill('')
+  await field2.press('Enter')
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
+  await expect(row.getByText('TFR', { exact: true })).toBeVisible()
+  expect(await sql('select short_label from tags where id = $1', [tag!.id])).toEqual([
+    { short_label: null },
+  ])
 })

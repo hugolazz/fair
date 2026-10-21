@@ -39,7 +39,7 @@ const TARGET_SELECT =
 export async function fetchTags(): Promise<Tag[]> {
   const { data, error } = await supabase
     .from('tags')
-    .select('id, label, color, kind')
+    .select('id, label, color, kind, short_label')
     .eq('scope', 'company')
     .is('deleted_at', null)
     .order('label')
@@ -49,6 +49,7 @@ export async function fetchTags(): Promise<Tag[]> {
     label: t.label as string,
     color: (t.color as string | null) ?? '#475569',
     kind: t.kind === 'show' ? ('show' as const) : ('type' as const),
+    abbrev: (t.short_label as string | null) ?? null,
   }))
 }
 
@@ -278,12 +279,23 @@ export async function createTag(
     .from('tags')
     .insert({ id, team_id: teamId, scope: 'company', label, color, kind })
   if (error) throw error
-  return { id, label, color, kind }
+  return { id, label, color, kind, abbrev: null }
 }
 
 export async function updateTag(id: string, label: string, color: string): Promise<void> {
   const { error } = await supabase.from('tags').update({ label, color }).eq('id', id)
   if (error) throw error
+}
+
+/** Abréviation d'un salon (admins) ; `null` = retour à l'abréviation automatique. */
+export async function updateShowAbbrev(id: string, abbrev: string | null): Promise<void> {
+  const { data, error } = await supabase
+    .from('tags')
+    .update({ short_label: abbrev })
+    .eq('id', id)
+    .select('id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
 }
 
 /** Soft delete : le tag disparaît de l'interface, ses liens sont nettoyés. */
