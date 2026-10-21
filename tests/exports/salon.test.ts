@@ -66,9 +66,7 @@ describe('table du salon', () => {
       'Date de la rencontre',
       'Intérêt (1-5)',
       'À recontacter',
-      'Prochaine étape',
       'Notes du salon',
-      'Désinscrit',
     ])
   })
 
@@ -103,12 +101,11 @@ describe('table du salon', () => {
     expect(of('Fnac Darty')[0]!.priority).toBeNull()
   })
 
-  it('reprend la dernière rencontre de l’entreprise : statut, date, intérêt maximal, prochaine étape', () => {
+  it('reprend la dernière rencontre de l’entreprise : statut, date, intérêt maximal', () => {
     // Carrefour : m1 (12/05, Vu, intérêt 5) puis m2 (13/05, À relancer, intérêt 4).
     expect(of('Carrefour')[0]).toMatchObject({
       status: 'À relancer',
       interest: 5,
-      nextStep: 'Rappeler mardi',
       assignees: 'Hugo, Marie',
     })
     expect(of('Carrefour')[0]!.meetingAt).toBeInstanceOf(Date)
@@ -238,8 +235,10 @@ describe('table du salon', () => {
     expect(pdf.pages.join(' ')).not.toContain('Salons')
   })
 
-  it('signale les contacts désinscrits', () => {
-    expect(of('Carrefour').map((r) => r.optOut)).toEqual([null, 'Oui'])
+  it('n’a ni colonne « Prochaine étape » ni colonne « Désinscrit » (retirées : rien ne permet de les renseigner)', () => {
+    const labels = buildSalonTable(sampleData()).columns.map((c) => c.label)
+    expect(labels).not.toContain('Prochaine étape')
+    expect(labels).not.toContain('Désinscrit')
   })
 
   it('l’historique de l’entreprise est dans la colonne « Commentaire »', () => {

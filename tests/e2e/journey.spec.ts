@@ -432,7 +432,6 @@ test.describe.serial('parcours complet', () => {
     expect(cell(carrefour, 'Commentaire')).toContain('Parler retail media')
     expect(cell(carrefour, 'Statut de la rencontre')).toBe('Vu')
     expect(cell(carrefour, 'Intérêt (1-5)')).toBe('4')
-    expect(cell(carrefour, 'Prochaine étape')).toBe('Envoyer la démo')
     expect(cell(carrefour, 'Notes du salon')).toContain('Très intéressée, veut une démo.')
 
     // Entreprise et contact saisis à la main : chaque info dans sa colonne, « à recontacter » compris.

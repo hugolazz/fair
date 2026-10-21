@@ -42,9 +42,7 @@ export const SALON_COLUMNS: Column[] = [
   col('meetingAt', 'Date de la rencontre', 'datetime', 18),
   col('interest', 'Intérêt (1-5)', 'number', 12),
   col('recontact', 'À recontacter', 'text', 14),
-  col('nextStep', 'Prochaine étape', 'longtext', 32),
   col('notes', 'Notes du salon', 'longtext', 70),
-  col('optOut', 'Désinscrit', 'text', 12),
 ]
 
 const NEWS_COLUMN = col('news', 'Actualité', 'text', 12)
@@ -147,7 +145,6 @@ export function buildSalonTable(data: ExportData): Table {
       status: last ? statusLabel(last.status) : 'Pas de rencontre',
       meetingAt: last ? wallClock(last.plannedAt, tz) : null,
       interest: interests.length ? Math.max(...interests) : null,
-      nextStep: orNull(last?.nextStep),
       notes: orNull(notes),
     }
     const contacts = contactsOf.get(t.companyId) ?? []
@@ -163,7 +160,6 @@ export function buildSalonTable(data: ExportData): Table {
           linkedin: orNull(c?.linkedin),
           recontact: contactRecontact(c, meetings),
           news: contactNews(c, meetings),
-          optOut: c?.optOut ? 'Oui' : null,
         },
       })
     }

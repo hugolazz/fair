@@ -8,10 +8,10 @@ Supabase, sous les droits de l'utilisateur (donc de son équipe). Tout est gén�
 Trois formats, aucun filtre, aucun réglage. Le fichier est **celui qu'on a importé, enrichi de tout ce qui s'est passé pendant le salon**,
 **une ligne par contact** (une seule ligne pour une entreprise sans contact), entreprises triées par nom.
 
-| Colonnes                        | Contenu                                                                                                                                                                                                                                           |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 à 14, **reprise de l'import** | Société · Site web · Stand · Secteur · Pays · Ville · Priorité (A / B / C) · Type (tags) · Contact · Fonction · E-mail · Téléphone · LinkedIn · Commentaire (= historique de l'entreprise)                                                        |
-| 15 à 22, **pendant le salon**   | Commerciaux · Statut de la rencontre · Date de la rencontre · Intérêt (1-5) · À recontacter (Oui / Non, propre à chaque contact) · **Actualité** (facultative, voir plus bas) · Prochaine étape · Notes du salon (datées et signées) · Désinscrit |
+| Colonnes                        | Contenu                                                                                                                                                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1 à 14, **reprise de l'import** | Société · Site web · Stand · Secteur · Pays · Ville · Priorité (A / B / C) · Type (tags) · Contact · Fonction · E-mail · Téléphone · LinkedIn · Commentaire (= historique de l'entreprise)                         |
+| 15 à 20, **pendant le salon**   | Commerciaux · Statut de la rencontre · Date de la rencontre · Intérêt (1-5) · À recontacter (Oui / Non, propre à chaque contact) · **Actualité** (facultative, voir plus bas) · Notes du salon (datées et signées) |
 
 La colonne **Salons** (« NRF 09/26, One to One Monaco (03/27) ») vient juste après « Commentaire » dans l'Excel et le CSV, uniquement si des
 entreprises ont des salons (pastilles de la fiche) ; elle ne figure pas dans les PDF. Elle se réimporte (intitulé « Salons »).
@@ -19,10 +19,10 @@ entreprises ont des salons (pastilles de la fiche) ; elle ne figure pas dans les
 La colonne **Actualité** (Oui / Non, comme « À recontacter ») n'existe que si l'équipe a activé la case « Actualité ? » dans _Réglages → Équipe_, ou si au
 moins une rencontre l'a cochée (les réponses déjà saisies ne disparaissent pas quand on désactive l'option). Dans les PDF (tableaux Entreprises et
 Rencontres), la colonne « Recontacter » est toujours présente et « Actualité » suit la même règle ; le tableau « Rencontres » n'a pas de
-colonne « Prochaine étape » (elle reste dans l'Excel / CSV et dans le bilan).
+colonne « Prochaine étape » (qui n'est plus non plus dans l'Excel / CSV ; elle reste saisissable dans « Modifier la fiche » et dans le bilan).
 
 Les 14 premiers intitulés sont **ceux du fichier d'import** : le fichier exporté se **réimporte tel quel**, les colonnes se mappent toutes
-seules (test d'aller-retour dans `src/features/import/lib/enrichment.test.ts`). Statut, date, intérêt et prochaine étape sont ceux de la
+seules (test d'aller-retour dans `src/features/import/lib/enrichment.test.ts`). Statut, date et intérêt sont ceux de la
 **dernière rencontre** de l'entreprise (intérêt = le plus élevé) ; les notes de **toutes** ses rencontres sont réunies. Une entreprise sans
 rencontre indique « Pas de rencontre ».
 
@@ -32,8 +32,8 @@ rencontre indique « Pas de rencontre ».
 | **CSV**                 | Même contenu. UTF-8 avec BOM, séparateur « ; » (accents corrects dans Excel FR), protection contre l'injection de formules (`=`, `@`, `+`).    |
 | **PDF de compte-rendu** | Page de garde (logo de l'équipe), sommaire, synthèse, tableau des entreprises, rencontres, notes. Pied « généré avec fair » et « page n / N ». |
 
-Les contacts **anonymisés** (RGPD) ne sont jamais exportés ; les contacts **désinscrits** sont exportés mais marqués « Oui » dans la colonne
-« Désinscrit » (à ne pas relancer).
+Les contacts **anonymisés** (RGPD) ne sont jamais exportés. Les colonnes « Prochaine étape » et « Désinscrit » ont été retirées de l'Excel et du
+CSV (aucun écran ne permet de renseigner « Désinscrit » ; la donnée `opt_out_at` reste en base).
 
 ## 2. Bilan
 
