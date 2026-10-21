@@ -30,6 +30,8 @@ const meeting: TargetMeeting = {
   nextStep: '',
   recontact: false,
   news: false,
+  autoCreated: false,
+  contactId: null,
 }
 const target = { id: 'ec1', name: 'Carrefour' } as Target
 

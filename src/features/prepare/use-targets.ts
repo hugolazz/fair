@@ -262,6 +262,8 @@ export function useTargets(eventId: string, teamId: string) {
             nextStep: prev?.nextStep ?? '',
             recontact: prev?.recontact ?? false,
             news: prev?.news ?? false,
+            autoCreated: input.auto === true,
+            contactId: prev?.contactId ?? null,
           }
           setData(
             (d) =>

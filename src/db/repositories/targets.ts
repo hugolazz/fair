@@ -34,7 +34,7 @@ const TARGET_SELECT =
   'id, event_id, company_id, stand_label, priority, objective, prep_comment, ' +
   'companies(id, name, domain, website, industry, country, city, history, contacts(count)), ' +
   'event_company_assignees(user_id, deleted_at), ' +
-  'meetings(id, planned_at, planned_duration_min, reminder_minutes, owner_id, status, interest, next_step, recontact, news, deleted_at)'
+  'meetings(id, planned_at, planned_duration_min, reminder_minutes, owner_id, status, interest, next_step, recontact, news, auto_created, contact_id, deleted_at)'
 
 export async function fetchTags(): Promise<Tag[]> {
   const { data, error } = await supabase
@@ -383,6 +383,8 @@ export type MeetingInput = {
   plannedAt: string
   durationMin: number
   reminderMin: number | null
+  /** Créée par le bloc-notes (pas planifiée) : supprimée toute seule quand elle est vide. */
+  auto?: boolean
 }
 
 export async function saveMeeting(m: MeetingInput): Promise<string> {
@@ -397,6 +399,8 @@ export async function saveMeeting(m: MeetingInput): Promise<string> {
       planned_at: m.plannedAt,
       planned_duration_min: m.durationMin,
       reminder_minutes: m.reminderMin,
+      // Replanifier une rencontre du bloc-notes à la main en fait un vrai rendez-vous : `auto` retombe à faux.
+      auto_created: m.auto === true,
       deleted_at: null,
     },
     { onConflict: 'id' },

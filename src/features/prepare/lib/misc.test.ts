@@ -80,6 +80,8 @@ describe('myList', () => {
       nextStep: '',
       recontact: false,
       news: false,
+      autoCreated: false,
+      contactId: null,
     },
   ]
   it('ne garde que mes cibles, triées par priorité, rendez-vous puis nom', () => {

@@ -32,28 +32,29 @@ pnpm supabase db push
 
 Sans la CLI : coller les fichiers dans _SQL Editor_, **dans l'ordre numérique** :
 
-| Fichier                                      | Contenu                                                                        |
-| -------------------------------------------- | ------------------------------------------------------------------------------ |
-| `20261002000001_schema.sql`                  | tables, enums, index                                                           |
-| `20261002000002_sync_triggers.sql`           | profils (trigger `handle_new_user`), horodatages                               |
-| `20261002000003_rls.sql`                     | RLS de base : isolation par équipe, `create_team`, invitations                 |
-| `20261002000004_prepare.sql`                 | préparation du salon (cibles, tags, assignations, rendez-vous)                 |
-| `20261002000005_field.sql`                   | bucket privé `attachments` (image du plan, logo)                               |
-| `20261002000006_sync_conflicts.sql`          | reste d'un ancien mode hors-ligne, supprimé par la suivante                    |
-| `20261002000007_floorplans.sql`              | plan du salon, pins, clé de stand                                              |
-| `20261002000008_drop_sync_conflicts.sql`     | retire la table de l'ancien mode hors-ligne                                    |
-| `20261002000009_exports.sql`                 | logo d'équipe, bucket privé `exports`                                          |
-| `20261002000010_roles.sql`                   | **rôles** admin d'équipe / commercial (RLS), dernier propriétaire protégé      |
-| `20261002000011_duplicate_event.sql`         | **duplication d'un salon** (`duplicate_event`)                                 |
-| `20261002000012_manual_entries.sql`          | **saisie manuelle** (entreprises et contacts), colonne `meetings.recontact`    |
-| `20261002000013_company_history.sql`         | colonne `companies.history` (historique de l'entreprise)                       |
-| `20261002000014_edit_companies.sql`          | tout membre peut modifier une fiche d'entreprise (« Modifier la fiche »)       |
-| `20261002000015_signup_teams.sql`            | création de compte libre, recherche d'équipe, `join_team`, `create_team`       |
-| `20261002000016_backfill_profiles.sql`       | profils des comptes existants                                                  |
-| `20261002000017_leave_team.sql`              | quitter l'équipe (`leave_team`)                                                |
-| `20261002000018_meeting_news.sql`            | case « Actualité ? » : `teams.news_enabled` et `meetings.news`                 |
-| `20261002000019_retire_orphan_companies.sql` | un salon supprimé retire aussi ses entreprises qui ne sont nulle part ailleurs |
-| `20261002000020_show_tags.sql`               | pastilles de salons : `tags.kind` (`type` ou `show`)                           |
+| Fichier                                      | Contenu                                                                                     |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `20261002000001_schema.sql`                  | tables, enums, index                                                                        |
+| `20261002000002_sync_triggers.sql`           | profils (trigger `handle_new_user`), horodatages                                            |
+| `20261002000003_rls.sql`                     | RLS de base : isolation par équipe, `create_team`, invitations                              |
+| `20261002000004_prepare.sql`                 | préparation du salon (cibles, tags, assignations, rendez-vous)                              |
+| `20261002000005_field.sql`                   | bucket privé `attachments` (image du plan, logo)                                            |
+| `20261002000006_sync_conflicts.sql`          | reste d'un ancien mode hors-ligne, supprimé par la suivante                                 |
+| `20261002000007_floorplans.sql`              | plan du salon, pins, clé de stand                                                           |
+| `20261002000008_drop_sync_conflicts.sql`     | retire la table de l'ancien mode hors-ligne                                                 |
+| `20261002000009_exports.sql`                 | logo d'équipe, bucket privé `exports`                                                       |
+| `20261002000010_roles.sql`                   | **rôles** admin d'équipe / commercial (RLS), dernier propriétaire protégé                   |
+| `20261002000011_duplicate_event.sql`         | **duplication d'un salon** (`duplicate_event`)                                              |
+| `20261002000012_manual_entries.sql`          | **saisie manuelle** (entreprises et contacts), colonne `meetings.recontact`                 |
+| `20261002000013_company_history.sql`         | colonne `companies.history` (historique de l'entreprise)                                    |
+| `20261002000014_edit_companies.sql`          | tout membre peut modifier une fiche d'entreprise (« Modifier la fiche »)                    |
+| `20261002000015_signup_teams.sql`            | création de compte libre, recherche d'équipe, `join_team`, `create_team`                    |
+| `20261002000016_backfill_profiles.sql`       | profils des comptes existants                                                               |
+| `20261002000017_leave_team.sql`              | quitter l'équipe (`leave_team`)                                                             |
+| `20261002000018_meeting_news.sql`            | case « Actualité ? » : `teams.news_enabled` et `meetings.news`                              |
+| `20261002000019_retire_orphan_companies.sql` | un salon supprimé retire aussi ses entreprises qui ne sont nulle part ailleurs              |
+| `20261002000020_show_tags.sql`               | pastilles de salons : `tags.kind` (`type` ou `show`)                                        |
+| `20261002000021_meeting_auto_created.sql`    | rencontre créée par le bloc-notes : `meetings.auto_created`, nettoyage des rencontres vides |
 
 Contrôle après coup, dans _SQL Editor_ :
 

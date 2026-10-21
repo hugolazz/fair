@@ -15,7 +15,7 @@ import { AddContactForm } from '@/features/manual-entry/add-contact-form'
 import { newId } from '@/lib/ids'
 import { useAsync } from '@/lib/use-async'
 import { formatTime } from './lib/format'
-import { currentMeeting } from './lib/notepad'
+import { currentMeeting, isEmptyAutoMeeting } from './lib/notepad'
 import type { TargetsApi } from './use-targets'
 
 type Props = {
@@ -72,6 +72,9 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   const running = useRef(false)
   const timer = useRef<number>(undefined)
   const mounted = useRef(true)
+  const meetingRef = useRef(meeting) // la rencontre à jour, pour les actions qui finissent après un rendu
+  meetingRef.current = meeting
+  const contactAttached = useRef(false)
 
   // Le champ est rempli une fois avec ma note existante ; la rencontre créée par nos soins ne l'efface pas.
   useEffect(() => {
@@ -101,6 +104,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
         plannedAt: new Date().toISOString(),
         durationMin: 15,
         reminderMin: null,
+        auto: true, // créée par le bloc-notes : supprimée toute seule si tout est retiré
       })
       if (!ok) {
         creating.current = undefined
@@ -109,6 +113,32 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
       return id
     })()
     return creating.current
+  }
+
+  /**
+   * Quand tout a été retiré (note, intérêt, cases, contact), la rencontre créée par le bloc-notes est supprimée : sa date
+   * ne reste pas dans les listes. `over` = valeurs qu'on vient de changer et que le rendu n'a pas encore reprises.
+   */
+  async function dropIfEmpty(
+    over: { interest?: number | null; recontact?: boolean; news?: boolean } = {},
+  ) {
+    const m = meetingRef.current
+    if (!m) return
+    const empty = isEmptyAutoMeeting(m, {
+      interest: over.interest !== undefined ? over.interest : interest,
+      recontact: over.recontact ?? recontact,
+      news: over.news ?? news,
+      contactAttached: contactAttached.current,
+      noteCount: draftRef.current.trim() !== '' || noteId.current ? 1 : 0,
+    })
+    if (!empty) return
+    // La note d'un collègue, ou la mienne pas encore partie : on ne supprime rien.
+    if ((await fetchMeetingNotes(m.id)).length > 0) return
+    creating.current = undefined
+    markedDone.current = false
+    noteId.current = undefined
+    lastSaved.current = ''
+    await api.actions.deleteMeeting(target.id, m.id)
   }
 
   async function setRecontact(on: boolean) {
@@ -122,6 +152,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
           ? { recontact: on, status: 'done' as const }
           : { recontact: on }
       await api.actions.updateMeetingReport(target.id, id, patch)
+      if (!on) await dropIfEmpty({ recontact: false })
     } catch {
       setRecontactLocal(undefined)
       setError(true)
@@ -137,6 +168,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
       const patch =
         on && meeting?.status !== 'done' ? { news: on, status: 'done' as const } : { news: on }
       await api.actions.updateMeetingReport(target.id, id, patch)
+      if (!on) await dropIfEmpty({ news: false })
     } catch {
       setNewsLocal(undefined)
       setError(true)
@@ -155,6 +187,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
           ? { interest: next, status: 'done' as const }
           : { interest: next }
       await api.actions.updateMeetingReport(target.id, id, patch)
+      if (next === null) await dropIfEmpty({ interest: null })
     } catch {
       setInterestLocal(undefined)
       setError(true)
@@ -163,6 +196,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
 
   async function onSavedContact(c: TargetContact) {
     setAddingContact(false)
+    contactAttached.current = true
     setMetWith(c.name || c.email)
     onContactAdded(c)
     try {
@@ -196,6 +230,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
           noteId.current = undefined
           lastSaved.current = ''
           if (mounted.current) setRemoved(true)
+          await dropIfEmpty()
           continue
         }
         const meetingId = await ensureMeeting()

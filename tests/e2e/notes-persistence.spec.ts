@@ -18,11 +18,22 @@ test('« À recontacter » marque la rencontre comme terminée, sans bouton : la
   await expect(sheet.getByRole('button', { name: 'Rencontre terminée' })).toHaveCount(0)
   await expect(sheet.getByText('Rencontre marquée comme terminée.')).toHaveCount(0)
 
-  // Cocher « à recontacter » termine la rencontre ; décocher ne la rouvre pas.
+  // Cocher « à recontacter » termine la rencontre ; avec une autre action (l'intérêt), décocher ne la rouvre pas.
   await sheet.getByLabel('À recontacter après le salon').check()
   await expect(sheet.getByText('Rencontre marquée comme terminée.')).toBeVisible()
+  await sheet
+    .getByRole('group', { name: 'Intérêt (sur 5)' })
+    .getByRole('button', { name: '4 sur 5' })
+    .click()
   await sheet.getByLabel('À recontacter après le salon').uncheck()
   await expect(sheet.getByText('Rencontre marquée comme terminée.')).toBeVisible()
+
+  // Si c'était la seule action, tout retirer supprime la rencontre : plus rien n'est « terminé ».
+  await sheet
+    .getByRole('group', { name: 'Intérêt (sur 5)' })
+    .getByRole('button', { name: '4 sur 5' })
+    .click()
+  await expect(sheet.getByText('Rencontre marquée comme terminée.')).toHaveCount(0)
 })
 
 test('l’intérêt se donne d’un appui dans le bloc-notes, se retire en retouchant la note, et reste enregistré', async ({
@@ -203,4 +214,96 @@ test('vider le champ supprime la note : elle ne revient pas, et on peut en écri
   await expect
     .poll(async () => (await sql('select id from notes where deleted_at is null')).length)
     .toBe(0)
+})
+
+// La rencontre est créée toute seule par le bloc-notes (avec la date du moment) ; quand tout est retiré, elle disparaît.
+const liveMeetings = async () =>
+  (await sql('select id from meetings where deleted_at is null')).length
+
+test('quand tout est retiré, la rencontre créée par le bloc-notes disparaît, et sa date aussi', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId } = await seedEvent('Salon retiré', [{ name: 'Bolt', stand: 'B2' }])
+  await login(page, USERS.admin)
+  await page.goto(`/events/${eventId}/participants`)
+  const row = page.getByRole('row', { name: /Bolt/ })
+  const open = () => page.getByRole('button', { name: 'Bolt' }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Bolt' })
+  const field = sheet.getByLabel('Note de la rencontre')
+  const hour = /\d{2}:\d{2}/
+
+  // Une note crée la rencontre : sa date apparaît dans la liste.
+  await open()
+  await field.fill('Passé au stand.')
+  await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(row).toContainText(hour)
+  expect(await liveMeetings()).toBe(1)
+
+  // Tout effacer : la rencontre et sa date disparaissent.
+  await open()
+  await field.fill('')
+  await expect(sheet.getByText('Note supprimée.')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(row).not.toContainText(hour)
+  await expect.poll(liveMeetings).toBe(0)
+
+  // Plusieurs actions : la rencontre reste tant qu'il en reste une, et disparaît avec la dernière.
+  await open()
+  await sheet
+    .getByRole('group', { name: 'Intérêt (sur 5)' })
+    .getByRole('button', { name: '3 sur 5' })
+    .click()
+  await sheet.getByLabel('À recontacter après le salon').check()
+  await field.fill('Une note.')
+  await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+  expect(await liveMeetings()).toBe(1)
+
+  await field.fill('')
+  await expect(sheet.getByText('Note supprimée.')).toBeVisible()
+  expect(await liveMeetings()).toBe(1) // il reste l'intérêt et « à recontacter »
+  await sheet
+    .getByRole('group', { name: 'Intérêt (sur 5)' })
+    .getByRole('button', { name: '3 sur 5' })
+    .click()
+  await expect.poll(liveMeetings).toBe(1) // il reste « à recontacter »
+  await sheet.getByLabel('À recontacter après le salon').uncheck()
+  await expect.poll(liveMeetings).toBe(0)
+  await page.keyboard.press('Escape')
+  await expect(row).not.toContainText(hour)
+
+  // On peut recommencer : une nouvelle rencontre se crée, une seule.
+  await open()
+  await field.fill('Retour.')
+  await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+  expect(await liveMeetings()).toBe(1)
+})
+
+test('un rendez-vous planifié à la main n’est jamais supprimé quand on vide le bloc-notes', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId, teamId, targetIds } = await seedEvent('Salon planifié', [
+    { name: 'Bolt', stand: 'B2' },
+  ])
+  const [admin] = await sql<{ id: string }>('select id from auth.users where email = $1', [
+    USERS.admin,
+  ])
+  await sql(
+    `insert into meetings (id, team_id, event_id, event_company_id, owner_id, planned_at, planned_duration_min, reminder_minutes, status)
+     values (gen_random_uuid(), $1, $2, $3, $4, now() + interval '2 days', 30, 15, 'to_see')`,
+    [teamId, eventId, targetIds['Bolt'], admin!.id],
+  )
+  await login(page, USERS.admin)
+  await page.goto(`/events/${eventId}/participants`)
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Bolt' })
+  const field = sheet.getByLabel('Note de la rencontre')
+
+  await field.fill('Note sur le rendez-vous.')
+  await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+  await field.fill('')
+  await expect(sheet.getByText('Note supprimée.')).toBeVisible()
+  expect(await liveMeetings()).toBe(1) // le rendez-vous planifié reste
 })

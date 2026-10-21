@@ -66,6 +66,10 @@ export type TargetMeeting = {
   recontact: boolean
   /** « Actualité ? » (case activable par équipe). */
   news: boolean
+  /** Créée toute seule par le bloc-notes (pas planifiée à la main) : elle disparaît quand tout est retiré. */
+  autoCreated: boolean
+  /** Contact avec qui la rencontre a eu lieu. */
+  contactId: string | null
 }
 
 /** Statuts d'une rencontre, dans l'ordre proposé au commercial. */
@@ -150,6 +154,8 @@ export const targetRowSchema = z.object({
         next_step: z.string().nullable().default(null),
         recontact: z.boolean().nullable().default(false),
         news: z.boolean().nullable().default(false),
+        auto_created: z.boolean().nullable().default(false),
+        contact_id: z.string().nullable().default(null),
         deleted_at: z.string().nullable(),
       }),
     )
@@ -190,6 +196,8 @@ export function rowToTarget(row: TargetRow, tagIds: string[]): Target {
         nextStep: m.next_step ?? '',
         recontact: m.recontact === true,
         news: m.news === true,
+        autoCreated: m.auto_created === true,
+        contactId: m.contact_id,
       }))
       .sort((a, b) => a.plannedAt.localeCompare(b.plannedAt)),
     searchKey: buildSearchKey([c.name, row.stand_label, c.industry, c.city, c.country, c.domain]),

@@ -15,3 +15,29 @@ export function currentMeeting(
     mine[mine.length - 1]
   )
 }
+
+/**
+ * Une rencontre créée toute seule par le bloc-notes, dont on a retiré tout ce qu'on y avait mis (note, intérêt, cases,
+ * contact, prochaine étape), n'a plus de raison d'exister : sa date disparaît des listes. Un rendez-vous planifié à la
+ * main (`autoCreated` faux) n'est jamais concerné.
+ */
+export function isEmptyAutoMeeting(
+  m: Pick<TargetMeeting, 'autoCreated' | 'nextStep'>,
+  state: {
+    interest: number | null
+    recontact: boolean
+    news: boolean
+    contactAttached: boolean
+    noteCount: number
+  },
+): boolean {
+  return (
+    m.autoCreated &&
+    state.interest === null &&
+    !state.recontact &&
+    !state.news &&
+    !state.contactAttached &&
+    m.nextStep.trim() === '' &&
+    state.noteCount === 0
+  )
+}
