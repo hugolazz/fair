@@ -7,7 +7,6 @@ import {
   deleteMeetingNote,
   fetchMeetingNotes,
   updateMeetingNote,
-  updateMeetingReport,
 } from '@/db/repositories/targets'
 import type { Target, TargetContact } from '@/db/schemas/prepare'
 import { useReadySession } from '@/features/auth-team/session'
@@ -74,7 +73,22 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   const mounted = useRef(true)
   const meetingRef = useRef(meeting) // la rencontre à jour, pour les actions qui finissent après un rendu
   meetingRef.current = meeting
-  const contactAttached = useRef(false)
+
+  // La rencontre a disparu sans nous (le contact qui en était la seule trace vient d'être supprimé) : on oublie ses
+  // identifiants, la prochaine action en recrée une.
+  useEffect(() => {
+    if (meeting) {
+      meetingSeen.current = true
+      return
+    }
+    if (!meetingSeen.current) return
+    meetingSeen.current = false
+    creating.current = undefined
+    markedDone.current = false
+    noteId.current = undefined
+    lastSaved.current = ''
+  }, [meeting])
+  const meetingSeen = useRef(false) // une rencontre a déjà existé ici : si elle disparaît, c'est de l'extérieur
 
   // Le champ est rempli une fois avec ma note existante ; la rencontre créée par nos soins ne l'efface pas.
   useEffect(() => {
@@ -128,7 +142,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
       interest: over.interest !== undefined ? over.interest : interest,
       recontact: over.recontact ?? recontact,
       news: over.news ?? news,
-      contactAttached: contactAttached.current,
+      contactAttached: m.contactId !== null,
       noteCount: draftRef.current.trim() !== '' || noteId.current ? 1 : 0,
     })
     if (!empty) return
@@ -196,12 +210,13 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
 
   async function onSavedContact(c: TargetContact) {
     setAddingContact(false)
-    contactAttached.current = true
     setMetWith(c.name || c.email)
     onContactAdded(c)
     try {
-      // Le contact rencontré est rattaché à la rencontre : il apparaît dans la colonne « Contact » des exports.
-      await updateMeetingReport(await ensureMeeting(), { contactId: c.id })
+      // Le contact rencontré est rattaché à la rencontre (colonne « Contact » des exports) : on l'a vu, donc terminée.
+      const id = await ensureMeeting()
+      markedDone.current = true
+      await api.actions.updateMeetingReport(target.id, id, { contactId: c.id, status: 'done' })
     } catch {
       setError(true)
     }

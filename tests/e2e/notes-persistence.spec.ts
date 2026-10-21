@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { login, resetBackend, seedEvent, sql, USERS } from './support'
+import { login, openEdit, resetBackend, seedEvent, sql, USERS } from './support'
 
 // Régression : une note et « À recontacter » saisis sur une entreprise sans rencontre créaient la rencontre en base, mais
 // l'état local de la page l'oubliait : en rouvrant la fiche, le champ était vide et la case décochée.
@@ -306,4 +306,81 @@ test('un rendez-vous planifié à la main n’est jamais supprimé quand on vide
   await field.fill('')
   await expect(sheet.getByText('Note supprimée.')).toBeVisible()
   expect(await liveMeetings()).toBe(1) // le rendez-vous planifié reste
+})
+
+test('ajouter un contact termine la rencontre ; le supprimer, s’il était la seule trace, la supprime', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId } = await seedEvent('Salon contact', [{ name: 'Bolt', stand: 'B2' }])
+  await login(page, USERS.admin)
+  await page.goto(`/events/${eventId}/participants`)
+  const row = page.getByRole('row', { name: /Bolt/ })
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Bolt' })
+  await expect(sheet.getByText('Rencontre marquée comme terminée.')).toHaveCount(0)
+
+  // Un contact ajouté pendant la rencontre : on l'a vu, donc la rencontre est terminée.
+  await sheet.getByRole('button', { name: 'Ajouter un contact' }).click()
+  const form = sheet.getByRole('form', { name: 'Nouveau contact' })
+  await form.getByLabel('Prénom').fill('Grace')
+  await form.getByLabel('Nom', { exact: true }).fill('Hopper')
+  await form.getByLabel('E-mail').fill('grace@contact.example')
+  await form.getByRole('button', { name: 'Enregistrer le contact' }).click()
+  await expect(sheet.getByText('Contact ajouté : Grace Hopper.')).toBeVisible()
+  await expect(sheet.getByText('Rencontre marquée comme terminée.')).toBeVisible()
+  expect(await liveMeetings()).toBe(1)
+
+  // Supprimer ce contact (la seule trace de la rencontre) : la rencontre disparaît, et « terminée » aussi.
+  const edit = await openEdit(page)
+  await edit.getByRole('button', { name: 'Supprimer le contact Grace Hopper' }).click()
+  await edit.getByRole('button', { name: 'Oui, supprimer' }).click()
+  await expect(edit.getByRole('button', { name: 'Modifier le contact Grace Hopper' })).toHaveCount(
+    0,
+  )
+  await page.keyboard.press('Escape')
+  await expect(sheet.getByText('Rencontre marquée comme terminée.')).toHaveCount(0)
+  await expect.poll(liveMeetings).toBe(0)
+  await page.keyboard.press('Escape')
+  await expect(row).not.toContainText(/\d{2}:\d{2}/)
+
+  // Réécrire ensuite fonctionne : une nouvelle rencontre se crée (pas de lien avec l'ancienne).
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  await sheet.getByLabel('Note de la rencontre').fill('Retour au stand.')
+  await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+  expect(await liveMeetings()).toBe(1)
+})
+
+test('supprimer un contact ne supprime pas une rencontre qui contient autre chose', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId } = await seedEvent('Salon contact 2', [{ name: 'Bolt', stand: 'B2' }])
+  await login(page, USERS.admin)
+  await page.goto(`/events/${eventId}/participants`)
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Bolt' })
+  await sheet.getByRole('button', { name: 'Ajouter un contact' }).click()
+  const form = sheet.getByRole('form', { name: 'Nouveau contact' })
+  await form.getByLabel('Prénom').fill('Grace')
+  await form.getByLabel('Nom', { exact: true }).fill('Hopper')
+  await form.getByLabel('E-mail').fill('grace@contact.example')
+  await form.getByRole('button', { name: 'Enregistrer le contact' }).click()
+  await expect(sheet.getByText('Contact ajouté : Grace Hopper.')).toBeVisible()
+  await sheet.getByLabel('Note de la rencontre').fill('On a parlé retail media.')
+  await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
+
+  const edit = await openEdit(page)
+  await edit.getByRole('button', { name: 'Supprimer le contact Grace Hopper' }).click()
+  await edit.getByRole('button', { name: 'Oui, supprimer' }).click()
+  await expect(edit.getByRole('button', { name: 'Modifier le contact Grace Hopper' })).toHaveCount(
+    0,
+  )
+  await page.keyboard.press('Escape')
+  // La note est là : la rencontre reste, toujours terminée.
+  await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue('On a parlé retail media.')
+  const meetings = await sql<{ status: string; contact_id: string | null }>(
+    'select status, contact_id from meetings where deleted_at is null',
+  )
+  expect(meetings).toEqual([{ status: 'done', contact_id: null }]) // reste, terminée, sans le contact supprimé
 })

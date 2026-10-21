@@ -98,3 +98,49 @@ describe('migration « rencontre créée par le bloc-notes »', () => {
     expect(await state(ids.planned)).toMatchObject({ auto_created: false, deleted_at: null })
   })
 })
+
+describe('supprimer un contact', () => {
+  const contactId = randomUUID()
+  const m = { empty: randomUUID(), withNote: randomUUID(), planned: randomUUID() }
+
+  it('détache le contact des rencontres, et retire la rencontre du bloc-notes devenue vide', async () => {
+    const company = (
+      await db.query<{ company_id: string }>(
+        'select company_id from event_companies where id = $1',
+        [ec],
+      )
+    ).rows[0]!.company_id
+    await db.query(
+      `insert into contacts (id, team_id, company_id, last_name) values ($1, $2, $3, 'Hopper')`,
+      [contactId, team, company],
+    )
+    const meeting = (id: string, auto: boolean, duration: number) =>
+      db.query(
+        `insert into meetings (id, team_id, event_id, event_company_id, owner_id, planned_at, planned_duration_min, auto_created, contact_id)
+         values ($1, $2, $3, $4, $5, now(), $6, $7, $8)`,
+        [id, team, event, ec, owner.id, duration, auto, contactId],
+      )
+    await meeting(m.empty, true, 15)
+    await meeting(m.withNote, true, 15)
+    await meeting(m.planned, false, 30)
+    await db.query(
+      `insert into notes (id, team_id, meeting_id, author_id, body, source, captured_at) values ($1, $2, $3, $4, 'Une note', 'typed', now())`,
+      [randomUUID(), team, m.withNote, owner.id],
+    )
+
+    // Suppression logique du contact, comme le fait l'appli.
+    await as(db, owner).query(`update contacts set deleted_at = now() where id = $1`, [contactId])
+
+    const read = async (id: string) =>
+      (
+        await db.query<{ contact_id: string | null; deleted_at: string | null }>(
+          'select contact_id, deleted_at from meetings where id = $1',
+          [id],
+        )
+      ).rows[0]!
+    expect(await read(m.empty)).toMatchObject({ contact_id: null })
+    expect((await read(m.empty)).deleted_at).not.toBeNull() // vide : retirée avec le contact
+    expect(await read(m.withNote)).toMatchObject({ contact_id: null, deleted_at: null }) // une note : reste
+    expect(await read(m.planned)).toMatchObject({ contact_id: null, deleted_at: null }) // planifiée : reste
+  })
+})

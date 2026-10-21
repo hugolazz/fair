@@ -55,6 +55,7 @@ Sans la CLI : coller les fichiers dans _SQL Editor_, **dans l'ordre numérique**
 | `20261002000019_retire_orphan_companies.sql` | un salon supprimé retire aussi ses entreprises qui ne sont nulle part ailleurs              |
 | `20261002000020_show_tags.sql`               | pastilles de salons : `tags.kind` (`type` ou `show`)                                        |
 | `20261002000021_meeting_auto_created.sql`    | rencontre créée par le bloc-notes : `meetings.auto_created`, nettoyage des rencontres vides |
+| `20261002000022_contact_delete_detach.sql`   | supprimer un contact le détache des rencontres (et retire celle du bloc-notes devenue vide) |
 
 Contrôle après coup, dans _SQL Editor_ :
 

@@ -216,7 +216,10 @@ function Body({
         eventDate={eventDate}
         teamId={membership.teamId}
         contacts={contacts ?? []}
-        onContactsChanged={() => reloadContacts()}
+        onContactsChanged={() => {
+          reloadContacts()
+          api.reload() // supprimer le contact a pu supprimer la rencontre qui n'avait que lui
+        }}
       />
     </div>
   )

@@ -307,6 +307,9 @@ export function useTargets(eventId: string, teamId: string) {
                               ? { recontact: patch.recontact }
                               : {}),
                             ...(patch.news !== undefined ? { news: patch.news } : {}),
+                            ...(patch.contactId !== undefined
+                              ? { contactId: patch.contactId }
+                              : {}),
                           }
                         : m,
                     ),
