@@ -189,10 +189,9 @@ describe('colonnes de salons', () => {
     expect(detectShowColumns(t, { companyName: 0, priority: 1 })).toEqual([])
   })
 
-  it('une colonne « Salons » (liste) est un champ à part entière, mais pas une colonne de croix nommée d’après un salon', () => {
-    expect(detectMapping(table(['Société', 'Salons'])).shows).toBe(1)
+  it('une colonne de croix nommée d’après un salon n’est associée à aucun champ', () => {
     const crosses = table(['Société', 'Salon passé 09/20'], [['A', 'x']])
-    expect(detectMapping(crosses).shows).toBeUndefined()
+    expect(detectMapping(crosses)).toEqual({ companyName: 0 })
     expect(detectShowColumns(crosses, detectMapping(crosses))).toEqual([1])
   })
 })

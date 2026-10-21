@@ -115,8 +115,8 @@ describe('cleanRows', () => {
   })
 })
 
-describe('salons (colonnes cochées et colonne « Salons »)', () => {
-  const headers = ['Société', 'NRF 09/26', '  One to One Monaco (03/27) ', 'Salons']
+describe('salons (colonnes de croix)', () => {
+  const headers = ['Société', 'NRF 09/26', '  One to One Monaco (03/27) ']
 
   it('une croix dans une colonne de salon ajoute son intitulé à l’entreprise', () => {
     const r = cleanRows(
@@ -136,14 +136,6 @@ describe('salons (colonnes cochées et colonne « Salons »)', () => {
       ['NRF 09/26', 'One to One Monaco (03/27)'],
       [],
     ])
-  })
-
-  it('la colonne « Salons » est découpée sur , ; | et retours à la ligne, sans doublon', () => {
-    const r = cleanRows(
-      table([['Carrefour', '', '', 'NRF 09/26, TFR 03/26;nrf 09/26\nRetail 01/27']], headers),
-      { companyName: 0, shows: 3 },
-    )
-    expect(r.rows[0]!.company.shows).toEqual(['NRF 09/26', 'TFR 03/26', 'Retail 01/27'])
   })
 
   it('sans colonne de salon, aucune pastille', () => {

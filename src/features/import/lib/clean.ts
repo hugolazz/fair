@@ -82,8 +82,6 @@ export function extractContacts(cell: (f: keyof ColumnMapping) => string): {
 
 export type CleanResult = { rows: CleanRow[]; errors: RowError[]; removed: RemovedCounts }
 
-const SHOWS_SEP = /\s*(?:\n|;|\||,)\s*/
-
 /**
  * Applique le mapping : nettoie chaque cellule, retire lignes vides / en-têtes répétés, signale les lignes inexploitables.
  * `showCols` = colonnes « salon » (une croix = l'entreprise y était ou y sera) : leur intitulé devient une pastille.
@@ -137,11 +135,6 @@ export function cleanRows(
     for (const col of showCols) {
       const label = cleanCell(table.headers[col] ?? '')
       if (label && isCross(raw[col] ?? '')) shows.set(normalizeName(label), label)
-    }
-    // La première graphie d'un salon l'emporte (« NRF 09/26 » puis « nrf 09/26 » = un seul salon).
-    for (const label of parts(cell('shows'), SHOWS_SEP)) {
-      const key = normalizeName(label)
-      if (!isCross(label) && !shows.has(key)) shows.set(key, label)
     }
     const extracted = extractContacts(cell)
     warnings.push(...extracted.warnings)

@@ -158,7 +158,6 @@ const SYNONYMS: Record<ImportField, string[]> = {
     'history',
   ],
   tag: ['type', 'typologie', 'tag', 'tags', 'type de compte', 'type d entreprise', 'relation'],
-  shows: ['salons', 'salon', 'salons visites', 'evenements', 'events', 'shows'],
 }
 
 /** Note de 0 à 1 : intitulé identique à un synonyme = 1 ; synonyme contenu dans l'intitulé = plus faible. */
@@ -170,8 +169,6 @@ function headerScore(header: string, field: ImportField): number {
   for (const syn of SYNONYMS[field]) {
     // « Name » seul est ambigu : plutôt la société que le contact.
     if (n === syn) return syn !== 'name' ? 1 : field === 'companyName' ? 0.5 : 0.45
-    // « Salons » (liste) : intitulé exact seulement, car « Salon passé 09/20 » est une colonne de croix, pas une liste.
-    if (field === 'shows') continue
     const st = syn.split(' ')
     if (st.every((t) => tokens.includes(t)))
       best = Math.max(best, 0.6 + 0.3 * (st.length / tokens.length))

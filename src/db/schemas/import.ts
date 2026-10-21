@@ -19,7 +19,6 @@ export const IMPORT_FIELDS = [
   'contactLinkedin',
   'priority',
   'tag',
-  'shows',
   'comment',
 ] as const
 export type ImportField = (typeof IMPORT_FIELDS)[number]
@@ -51,7 +50,7 @@ export type CompanyDraft = {
   priority: Priority | null
   /** Typologie (client, prospect, concurrent…) : le libellé d'un tag de l'équipe. */
   tag: string
-  /** Salons où l'entreprise était ou sera : libellés des colonnes cochées et de la colonne « Salons » (pastilles). */
+  /** Salons où l'entreprise était ou sera : libellés des colonnes de salons cochées (pastilles). */
   shows: string[]
   /** Historique avec l'entreprise (colonne « Commentaire » du fichier), texte libre. */
   comment: string
