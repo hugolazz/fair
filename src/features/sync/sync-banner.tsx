@@ -1,57 +1,76 @@
 import { CloudOff, RefreshCw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { prefetchStatus } from '@/db/repositories/prefetch'
+import { staleStatus } from '@/lib/cache/cache'
 import { cn } from '@/lib/cn'
 import { useSync } from './use-sync'
 
-/** Combien de temps « Tout est synchronisé » reste affiché. */
+/** Combien de temps « Tout est synchronisé » (et « Prêt pour le hors ligne ») restent affichés. */
 const SYNCED_MS = 3_000
 
-/**
- * État des envois, toujours dit en clair : « Hors ligne : 2 modifications en attente », « Envoi… », « Tout est
- * synchronisé », ou un refus du serveur à traiter. Rien ne s'affiche quand tout va bien.
- */
-export function SyncBanner() {
-  const { t } = useTranslation('sync')
-  const { snapshot, retryFailed, discardFailed } = useSync()
-  const [justSynced, setJustSynced] = useState(false)
+const dateTime = new Intl.DateTimeFormat('fr', {
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+})
 
-  // « Tout est synchronisé » seulement quand la file vient de se vider après un envoi réel.
-  const { lastSyncedAt, pending } = snapshot
+type Tone = 'info' | 'warn' | 'error' | 'ok'
+type Line = { text: string; tone: Tone }
+
+/** Affiche un message `ms` millisecondes après un instant donné (un horodatage qui change), puis le retire. */
+function useFlash(stamp: number | null, active: boolean): boolean {
+  const [shown, setShown] = useState(false)
   useEffect(() => {
-    if (lastSyncedAt === null || pending > 0) return
-    const show = window.setTimeout(() => setJustSynced(true), 0)
-    const hide = window.setTimeout(() => setJustSynced(false), SYNCED_MS)
+    if (stamp === null || !active) return
+    const show = window.setTimeout(() => setShown(true), 0)
+    const hide = window.setTimeout(() => setShown(false), SYNCED_MS)
     return () => {
       window.clearTimeout(show)
       window.clearTimeout(hide)
     }
-  }, [lastSyncedAt, pending])
+  }, [stamp, active])
+  return shown
+}
 
-  let text: string | null = null
-  let tone: 'info' | 'warn' | 'error' | 'ok' = 'info'
-  if (snapshot.failed > 0) {
-    text = t('failed', { count: snapshot.failed })
-    tone = 'error'
-  } else if (snapshot.pending > 0 && snapshot.status === 'offline') {
-    text = t('offline', { count: snapshot.pending })
-    tone = 'warn'
-  } else if (snapshot.pending > 0) {
-    text = t('syncing', { count: snapshot.pending })
-  } else if (justSynced) {
-    text = t('synced')
-    tone = 'ok'
-  }
+/**
+ * État de l'appli face au réseau, toujours dit en clair : envois en attente (« Hors ligne : 2 modifications… »), refus du
+ * serveur à traiter, données lues dans la copie locale (« Données enregistrées le … »), préparation du hors ligne.
+ * Rien ne s'affiche quand tout va bien.
+ */
+export function SyncBanner() {
+  const { t } = useTranslation('sync')
+  const { snapshot, retryFailed, discardFailed } = useSync()
+  const staleSince = useSyncExternalStore(staleStatus.subscribe, staleStatus.getSnapshot)
+  const prefetch = useSyncExternalStore(prefetchStatus.subscribe, prefetchStatus.getSnapshot)
+  const justSynced = useFlash(snapshot.lastSyncedAt, snapshot.pending === 0)
+  const justPrefetched = useFlash(prefetch.finishedAt, prefetch.status === 'done')
+
+  const lines: Line[] = []
+  if (snapshot.failed > 0)
+    lines.push({ text: t('failed', { count: snapshot.failed }), tone: 'error' })
+  else if (snapshot.pending > 0 && snapshot.status === 'offline')
+    lines.push({ text: t('offline', { count: snapshot.pending }), tone: 'warn' })
+  else if (snapshot.pending > 0)
+    lines.push({ text: t('syncing', { count: snapshot.pending }), tone: 'info' })
+  else if (justSynced) lines.push({ text: t('synced'), tone: 'ok' })
+  if (staleSince !== null)
+    lines.push({ text: t('stale', { date: dateTime.format(new Date(staleSince)) }), tone: 'warn' })
+  if (prefetch.status === 'running')
+    lines.push({ text: t('prefetching', { percent: prefetch.percent }), tone: 'info' })
+  else if (justPrefetched) lines.push({ text: t('prefetched'), tone: 'ok' })
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className="mx-auto w-full max-w-[1040px] px-4 empty:hidden md:px-10"
+      className="mx-auto flex w-full max-w-[1040px] flex-col gap-2 px-4 empty:hidden md:px-10"
     >
-      {text ? (
+      {lines.map(({ text, tone }) => (
         <p
+          key={text}
           className={cn(
             'flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-3 py-2 text-sm font-medium',
             tone === 'error' && 'bg-red-50 text-red-900',
@@ -80,7 +99,7 @@ export function SyncBanner() {
             </span>
           ) : null}
         </p>
-      ) : null}
+      ))}
     </div>
   )
 }

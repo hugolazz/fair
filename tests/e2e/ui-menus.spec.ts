@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { login, resetBackend, USERS } from './support'
+import { login, resetBackend, USERS, settleAnimations } from './support'
 
 // Menus déroulants et calendriers aux couleurs de l'appli (écran non tactile : les sélecteurs natifs ne servent que sur mobile).
 async function openNewEventDialog(page: Page) {
@@ -65,7 +65,7 @@ test.describe.serial('menus et calendriers', () => {
   test('accessibilité : calendrier et liste ouverts (axe)', async ({ page }) => {
     const dialog = await openNewEventDialog(page)
     const audit = async (label: string) => {
-      await page.waitForTimeout(600) // fin de l'animation d'ouverture
+      await settleAnimations(page)
       const { violations } = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
         .analyze()

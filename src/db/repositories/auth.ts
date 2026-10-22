@@ -1,4 +1,5 @@
 import type { Session } from '@supabase/supabase-js'
+import { clearCache } from '@/lib/cache/cache'
 import { supabase } from '@/lib/supabase'
 
 export type { Session }
@@ -93,6 +94,7 @@ export async function changePassword(
 }
 
 export async function signOut(): Promise<void> {
+  await clearCache() // rien de lu ne reste sur l'appareil après la déconnexion
   const { error } = await supabase.auth.signOut()
   if (error) throw error
 }

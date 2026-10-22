@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { login, resetBackend, seedEvent, sql, USERS } from './support'
+import { login, resetBackend, seedEvent, sql, USERS, settleAnimations } from './support'
 
 // Écritures hors ligne : sans réseau, la note et les cases sont gardées sur l'appareil (file d'attente) et partent toutes
 // seules au retour de la connexion. La bannière dit « Hors ligne : N modifications en attente d'envoi ».
@@ -41,7 +41,7 @@ test('hors ligne : la note est gardée sur l’appareil, puis part toute seule a
   expect(await liveNotes()).toEqual([])
   expect(await liveMeetings()).toBe(0)
   // La bannière est accessible (contraste, rôle) pendant qu'elle est affichée.
-  await page.waitForTimeout(600)
+  await settleAnimations(page)
   const { violations } = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
     .analyze()

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore, type ReactNode } from 'react'
 import {
+  applyOpToCache,
   executeOp,
   isRetryableError,
   mergeOps,
@@ -56,7 +57,10 @@ export function SyncProvider({ userId, children }: { userId: string; children: R
   }, [snapshot.pending])
 
   const enqueue = useCallback(
-    (op: SyncOp) => outbox.enqueue(op, { key: opKey(op), merge: mergeOps }),
+    (op: SyncOp) => {
+      outbox.enqueue(op, { key: opKey(op), merge: mergeOps })
+      void applyOpToCache(op)
+    },
     [outbox],
   )
   const cancelUnsentMeeting = useCallback(

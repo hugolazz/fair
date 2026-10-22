@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { SyncOp } from '@/db/repositories/sync'
 import type { Target, TargetMeeting } from '@/db/schemas/prepare'
-import { applyMeetingPatch, overlayMeetingOps } from './overlay'
+import type { MeetingNote } from '@/db/repositories/targets'
+import { applyMeetingPatch, overlayMeetingOps, overlayNotes } from './overlay'
 import { target } from './test-helpers'
 
 const meeting = (id: string, over: Partial<TargetMeeting> = {}): TargetMeeting => ({
@@ -116,5 +117,75 @@ describe('overlayMeetingOps', () => {
       { type: 'meeting.patch', id: 'inconnue', patch: { news: true } },
     ])
     expect(out[0]!.meetings).toEqual([])
+  })
+})
+
+describe('overlayNotes', () => {
+  const note = (
+    id: string,
+    body: string,
+    authorId = 'moi',
+    capturedAt = '2026-10-20T10:00:00.000Z',
+  ): MeetingNote => ({
+    id,
+    body,
+    authorId,
+    capturedAt,
+  })
+  const upsert = (id: string, body: string, adopt = false, meetingId = 'm1'): SyncOp => ({
+    type: 'note.upsert',
+    note: {
+      id,
+      teamId: 't',
+      meetingId,
+      authorId: 'moi',
+      body,
+      capturedAt: '2026-10-21T10:00:00.000Z',
+      adopt,
+    },
+  })
+
+  it('ma note écrite hors ligne apparaît ; sans écriture en attente, la liste est inchangée', () => {
+    const base = [note('n1', 'd\u2019un coll\u00e8gue', 'paul')]
+    expect(overlayNotes(base, [], 'm1')).toEqual(base)
+    const out = overlayNotes(base, [upsert('n2', 'Ma note hors ligne')], 'm1')
+    expect(out.map((n) => [n.id, n.body])).toEqual([
+      ['n1', 'd\u2019un coll\u00e8gue'],
+      ['n2', 'Ma note hors ligne'],
+    ])
+  })
+
+  it('un nouveau texte remplace l\u2019ancien (m\u00eame identifiant), en gardant l\u2019heure d\u2019origine', () => {
+    const out = overlayNotes([note('n1', 'ancien')], [upsert('n1', 'corrig\u00e9')], 'm1')
+    expect(out).toEqual([note('n1', 'corrig\u00e9')])
+  })
+
+  it('une note supprim\u00e9e ne revient pas', () => {
+    const out = overlayNotes(
+      [note('n1', 'a'), note('n2', 'b', 'paul', '2026-10-20T11:00:00.000Z')],
+      [{ type: 'note.delete', id: 'n1', meetingId: 'm1' }],
+      'm1',
+    )
+    expect(out.map((n) => n.id)).toEqual(['n2'])
+  })
+
+  it('\u00e9crite sans avoir pu lire l\u2019existante (adopt) : la mienne s\u2019affiche comme corrig\u00e9e, pas en double', () => {
+    const out = overlayNotes(
+      [note('existante', 'avant')],
+      [upsert('nouvelle', 'apr\u00e8s', true)],
+      'm1',
+    )
+    expect(out).toEqual([note('existante', 'apr\u00e8s')])
+  })
+
+  it('ne touche pas aux notes des autres rencontres', () => {
+    const out = overlayNotes([note('n1', 'a')], [upsert('n9', 'ailleurs', false, 'm2')], 'm1')
+    expect(out).toEqual([note('n1', 'a')])
+  })
+
+  it('est rejouable : appliquer deux fois donne le m\u00eame r\u00e9sultat', () => {
+    const ops = [upsert('n1', 'texte')]
+    const once = overlayNotes([], ops, 'm1')
+    expect(overlayNotes(once, ops, 'm1')).toEqual(once)
   })
 })

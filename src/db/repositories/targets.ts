@@ -1,6 +1,8 @@
 // Préparation du salon : cibles (event_companies), tags, assignations, rendez-vous, fiche et historique.
 // Comme events.ts, lit et écrit directement sur Supabase.
+import { cachedRead } from '@/lib/cache/cache'
 import { supabase } from '@/lib/supabase'
+import { cacheKeys } from '../cache-keys'
 import { newId } from '@/lib/ids'
 import {
   DEFAULT_TAGS,
@@ -112,7 +114,23 @@ export async function listTargets(eventId: string): Promise<Target[]> {
   }
 }
 
-export async function fetchContacts(companyId: string): Promise<TargetContact[]> {
+/** Une ligne `contacts` telle que l'appli la manipule. */
+export function toTargetContact(c: Record<string, unknown>): TargetContact {
+  return {
+    id: c.id as string,
+    name: [c.first_name, c.last_name].filter(Boolean).join(' '),
+    jobTitle: (c.job_title as string | null) ?? '',
+    email: (c.email as string | null) ?? '',
+    phone: (c.phone as string | null) ?? '',
+    linkedin: (c.linkedin_url as string | null) ?? '',
+  }
+}
+
+/** Contacts d'une entreprise : le réseau d'abord, la copie locale si le réseau manque. */
+export const fetchContacts = (companyId: string): Promise<TargetContact[]> =>
+  cachedRead(cacheKeys.contacts(companyId), () => fetchContactsNetwork(companyId))
+
+export async function fetchContactsNetwork(companyId: string): Promise<TargetContact[]> {
   const { data, error } = await supabase
     .from('contacts')
     .select('id, first_name, last_name, job_title, email, phone, linkedin_url')
@@ -121,14 +139,7 @@ export async function fetchContacts(companyId: string): Promise<TargetContact[]>
     // Ordre de saisie (identifiants UUIDv7) : le premier contact importé reste le contact clé, les ajouts suivent.
     .order('id')
   if (error) throw error
-  return (data ?? []).map((c) => ({
-    id: c.id as string,
-    name: [c.first_name, c.last_name].filter(Boolean).join(' '),
-    jobTitle: (c.job_title as string | null) ?? '',
-    email: (c.email as string | null) ?? '',
-    phone: (c.phone as string | null) ?? '',
-    linkedin: (c.linkedin_url as string | null) ?? '',
-  }))
+  return (data ?? []).map(toTargetContact)
 }
 
 export type NewContact = {
@@ -172,7 +183,12 @@ export async function addContact(
 }
 
 /** Rencontres et notes de la même entreprise lors des autres salons. */
-export async function fetchHistory(
+export const fetchHistory = (companyId: string, currentEventId: string): Promise<HistoryEntry[]> =>
+  cachedRead(cacheKeys.history(companyId, currentEventId), () =>
+    fetchHistoryNetwork(companyId, currentEventId),
+  )
+
+export async function fetchHistoryNetwork(
   companyId: string,
   currentEventId: string,
 ): Promise<HistoryEntry[]> {
@@ -452,7 +468,21 @@ export async function updateMeetingReport(id: string, patch: MeetingReportPatch)
 
 export type MeetingNote = { id: string; body: string; authorId: string; capturedAt: string }
 
-export async function fetchMeetingNotes(meetingId: string): Promise<MeetingNote[]> {
+/** Une ligne `notes` telle que l'appli la manipule. */
+export function toMeetingNote(n: Record<string, unknown>): MeetingNote {
+  return {
+    id: n.id as string,
+    body: n.body as string,
+    authorId: n.author_id as string,
+    capturedAt: n.captured_at as string,
+  }
+}
+
+/** Notes d'une rencontre : le réseau d'abord, la copie locale si le réseau manque. */
+export const fetchMeetingNotes = (meetingId: string): Promise<MeetingNote[]> =>
+  cachedRead(cacheKeys.notes(meetingId), () => fetchMeetingNotesNetwork(meetingId))
+
+export async function fetchMeetingNotesNetwork(meetingId: string): Promise<MeetingNote[]> {
   const { data, error } = await supabase
     .from('notes')
     .select('id, body, author_id, captured_at')
@@ -460,12 +490,7 @@ export async function fetchMeetingNotes(meetingId: string): Promise<MeetingNote[
     .is('deleted_at', null)
     .order('captured_at')
   if (error) throw error
-  return (data ?? []).map((n) => ({
-    id: n.id as string,
-    body: n.body as string,
-    authorId: n.author_id as string,
-    capturedAt: n.captured_at as string,
-  }))
+  return (data ?? []).map(toMeetingNote)
 }
 
 export async function addMeetingNote(

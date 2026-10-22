@@ -1,5 +1,5 @@
 import { CheckCircle2, NotebookPen, UserPlus } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { fetchMeetingNotes } from '@/db/repositories/targets'
@@ -11,6 +11,7 @@ import { newId } from '@/lib/ids'
 import { useAsync } from '@/lib/use-async'
 import { formatTime } from './lib/format'
 import { currentMeeting, isEmptyAutoMeeting } from './lib/notepad'
+import { overlayNotes } from './lib/overlay'
 import type { TargetsApi } from './use-targets'
 
 type Props = {
@@ -47,8 +48,20 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
     () => (meeting ? fetchMeetingNotes(meeting.id) : Promise.resolve([])),
     [meeting?.id],
   )
+  // Les notes lues, avec par-dessus mes écritures pas encore parties (hors ligne, ou page rechargée avant l'envoi).
+  const pendingKeys = sync.snapshot.keys
+  const noteList = useMemo(
+    () =>
+      overlayNotes(
+        notes.data ?? [],
+        sync.snapshot.pending > 0 ? sync.pendingOps() : [],
+        meeting?.id,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `pendingKeys` change à chaque évolution de la file
+    [notes.data, pendingKeys, meeting?.id],
+  )
   // Mon texte : une seule note par rencontre, qui reste affichée (et modifiable) après l'enregistrement.
-  const mine = [...(notes.data ?? [])].reverse().find((n) => n.authorId === meId)
+  const mine = [...noteList].reverse().find((n) => n.authorId === meId)
   // La liste est lue, ou la lecture a échoué (réseau coupé) : dans les deux cas on peut écrire.
   const notesSettled = notes.data !== undefined || notes.error !== undefined
   const [draft, setDraft] = useState('')
@@ -322,7 +335,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
 
   const done = meeting?.status === 'done'
   // Les notes de mes collègues restent listées sous la mienne.
-  const list = [...(notes.data ?? [])].reverse().filter((n) => n.id !== mine?.id)
+  const list = [...noteList].reverse().filter((n) => n.id !== mine?.id)
   const recontact = recontactLocal ?? meeting?.recontact ?? false
   const interest = interestLocal !== undefined ? interestLocal : (meeting?.interest ?? null)
   const news = newsLocal ?? meeting?.news ?? false

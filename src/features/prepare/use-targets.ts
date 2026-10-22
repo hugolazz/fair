@@ -1,4 +1,9 @@
 import { toError } from '@/lib/to-error'
+import { cacheKeys } from '@/db/cache-keys'
+import { prefetchEventData } from '@/db/repositories/prefetch'
+import { markFresh, markStale, readCached, writeCached } from '@/lib/cache/cache'
+import { isRetryableError } from '@/lib/network-error'
+import { useReadySession } from '@/features/auth-team/session'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   assignTargets,
@@ -38,6 +43,8 @@ export function useTargets(eventId: string, teamId: string) {
   const [tick, setTick] = useState(0)
   const dataRef = useRef<Data>(undefined)
   const sync = useSync()
+  const { session } = useReadySession()
+  const meId = session.user.id
   const syncRef = useRef(sync)
   useEffect(() => {
     syncRef.current = sync
@@ -47,26 +54,55 @@ export function useTargets(eventId: string, teamId: string) {
     dataRef.current = data
   }, [data])
 
+  // Chargement : la copie locale s'affiche tout de suite (connexion lente ou coupée), le réseau la remplace dès qu'il répond.
   useEffect(() => {
     let cancelled = false
-    Promise.all([listTargets(eventId), ensureDefaultTags(teamId), listMembers(teamId)]).then(
-      ([targets, tags, members]) => {
+    void (async () => {
+      const cached = await readCached<Data>(cacheKeys.eventData(eventId))
+      if (cancelled) return
+      if (cached && !dataRef.current) setData(cached.value)
+      try {
+        const [targets, tags, members] = await Promise.all([
+          listTargets(eventId),
+          ensureDefaultTags(teamId),
+          listMembers(teamId),
+        ])
         if (cancelled) return
+        markFresh()
         setError(undefined)
-        setData({
+        const fresh: Data = {
           targets,
           tags,
           members: members.map((m) => ({ userId: m.userId, name: m.displayName || '?' })),
-        })
-      },
-      (e: unknown) => {
-        if (!cancelled) setError(toError(e))
-      },
-    )
+        }
+        setData(fresh)
+        void writeCached(cacheKeys.eventData(eventId), fresh)
+        // Contacts, notes et historique du salon, pour pouvoir ouvrir une fiche sans réseau.
+        void prefetchEventData(eventId, targets, meId)
+      } catch (e) {
+        if (cancelled) return
+        if ((cached || dataRef.current) && isRetryableError(e)) {
+          markStale(cached?.savedAt ?? Date.now()) // on garde ce qu'on a, la bannière le dit
+        } else {
+          setError(toError(e))
+        }
+      }
+    })()
     return () => {
       cancelled = true
     }
-  }, [eventId, teamId, tick])
+  }, [eventId, teamId, tick, meId])
+
+  // La copie locale suit les modifications faites à l'écran (après une courte pause) : rouvrir la liste hors ligne
+  // montre ce qu'on y avait fait.
+  useEffect(() => {
+    if (!data) return
+    const timer = window.setTimeout(
+      () => void writeCached(cacheKeys.eventData(eventId), data),
+      1_500,
+    )
+    return () => window.clearTimeout(timer)
+  }, [data, eventId])
 
   const reload = useCallback(() => setTick((t) => t + 1), [])
 

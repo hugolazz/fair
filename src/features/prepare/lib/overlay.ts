@@ -1,5 +1,5 @@
-import type { SyncOp } from '@/db/repositories/sync'
-import type { MeetingReportPatch } from '@/db/repositories/targets'
+import { applyNoteOp, type SyncOp } from '@/db/repositories/sync'
+import type { MeetingNote, MeetingReportPatch } from '@/db/repositories/targets'
 import type { Target, TargetMeeting } from '@/db/schemas/prepare'
 
 /** Applique un changement de compte-rendu (statut, intérêt, cases, contact) à une rencontre. */
@@ -81,4 +81,24 @@ export function overlayMeetingOps(targets: Target[], ops: readonly SyncOp[]): Ta
     }
   }
   return targets.map((t) => (changed.has(t.id) ? { ...t, meetings: changed.get(t.id)! } : t))
+}
+
+/**
+ * Rejoue sur les notes d'une rencontre (lues sur le serveur ou dans la copie locale) celles qui n'y sont pas encore
+ * arrivées : ma note écrite hors ligne s'affiche, une note que je viens de supprimer ne revient pas. Rejouable sans risque.
+ */
+export function overlayNotes(
+  notes: readonly MeetingNote[],
+  ops: readonly SyncOp[],
+  meetingId: string | undefined,
+): MeetingNote[] {
+  if (!meetingId) return [...notes]
+  let out = [...notes]
+  for (const op of ops) {
+    const concerned =
+      (op.type === 'note.upsert' && op.note.meetingId === meetingId) ||
+      (op.type === 'note.delete' && op.meetingId === meetingId)
+    if (concerned) out = applyNoteOp(out, op)
+  }
+  return out
 }

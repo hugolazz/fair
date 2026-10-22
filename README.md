@@ -8,7 +8,7 @@ companies, take meeting notes on your phone, keep a per-company history from one
 as Excel, CSV or PDF. Built with React, TypeScript and Supabase (Postgres with row-level security). The interface is in
 French._
 
-L'appli est utilisée connectée ; les notes et les cases d'une rencontre se saisissent aussi sans réseau : elles sont gardées sur l'appareil et partent toutes seules au retour de la connexion (bannière « Hors ligne : N modifications en attente »).
+L'appli est utilisée connectée ; les notes et les cases d'une rencontre se saisissent aussi sans réseau : elles sont gardées sur l'appareil et partent toutes seules au retour de la connexion (bannière « Hors ligne : N modifications en attente »). Les fiches d'un salon (contacts, notes, historique de vos entreprises) sont aussi copiées sur l'appareil et se lisent sans réseau une fois le salon ouvert en ligne.
 
 ![Liste des salons](docs/screenshots/salons.png)
 

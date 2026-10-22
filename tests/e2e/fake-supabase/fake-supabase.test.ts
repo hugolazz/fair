@@ -436,6 +436,78 @@ describe('faux Supabase', () => {
     expect(await liveMeetings()).toEqual([])
   })
 
+  it('copie locale : les lectures se rabattent sur la copie si le réseau manque, et le téléchargement remplit les fiches', async () => {
+    const auth = await import('@/db/repositories/auth')
+    const teams = await import('@/db/repositories/teams')
+    const events = await import('@/db/repositories/events')
+    const targets = await import('@/db/repositories/targets')
+    const { prefetchEventData, prefetchStatus } = await import('@/db/repositories/prefetch')
+    const { cacheKeys } = await import('@/db/cache-keys')
+    const { configureCache, readCached, staleStatus, markFresh } = await import('@/lib/cache/cache')
+    const { MemoryCacheStore } = await import('@/lib/cache/store')
+
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    const me = (await auth.getSession())!.user.id
+    const teamId = (await teams.fetchMembership(me))!.teamId
+    configureCache(me, new MemoryCacheStore())
+    const event = await events.createEvent(teamId, {
+      name: 'Salon copie',
+      startsOn: '2027-02-10',
+      endsOn: '2027-02-11',
+      venue: '',
+      city: '',
+      goals: '',
+    })
+    const rows = await exec(`
+      with c as (insert into companies (id, team_id, name, name_normalized) values (gen_random_uuid(), '${teamId}', 'Copieco', 'copieco') returning id),
+           ct as (insert into contacts (id, team_id, company_id, first_name, last_name)
+                  select gen_random_uuid(), '${teamId}', id, 'Ada', 'Lovelace' from c returning id),
+           ec as (insert into event_companies (id, team_id, event_id, company_id)
+                  select gen_random_uuid(), '${teamId}', '${event.id}', id from c returning id, company_id),
+           m as (insert into meetings (id, team_id, event_id, event_company_id, owner_id, planned_at)
+                 select gen_random_uuid(), '${teamId}', '${event.id}', id, '${me}', now() from ec returning id)
+      select (select company_id from ec) as company_id, (select id from m) as meeting_id`)
+    const companyId = String(rows[0]!.company_id)
+    const meetingId = String(rows[0]!.meeting_id)
+    await exec(
+      `insert into notes (id, team_id, meeting_id, author_id, body, source, captured_at) values (gen_random_uuid(), '${teamId}', '${meetingId}', '${me}', 'Note copiée', 'typed', now())`,
+    )
+
+    // Lecture en ligne : la copie se remplit.
+    const live = await targets.fetchContacts(companyId)
+    expect(live.map((c) => c.name)).toEqual(['Ada Lovelace'])
+    expect((await readCached(cacheKeys.contacts(companyId)))?.value).toEqual(live)
+
+    // Téléchargement du salon : contacts, notes et historique des entreprises assignées.
+    const list = await targets.listTargets(event.id)
+    await prefetchEventData(event.id, list, me, { force: true })
+    expect(prefetchStatus.getSnapshot()).toMatchObject({ status: 'done', percent: 100 })
+    expect((await readCached(cacheKeys.notes(meetingId)))?.value).toEqual([
+      expect.objectContaining({ body: 'Note copiée', authorId: me }),
+    ])
+
+    // Réseau coupé : la lecture rend la copie et le signale.
+    const offline = vi
+      .spyOn(globalThis, 'fetch')
+      .mockRejectedValue(new TypeError('Failed to fetch'))
+    try {
+      expect((await targets.fetchContacts(companyId)).map((c) => c.name)).toEqual(['Ada Lovelace'])
+      expect((await targets.fetchMeetingNotes(meetingId)).map((n) => n.body)).toEqual([
+        'Note copiée',
+      ])
+      expect(staleStatus.getSnapshot()).not.toBeNull()
+      // Sans copie, l'erreur remonte (rien à afficher).
+      await expect(
+        targets.fetchContacts('00000000-0000-0000-0000-000000000000'),
+      ).rejects.toBeDefined()
+    } finally {
+      offline.mockRestore()
+      markFresh()
+    }
+    configureCache(null)
+  })
+
   it('inscription : nom d’usage, recherche d’une équipe par son nom, adhésion, profil modifiable', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')

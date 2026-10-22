@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { PASSWORD, resetBackend } from './support'
+import { PASSWORD, resetBackend, settleAnimations } from './support'
 
 // Création de compte : nom d'usage, recherche d'une équipe par son nom, rejoindre / créer / travailler seul.
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
@@ -17,7 +17,7 @@ async function signUp(page: Page, first: string, last: string, email: string) {
 }
 
 async function audit(page: Page, label: string) {
-  await page.waitForTimeout(600) // fin de l'animation d'entrée : axe mesure sinon un contraste à mi-opacité
+  await settleAnimations(page)
   const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze()
   expect(
     violations.map((v) => `${v.id}: ${v.nodes[0]?.html.slice(0, 140)}`),

@@ -1,3 +1,4 @@
+import { configureCache } from '@/lib/cache/cache'
 import { toError } from '@/lib/to-error'
 import {
   createContext,
@@ -31,6 +32,7 @@ type Loaded = {
 }
 
 async function loadFor(uid: string): Promise<Loaded> {
+  configureCache(uid) // avant tout affichage : les lectures de l'appli passent par la copie de cet utilisateur
   try {
     const [membership, displayName] = await Promise.all([
       fetchMembership(uid),

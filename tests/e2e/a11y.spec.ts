@@ -1,12 +1,12 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { login, resetBackend, seedEvent, sql, USERS } from './support'
+import { login, resetBackend, seedEvent, sql, USERS, settleAnimations } from './support'
 
 // Accessibilité WCAG 2.2 AA : audit axe de chaque écran avec des données réelles, plus la navigation au clavier.
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
 
 async function audit(page: Page, label: string) {
-  await page.waitForTimeout(600) // fin de l'animation d'entrée : axe mesure sinon un contraste à mi-opacité
+  await settleAnimations(page)
   const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze()
   const summary = violations.map(
     (v) => `${v.id} (${v.impact}) ×${v.nodes.length} : ${v.nodes[0]?.html.slice(0, 160)}`,

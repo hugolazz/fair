@@ -174,8 +174,14 @@ test('la note s’enregistre toute seule : à la pause, à la fermeture de la fi
   await page.reload()
   await page.getByRole('button', { name: 'Bolt' }).first().click()
   await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue(expected)
-  const notes = await sql<{ body: string }>('select body from notes where deleted_at is null')
-  expect(notes.map((n) => n.body)).toEqual([expected])
+  // « Note enregistrée » = gardée sur l'appareil ; l'envoi vers la base suit : on attend qu'il soit arrivé.
+  await expect
+    .poll(async () =>
+      (await sql<{ body: string }>('select body from notes where deleted_at is null')).map(
+        (n) => n.body,
+      ),
+    )
+    .toEqual([expected])
 })
 
 test('vider le champ supprime la note : elle ne revient pas, et on peut en écrire une nouvelle', async ({
@@ -199,13 +205,21 @@ test('vider le champ supprime la note : elle ne revient pas, et on peut en écri
   await page.reload()
   await page.getByRole('button', { name: 'Bolt' }).first().click()
   await expect(sheet.getByLabel('Note de la rencontre')).toHaveValue('')
-  expect(await sql('select id from notes where deleted_at is null')).toEqual([])
+  // La suppression part par la file d'attente : on attend qu'elle soit arrivée plutôt que de lire la base trop tôt.
+  await expect
+    .poll(async () => (await sql('select id from notes where deleted_at is null')).length)
+    .toBe(0)
 
   // On peut écrire de nouveau : une nouvelle note, une seule.
   await sheet.getByLabel('Note de la rencontre').fill('Nouvelle note.')
   await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
-  const notes = await sql<{ body: string }>('select body from notes where deleted_at is null')
-  expect(notes.map((n) => n.body)).toEqual(['Nouvelle note.'])
+  await expect
+    .poll(async () =>
+      (await sql<{ body: string }>('select body from notes where deleted_at is null')).map(
+        (n) => n.body,
+      ),
+    )
+    .toEqual(['Nouvelle note.'])
 
   // Vider puis fermer aussitôt (avant la pause) : la suppression part quand même.
   await sheet.getByLabel('Note de la rencontre').fill('')
@@ -239,7 +253,7 @@ test('quand tout est retiré, la rencontre créée par le bloc-notes disparaît,
   await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(row).toContainText(hour)
-  expect(await liveMeetings()).toBe(1)
+  await expect.poll(liveMeetings).toBe(1)
 
   // Tout effacer : la rencontre et sa date disparaissent.
   await open()
@@ -258,11 +272,11 @@ test('quand tout est retiré, la rencontre créée par le bloc-notes disparaît,
   await sheet.getByLabel('À recontacter après le salon').check()
   await field.fill('Une note.')
   await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
-  expect(await liveMeetings()).toBe(1)
+  await expect.poll(liveMeetings).toBe(1)
 
   await field.fill('')
   await expect(sheet.getByText('Note supprimée.')).toBeVisible()
-  expect(await liveMeetings()).toBe(1) // il reste l'intérêt et « à recontacter »
+  await expect.poll(liveMeetings).toBe(1) // il reste l'intérêt et « à recontacter »
   await sheet
     .getByRole('group', { name: 'Intérêt (sur 5)' })
     .getByRole('button', { name: '3 sur 5' })
@@ -277,7 +291,7 @@ test('quand tout est retiré, la rencontre créée par le bloc-notes disparaît,
   await open()
   await field.fill('Retour.')
   await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
-  expect(await liveMeetings()).toBe(1)
+  await expect.poll(liveMeetings).toBe(1)
 })
 
 test('un rendez-vous planifié à la main n’est jamais supprimé quand on vide le bloc-notes', async ({
@@ -305,7 +319,7 @@ test('un rendez-vous planifié à la main n’est jamais supprimé quand on vide
   await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
   await field.fill('')
   await expect(sheet.getByText('Note supprimée.')).toBeVisible()
-  expect(await liveMeetings()).toBe(1) // le rendez-vous planifié reste
+  await expect.poll(liveMeetings).toBe(1) // le rendez-vous planifié reste
 })
 
 test('ajouter un contact termine la rencontre ; le supprimer, s’il était la seule trace, la supprime', async ({
@@ -329,7 +343,7 @@ test('ajouter un contact termine la rencontre ; le supprimer, s’il était la s
   await form.getByRole('button', { name: 'Enregistrer le contact' }).click()
   await expect(sheet.getByText('Contact ajouté : Grace Hopper.')).toBeVisible()
   await expect(sheet.getByText('Rencontre marquée comme terminée.')).toBeVisible()
-  expect(await liveMeetings()).toBe(1)
+  await expect.poll(liveMeetings).toBe(1)
 
   // Supprimer ce contact (la seule trace de la rencontre) : la rencontre disparaît, et « terminée » aussi.
   const edit = await openEdit(page)
@@ -348,7 +362,7 @@ test('ajouter un contact termine la rencontre ; le supprimer, s’il était la s
   await page.getByRole('button', { name: 'Bolt' }).first().click()
   await sheet.getByLabel('Note de la rencontre').fill('Retour au stand.')
   await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
-  expect(await liveMeetings()).toBe(1)
+  await expect.poll(liveMeetings).toBe(1)
 })
 
 test('supprimer un contact ne supprime pas une rencontre qui contient autre chose', async ({

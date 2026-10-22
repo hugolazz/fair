@@ -1,5 +1,7 @@
 // Salons : lecture/écriture directes sur Supabase.
+import { cachedRead } from '@/lib/cache/cache'
 import { supabase } from '@/lib/supabase'
+import { cacheKeys } from '../cache-keys'
 import { newId } from '@/lib/ids'
 import {
   eventRowSchema,
@@ -10,7 +12,11 @@ import {
 
 const COLUMNS = 'id, team_id, name, starts_on, ends_on, venue, city, status, goals'
 
-export async function listEvents(): Promise<EventRow[]> {
+/** Les salons : le réseau d'abord, la copie locale si le réseau manque. */
+export const listEvents = (): Promise<EventRow[]> =>
+  cachedRead(cacheKeys.events(), listEventsNetwork)
+
+async function listEventsNetwork(): Promise<EventRow[]> {
   const { data, error } = await supabase
     .from('events')
     .select(COLUMNS)
@@ -21,7 +27,10 @@ export async function listEvents(): Promise<EventRow[]> {
   return eventRowSchema.array().parse(data)
 }
 
-export async function getEvent(id: string): Promise<EventRow | null> {
+export const getEvent = (id: string): Promise<EventRow | null> =>
+  cachedRead(cacheKeys.event(id), () => getEventNetwork(id))
+
+async function getEventNetwork(id: string): Promise<EventRow | null> {
   const { data, error } = await supabase
     .from('events')
     .select(COLUMNS)

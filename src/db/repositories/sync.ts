@@ -1,3 +1,5 @@
+import { patchCached } from '@/lib/cache/cache'
+import { cacheKeys } from '../cache-keys'
 import {
   deleteMeeting,
   deleteMeetingNote,
@@ -7,6 +9,7 @@ import {
   updateMeetingReport,
   upsertMeetingNote,
   type MeetingInput,
+  type MeetingNote,
   type MeetingReportPatch,
 } from './targets'
 
@@ -108,19 +111,39 @@ export async function executeOp(op: SyncOp): Promise<void> {
   }
 }
 
-const NETWORK_MESSAGE =
-  /failed to fetch|fetch failed|networkerror|network request failed|load failed|network error|timed? ?out|econn|err_internet|err_network|err_connection|aborted/i
-
 /**
- * Une erreur passagère : réseau coupé, serveur indisponible, jeton à renouveler. L'envoi sera retenté plus tard au lieu
- * d'être déclaré refusé.
+ * Applique une écriture de note à une liste de notes : ma note écrite hors ligne apparaît, une note supprimée disparaît.
+ * Rejouable sans risque. Sert à afficher les écritures en attente et à tenir la copie locale à jour.
  */
-export function isRetryableError(e: unknown): boolean {
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true
-  if (typeof e !== 'object' || e === null) return false
-  const { message, code, status } = e as { message?: unknown; code?: unknown; status?: unknown }
-  if (typeof message === 'string' && NETWORK_MESSAGE.test(message)) return true
-  if (typeof message === 'string' && /jwt expired/i.test(message)) return true
-  if (code === 'PGRST301') return true
-  return typeof status === 'number' && (status >= 500 || status === 429 || status === 408)
+export function applyNoteOp(notes: readonly MeetingNote[], op: SyncOp): MeetingNote[] {
+  if (op.type === 'note.upsert') {
+    const { note } = op
+    // Écrite sans avoir pu lire l'existante (`adopt`) : l'envoi reprendra la mienne, on l'affiche comme corrigée.
+    const target =
+      notes.find((n) => n.id === note.id) ??
+      (note.adopt ? notes.find((n) => n.authorId === note.authorId) : undefined)
+    const next: MeetingNote = {
+      id: target?.id ?? note.id,
+      body: note.body,
+      authorId: note.authorId,
+      capturedAt: target?.capturedAt ?? note.capturedAt,
+    }
+    return (target ? notes.map((n) => (n.id === target.id ? next : n)) : [...notes, next]).sort(
+      (a, b) => a.capturedAt.localeCompare(b.capturedAt),
+    )
+  }
+  if (op.type === 'note.delete') return notes.filter((n) => n.id !== op.id)
+  return [...notes]
 }
+
+/** La copie locale des notes d'une rencontre suit l'écriture locale : la rouvrir hors ligne montre ce qu'on vient d'écrire. */
+export async function applyOpToCache(op: SyncOp): Promise<void> {
+  if (op.type !== 'note.upsert' && op.type !== 'note.delete') return
+  const meetingId = op.type === 'note.upsert' ? op.note.meetingId : op.meetingId
+  if (!meetingId) return
+  await patchCached<MeetingNote[]>(cacheKeys.notes(meetingId), (prev) =>
+    applyNoteOp(prev ?? [], op),
+  )
+}
+
+export { isRetryableError } from '@/lib/network-error'

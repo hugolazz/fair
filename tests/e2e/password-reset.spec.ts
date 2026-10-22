@@ -1,12 +1,12 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { login, resetBackend, USERS } from './support'
+import { login, resetBackend, USERS, settleAnimations } from './support'
 
 // Mot de passe oublié : demande du lien, puis choix du nouveau mot de passe (session de récupération).
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
 
 async function audit(page: Page, label: string) {
-  await page.waitForTimeout(600) // fin de l'animation d'entrée
+  await settleAnimations(page)
   const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze()
   expect(
     violations.map((v) => `${v.id}: ${v.nodes[0]?.html.slice(0, 140)}`),

@@ -75,3 +75,15 @@ export async function seedEvent(
   }
   return { eventId: event!.id, teamId: team!.id, targetIds }
 }
+
+/**
+ * Attend la fin des animations d'apparition : un audit d'accessibilité lancé pendant l'animation mesure sinon un
+ * contraste à mi-opacité (et une attente fixe devient trop juste quand la page met plus longtemps à s'afficher).
+ */
+export async function settleAnimations(page: Page): Promise<void> {
+  await page.waitForLoadState('networkidle') // la page (et ses morceaux de code chargés à la demande) est affichée
+  await page.waitForFunction(() =>
+    document.getAnimations().every((a) => a.playState === 'finished' || a.playState === 'idle'),
+  )
+  await page.waitForTimeout(100)
+}
