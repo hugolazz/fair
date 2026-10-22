@@ -1,13 +1,47 @@
 import type { Session } from '@supabase/supabase-js'
 import { clearCache } from '@/lib/cache/cache'
+import { isRetryableError } from '@/lib/network-error'
 import { supabase } from '@/lib/supabase'
 
 export type { Session }
 
 export async function getSession(): Promise<Session | null> {
-  const { data, error } = await supabase.auth.getSession()
-  if (error) throw error
-  return data.session
+  const stored = readStoredSession()
+  const expired = stored?.expires_at !== undefined && stored.expires_at * 1000 < Date.now() + 60_000
+  // Jeton à renouveler : supabase-js réessaie longuement quand le réseau manque. L'appli ne doit pas rester sur
+  // « Chargement… » : passé ce délai, la session gardée sur l'appareil sert (le renouvellement continue en tâche de fond).
+  const attempt = supabase.auth.getSession()
+  attempt.catch(() => {})
+  const fallback =
+    stored && expired
+      ? new Promise<null>((resolve) =>
+          setTimeout(resolve, navigator.onLine === false ? 300 : 4_000, null),
+        )
+      : null
+  try {
+    const result = await (fallback ? Promise.race([attempt, fallback]) : attempt)
+    if (result === null) return stored
+    if (result.error) throw result.error
+    return result.data.session
+  } catch (e) {
+    // Un refus du serveur est une vraie erreur ; une coupure réseau ne ferme pas la session.
+    if (stored && isRetryableError(e)) return stored
+    throw e
+  }
+}
+
+/** La session gardée par supabase-js dans le stockage du navigateur (jeton éventuellement expiré). */
+function readStoredSession(): Session | null {
+  try {
+    const key = (supabase.auth as unknown as { storageKey?: string }).storageKey
+    const raw = key ? globalThis.localStorage?.getItem(key) : null
+    const parsed: unknown = raw ? JSON.parse(raw) : null
+    if (!parsed || typeof parsed !== 'object') return null
+    const s = parsed as Partial<Session>
+    return s.access_token && s.refresh_token && s.user?.id ? (s as Session) : null
+  } catch {
+    return null
+  }
 }
 
 /** Retourne la fonction de désabonnement. */

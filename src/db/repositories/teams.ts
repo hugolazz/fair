@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { cacheKeys } from '@/db/cache-keys'
+import { cachedRead } from '@/lib/cache/cache'
 import { supabase } from '@/lib/supabase'
 
 export const TEAM_ROLES = ['owner', 'admin', 'member'] as const
@@ -18,7 +20,11 @@ export type Membership = {
 
 export type Member = { userId: string; role: TeamRole; displayName: string }
 
-export async function fetchMembership(userId: string): Promise<Membership | null> {
+/** Équipe de l'utilisateur ; sans réseau, la dernière connue (l'appli s'ouvre hors ligne). */
+export const fetchMembership = (userId: string): Promise<Membership | null> =>
+  cachedRead(cacheKeys.membership(userId), () => fetchMembershipNetwork(userId))
+
+async function fetchMembershipNetwork(userId: string): Promise<Membership | null> {
   const { data, error } = await supabase
     .from('team_members')
     .select('role, teams!inner(id, name, news_enabled)')

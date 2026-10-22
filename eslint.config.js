@@ -32,6 +32,10 @@ export default tseslint.config(
     },
   },
   {
+    files: ['sw/**/*.js'],
+    languageOptions: { globals: globals.serviceworker },
+  },
+  {
     // Les features n'accèdent jamais directement à Supabase : tout passe par src/db/repositories.
     files: ['src/features/**/*.{ts,tsx}'],
     rules: {

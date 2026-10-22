@@ -10,6 +10,7 @@ import {
 } from '@/db/repositories/sync'
 import { Outbox } from '@/lib/outbox/outbox'
 import { createStorage } from '@/lib/outbox/storage'
+import { applyUpdate, useUpdateWaiting } from '@/lib/pwa/register'
 import { SyncContext, type SyncContextValue } from './use-sync'
 
 /** L'envoi des écritures hors ligne d'un utilisateur : une file par utilisateur, conservée sur l'appareil. */
@@ -44,6 +45,18 @@ export function SyncProvider({ userId, children }: { userId: string; children: R
       outbox.stop()
     }
   }, [outbox])
+
+  // Nouvelle version de l'appli prête : on l'active quand la page passe en arrière-plan avec rien à envoyer.
+  const updateWaiting = useUpdateWaiting()
+  useEffect(() => {
+    if (!updateWaiting || snapshot.pending > 0) return
+    if (document.hidden) return applyUpdate()
+    const onHidden = () => {
+      if (document.hidden) applyUpdate()
+    }
+    document.addEventListener('visibilitychange', onHidden)
+    return () => document.removeEventListener('visibilitychange', onHidden)
+  }, [updateWaiting, snapshot.pending])
 
   // Quitter la page avec des modifications en attente : on prévient (là où le navigateur le permet).
   useEffect(() => {

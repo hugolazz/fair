@@ -1,7 +1,12 @@
+import { cacheKeys } from '@/db/cache-keys'
+import { cachedRead } from '@/lib/cache/cache'
 import { supabase } from '@/lib/supabase'
 
 /** Nom d'usage (« Prénom Nom ») de l'utilisateur ; chaîne vide si le profil n'en a pas. */
-export async function fetchMyDisplayName(userId: string): Promise<string> {
+export const fetchMyDisplayName = (userId: string): Promise<string> =>
+  cachedRead(cacheKeys.displayName(userId), () => fetchMyDisplayNameNetwork(userId))
+
+async function fetchMyDisplayNameNetwork(userId: string): Promise<string> {
   const { data, error } = await supabase
     .from('profiles')
     .select('display_name')

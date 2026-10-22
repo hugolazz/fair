@@ -20,6 +20,8 @@ export default defineConfig({
     locale: 'fr-FR',
     timezoneId: 'Europe/Paris',
     acceptDownloads: true,
+    // Le service worker (ouverture sans réseau) n'est exercé que par offline-start.spec.ts ; ailleurs il fausserait les interceptions.
+    serviceWorkers: 'block',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -50,6 +52,7 @@ export default defineConfig({
       env: {
         VITE_SUPABASE_URL: API_URL,
         VITE_SUPABASE_ANON_KEY: 'anon-key-e2e',
+        VITE_OFFLINE_APP: '1',
         VITE_DEV_EMAIL: '',
         VITE_DEV_PASSWORD: '',
       },

@@ -508,6 +508,34 @@ describe('faux Supabase', () => {
     configureCache(null)
   })
 
+  it('ouverture sans réseau : l’équipe et le nom d’usage viennent de la copie locale', async () => {
+    const auth = await import('@/db/repositories/auth')
+    const teams = await import('@/db/repositories/teams')
+    const profile = await import('@/db/repositories/profile')
+    const { configureCache, markFresh } = await import('@/lib/cache/cache')
+    const { MemoryCacheStore } = await import('@/lib/cache/store')
+
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    const me = (await auth.getSession())!.user.id
+    configureCache(me, new MemoryCacheStore())
+    const live = await teams.fetchMembership(me)
+    const name = await profile.fetchMyDisplayName(me)
+    expect(live).not.toBeNull()
+
+    const offline = vi
+      .spyOn(globalThis, 'fetch')
+      .mockRejectedValue(new TypeError('Failed to fetch'))
+    try {
+      expect(await teams.fetchMembership(me)).toEqual(live)
+      expect(await profile.fetchMyDisplayName(me)).toEqual(name)
+    } finally {
+      offline.mockRestore()
+      markFresh()
+    }
+    configureCache(null)
+  })
+
   it('inscription : nom d’usage, recherche d’une équipe par son nom, adhésion, profil modifiable', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')
