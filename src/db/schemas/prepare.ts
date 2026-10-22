@@ -223,11 +223,14 @@ export type TargetContact = {
 export type HistoryNote = { id: string; body: string; capturedAt: string }
 export type HistoryMeeting = {
   id: string
-  status: string
-  temperature: string | null
-  outcome: string
-  nextStep: string
   plannedAt: string | null
+  /** Intérêt constaté, de 1 à 5. */
+  interest: number | null
+  recontact: boolean
+  /** « Actualité ? » : à n'afficher que si l'équipe a activé l'option. */
+  news: boolean
+  /** Contact vu pendant la rencontre (nom, à défaut l'e-mail) ; vide si aucun. */
+  contactName: string
   notes: HistoryNote[]
 }
 export type HistoryEntry = {
@@ -235,10 +238,6 @@ export type HistoryEntry = {
   eventId: string
   eventName: string
   startsOn: string | null
-  city: string
-  stand: string
-  priority: Priority | null
-  goal: Goal | null
   meetings: HistoryMeeting[]
   notes: HistoryNote[]
 }
@@ -253,24 +252,23 @@ const note = z.object({
 export const historyRowSchema = z.object({
   id: z.string(),
   event_id: z.string(),
-  stand_label: str,
-  priority: z.enum(PRIORITIES).nullable(),
-  objective: z.enum(GOALS).nullable(),
   events: z.object({
     id: z.string(),
     name: z.string(),
     starts_on: z.string().nullable(),
-    city: str,
   }),
   meetings: z
     .array(
       z.object({
         id: z.string(),
-        status: z.string(),
-        temperature: z.string().nullable(),
-        outcome: str,
-        next_step: str,
         planned_at: z.string().nullable(),
+        interest: z.number().nullable().default(null),
+        recontact: z.boolean().nullable().default(false),
+        news: z.boolean().nullable().default(false),
+        contacts: z
+          .object({ first_name: str, last_name: str, email: str })
+          .nullable()
+          .default(null),
         deleted_at: z.string().nullable(),
         notes: z.array(note).default([]),
       }),
@@ -291,20 +289,19 @@ export function toHistory(rows: HistoryRow[]): HistoryEntry[] {
     eventId: r.event_id,
     eventName: r.events.name,
     startsOn: r.events.starts_on,
-    city: r.events.city,
-    stand: r.stand_label,
-    priority: r.priority,
-    goal: r.objective,
     meetings: newestFirst(
       r.meetings
         .filter((m) => !m.deleted_at)
         .map((m) => ({
           id: m.id,
-          status: m.status,
-          temperature: m.temperature,
-          outcome: m.outcome,
-          nextStep: m.next_step,
           plannedAt: m.planned_at,
+          interest: m.interest,
+          recontact: m.recontact === true,
+          news: m.news === true,
+          contactName: m.contacts
+            ? [m.contacts.first_name, m.contacts.last_name].filter(Boolean).join(' ') ||
+              m.contacts.email
+            : '',
           notes: newestFirst(
             m.notes
               .filter((n) => !n.deleted_at)

@@ -222,20 +222,14 @@
     "title": "Historique avec cette entreprise",
     "empty": "Première rencontre : aucun historique sur d'autres salons.",
     "noneWritten": "Aucun historique renseigné pour cette entreprise.",
-    "otherEvents": "Rencontres enregistrées sur d'autres salons ({{count}})",
+    "otherEvents": "Autres salons fair ({{count}})",
     "loadError": "Impossible de charger l'historique.",
-    "meetingOn": "Rencontre du {{date}}",
-    "outcome": "Résultat",
-    "nextStep": "Prochaine étape",
-    "notes": "Notes",
-    "temperature": { "hot": "Chaud", "warm": "Tiède", "cold": "Froid" },
-    "status": {
-      "to_see": "À voir",
-      "in_progress": "En cours",
-      "done": "Faite",
-      "missed": "Manquée",
-      "skipped": "Écartée"
-    }
+    "contactMet": "Contact vu",
+    "interest": "Intérêt",
+    "interestOf": "{{n}}/5",
+    "recontact": "À recontacter",
+    "news": "Actualité",
+    "notes": "Notes"
   },
   "tagManager": {
     "title": "Tags",

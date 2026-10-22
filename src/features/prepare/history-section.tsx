@@ -2,47 +2,54 @@ import { useTranslation } from 'react-i18next'
 import { ErrorState } from '@/components/page-states'
 import { fetchHistory } from '@/db/repositories/targets'
 import type { HistoryEntry } from '@/db/schemas/prepare'
+import { useReadySession } from '@/features/auth-team/session'
 import { useAsync } from '@/lib/use-async'
-import { PriorityBadge } from './atoms'
 import { formatDay } from './lib/format'
 
-function Entry({ entry, defaultOpen }: { entry: HistoryEntry; defaultOpen: boolean }) {
+const BADGE =
+  'rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-950 whitespace-nowrap'
+
+/**
+ * Un ancien salon fair : son nom et sa date, puis pour chaque rencontre le contact vu, l'intérêt sur 5, les cases
+ * « à recontacter » et « Actualité » (celle-ci seulement si l'équipe a activé l'option) et les notes.
+ */
+function Entry({
+  entry,
+  defaultOpen,
+  showNews,
+}: {
+  entry: HistoryEntry
+  defaultOpen: boolean
+  showNews: boolean
+}) {
   const { t } = useTranslation('prepare')
-  const when = entry.startsOn ? formatDay(entry.startsOn) : ''
   return (
     <details open={defaultOpen} className="rounded-lg border border-slate-200 bg-white">
-      <summary className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-2">
-        <PriorityBadge priority={entry.priority} />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium">{entry.eventName}</span>
-          <span className="block truncate text-sm text-slate-600">
-            {[when, entry.city, entry.stand && t('sheet.stand', { stand: entry.stand })]
-              .filter(Boolean)
-              .join(' · ')}
-          </span>
-        </span>
+      <summary className="flex min-h-11 cursor-pointer flex-wrap items-center gap-x-3 px-3 py-2">
+        <span className="min-w-0 flex-1 truncate font-medium">{entry.eventName}</span>
+        {entry.startsOn ? (
+          <span className="text-sm text-slate-600">{formatDay(entry.startsOn)}</span>
+        ) : null}
       </summary>
       <div className="flex flex-col gap-3 border-t border-slate-100 px-3 py-3 text-sm">
         {entry.meetings.map((m) => (
-          <div key={m.id} className="flex flex-col gap-1">
-            <p className="font-medium">
-              {m.plannedAt
-                ? t('history.meetingOn', { date: formatDay(m.plannedAt) })
-                : t('history.status.' + m.status, { defaultValue: m.status })}
-              {m.temperature
-                ? ` · ${t(`history.temperature.${m.temperature}`, { defaultValue: m.temperature })}`
-                : ''}
-            </p>
-            {m.outcome ? (
+          <div key={m.id} className="flex flex-col gap-1.5">
+            {m.contactName ? (
               <p>
-                <span className="text-slate-600">{t('history.outcome')} : </span>
-                {m.outcome}
+                <span className="text-slate-600">{t('history.contactMet')} : </span>
+                {m.contactName}
               </p>
             ) : null}
-            {m.nextStep ? (
+            {m.interest ? (
               <p>
-                <span className="text-slate-600">{t('history.nextStep')} : </span>
-                {m.nextStep}
+                <span className="text-slate-600">{t('history.interest')} : </span>
+                {t('history.interestOf', { n: m.interest })}
+              </p>
+            ) : null}
+            {m.recontact || (showNews && m.news) ? (
+              <p className="flex flex-wrap gap-1.5">
+                {m.recontact ? <span className={BADGE}>{t('history.recontact')}</span> : null}
+                {showNews && m.news ? <span className={BADGE}>{t('history.news')}</span> : null}
               </p>
             ) : null}
             {m.notes.map((n) => (
@@ -75,11 +82,12 @@ type Props = {
 }
 
 /**
- * Historique de l'entreprise : d'abord le texte renseigné (« déjà contacté M. X le 19 janvier pour… »), puis, repliées,
- * les rencontres et notes enregistrées dans fair lors d'autres salons (hors salons supprimés).
+ * Historique de l'entreprise : d'abord le texte renseigné (« déjà contacté M. X le 19 janvier pour… »), puis, repliés,
+ * les autres salons fair où elle a eu une rencontre ou une note (hors salons supprimés).
  */
 export function HistorySection({ companyId, eventId, history }: Props) {
   const { t } = useTranslation('prepare')
+  const { membership } = useReadySession()
   const { data, error, loading, reload } = useAsync(
     () => fetchHistory(companyId, eventId),
     [companyId, eventId],
@@ -105,7 +113,7 @@ export function HistorySection({ companyId, eventId, history }: Props) {
           </summary>
           <div className="flex flex-col gap-2 border-t border-slate-100 p-2">
             {past.map((e, i) => (
-              <Entry key={e.id} entry={e} defaultOpen={i === 0} />
+              <Entry key={e.id} entry={e} defaultOpen={i === 0} showNews={membership.newsEnabled} />
             ))}
           </div>
         </details>

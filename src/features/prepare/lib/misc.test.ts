@@ -176,10 +176,7 @@ describe('toHistory', () => {
   ): HistoryRow => ({
     id,
     event_id: `ev-${id}`,
-    stand_label: 'B1',
-    priority: 'A',
-    objective: null,
-    events: { id: `ev-${id}`, name: `Salon ${id}`, starts_on: startsOn, city: 'Paris' },
+    events: { id: `ev-${id}`, name: `Salon ${id}`, starts_on: startsOn },
     meetings: [],
     notes: [],
     ...extra,
@@ -216,31 +213,31 @@ describe('toHistory', () => {
         meetings: [
           {
             id: 'm1',
-            status: 'done',
-            temperature: 'hot',
-            outcome: 'Intéressé',
-            next_step: 'Envoyer devis',
             planned_at: '2026-06-01T09:00:00Z',
+            interest: 4,
+            recontact: true,
+            news: true,
+            contacts: { first_name: 'Grace', last_name: 'Hopper', email: 'g@x.example' },
             deleted_at: null,
             notes: [n('n4', '2026-06-01T09:30:00Z')],
           },
           {
             id: 'm2',
-            status: 'done',
-            temperature: null,
-            outcome: '',
-            next_step: '',
             planned_at: '2026-06-02T09:00:00Z',
+            interest: null,
+            recontact: false,
+            news: false,
+            contacts: null,
             deleted_at: null,
             notes: [],
           },
           {
             id: 'm3',
-            status: 'skipped',
-            temperature: null,
-            outcome: '',
-            next_step: '',
             planned_at: null,
+            interest: null,
+            recontact: false,
+            news: false,
+            contacts: null,
             deleted_at: 'x',
             notes: [],
           },
@@ -250,10 +247,31 @@ describe('toHistory', () => {
     expect(h[0]!.notes.map((x) => x.id)).toEqual(['n2', 'n1'])
     expect(h[0]!.meetings.map((m) => m.id)).toEqual(['m2', 'm1'])
     expect(h[0]!.meetings[1]).toMatchObject({
-      outcome: 'Intéressé',
-      nextStep: 'Envoyer devis',
-      temperature: 'hot',
+      interest: 4,
+      recontact: true,
+      news: true,
+      contactName: 'Grace Hopper',
     })
+    expect(h[0]!.meetings[0]).toMatchObject({ interest: null, recontact: false, contactName: '' })
     expect(h[0]!.meetings[1]!.notes[0]!.body).toBe('n4')
+  })
+  it('le contact vu est le nom, à défaut l’e-mail', () => {
+    const h = toHistory([
+      row('a', '2026-06-01', {
+        meetings: [
+          {
+            id: 'm1',
+            planned_at: '2026-06-01T09:00:00Z',
+            interest: null,
+            recontact: false,
+            news: false,
+            contacts: { first_name: '', last_name: '', email: 'sans.nom@x.example' },
+            deleted_at: null,
+            notes: [],
+          },
+        ],
+      }),
+    ])
+    expect(h[0]!.meetings[0]!.contactName).toBe('sans.nom@x.example')
   })
 })

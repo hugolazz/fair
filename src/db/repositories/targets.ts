@@ -179,8 +179,8 @@ export async function fetchHistory(
   const { data, error } = await supabase
     .from('event_companies')
     .select(
-      'id, event_id, stand_label, priority, objective, events!inner(id, name, starts_on, city), ' +
-        'meetings(id, status, temperature, outcome, next_step, planned_at, deleted_at, notes(id, body, captured_at, deleted_at)), ' +
+      'id, event_id, events!inner(id, name, starts_on), ' +
+        'meetings(id, planned_at, interest, recontact, news, deleted_at, contacts(first_name, last_name, email), notes(id, body, captured_at, deleted_at)), ' +
         'notes(id, body, captured_at, deleted_at)',
     )
     .eq('company_id', companyId)
