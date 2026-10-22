@@ -400,6 +400,20 @@ export async function unassignTargets(targetIds: string[], userId: string): Prom
   return updated
 }
 
+/**
+ * Retire des participants du salon (admins) avec leurs rencontres, notes et assignations ; l'entreprise reste.
+ * Renvoie le nombre de participations retirées (la fonction SQL ne lève pas d'erreur si un droit manque).
+ */
+export async function removeTargets(targetIds: string[]): Promise<number> {
+  let removed = 0
+  for (const part of chunks(targetIds, IN_CHUNK)) {
+    const { data, error } = await supabase.rpc('remove_event_companies', { p_ids: part })
+    if (error) throw error
+    removed += Number(data ?? 0)
+  }
+  return removed
+}
+
 // --- Rendez-vous planifiés ----------------------------------------------------------------------------------------------
 
 export type MeetingInput = {

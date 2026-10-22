@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { Trash2, X } from 'lucide-react'
 import { Select } from '@/components/ui/select'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,8 @@ type Props = {
   onPriority: (p: Priority | null) => void
   onTag: (tagId: string) => void
   onAssign: (userId: string) => void
+  /** Retrait des participants du salon (admins seulement). */
+  onRemove: () => void
   onClear: () => void
 }
 
@@ -93,6 +95,16 @@ export function BulkBar(p: Props) {
         <option value="">{t('bulk.assign')}</option>
         {memberOptions}
       </Select>
+      {admin ? (
+        <Button
+          variant="ghost"
+          className="text-danger min-h-11 px-3 md:min-h-9 md:px-4"
+          onClick={p.onRemove}
+        >
+          <Trash2 aria-hidden className="size-4" />
+          <span className="sr-only md:not-sr-only">{t('remove.action')}</span>
+        </Button>
+      ) : null}
       <Button
         variant="ghost"
         className="ml-auto min-h-11 px-3 md:min-h-9 md:px-6"

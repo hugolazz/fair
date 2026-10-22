@@ -11,6 +11,7 @@ import {
   deleteTag as deleteTagRemote,
   ensureDefaultTags,
   listTargets,
+  removeTargets,
   setCompanyTag,
   unassignTargets,
   updateShowAbbrev as updateShowAbbrevRemote,
@@ -236,6 +237,17 @@ export function useTargets(eventId: string, teamId: string) {
             if ((await unassignTargets(ids, userId)) === 0 && expected > 0) {
               throw new Error('unassign had no effect')
             }
+          },
+        )
+      },
+
+      /** Retire des participants du salon (admins) : disparaissent tout de suite, rechargés si le serveur refuse. */
+      remove: (ids: string[]) => {
+        const set = byId(ids)
+        return run(
+          (d) => ({ ...d, targets: d.targets.filter((t) => !set.has(t.id)) }),
+          async () => {
+            if ((await removeTargets(ids)) < ids.length) throw new Error('not allowed or not found')
           },
         )
       },

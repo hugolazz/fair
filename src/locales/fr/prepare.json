@@ -95,6 +95,23 @@
     "assign": "Assigner",
     "done": "Modifié pour {{count}} entreprise(s)."
   },
+  "remove": {
+    "action": "Retirer du salon",
+    "title_one": "Retirer {{count}} entreprise du salon ?",
+    "title_other": "Retirer {{count}} entreprises du salon ?",
+    "body_one": "Elle disparaît de la liste de ce salon (stand, priorité, assignations). Sa fiche, ses contacts et son historique dans les autres salons sont conservés.",
+    "body_other": "Elles disparaissent de la liste de ce salon (stands, priorités, assignations). Leurs fiches, leurs contacts et leur historique dans les autres salons sont conservés.",
+    "confirm": "Retirer du salon",
+    "cancel": "Annuler",
+    "dataTitle": "Des données ont déjà été saisies",
+    "dataBody_one": "L'entreprise que vous tentez de retirer dispose de données saisies (rencontres, notes). Souhaitez-vous tout de même la retirer ? Ces données seront supprimées avec elle.",
+    "dataBody_other": "Les entreprises que vous tentez de retirer disposent de données saisies (rencontres, notes). Souhaitez-vous tout de même les retirer ? Ces données seront supprimées avec elles.",
+    "confirmData": "Oui, tout supprimer",
+    "more_one": "… et {{count}} autre",
+    "more_other": "… et {{count}} autres",
+    "done_one": "{{count}} entreprise retirée du salon.",
+    "done_other": "{{count}} entreprises retirées du salon."
+  },
   "tagPicker": {
     "edit": "Modifier les tags de {{name}}",
     "title": "Tags",

@@ -19,6 +19,7 @@ import { TargetSheet } from './target-sheet'
 import { TargetsCards } from './targets-cards'
 import { TargetsTable } from './targets-table'
 import { useAssignFlow } from './use-assign-flow'
+import { useRemoveFlow } from './use-remove-flow'
 import { useTargets } from './use-targets'
 
 /** Préparation du salon : tableau des participants (desktop) / cartes (mobile), filtres, actions en masse, fiche. */
@@ -94,6 +95,10 @@ export default function PreparePage() {
     setSelected(new Set())
     setSelectMode(false)
   }
+  const remove = useRemoveFlow(api, api.targets, (count) => {
+    setNotice(t('remove.done', { count }))
+    clear()
+  })
 
   const addDialog = (
     <AddCompanyDialog
@@ -111,10 +116,23 @@ export default function PreparePage() {
 
   if (api.loading) return <Loading />
   if (api.error) return <ErrorState message={t('errors.load')} onRetry={api.reload} />
+  const noticeBar = notice ? (
+    <p
+      role="status"
+      className="flex items-center justify-between gap-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-950"
+    >
+      {notice}
+      <Button variant="ghost" className="min-h-9" onClick={() => setNotice(undefined)}>
+        {t('errors.dismiss')}
+      </Button>
+    </p>
+  ) : null
+
   const total = api.targets?.length ?? 0
   if (total === 0) {
     return (
       <>
+        {noticeBar}
         <EmptyState
           icon={<Upload className="size-10" />}
           title={t('title')}
@@ -167,17 +185,7 @@ export default function PreparePage() {
         </p>
       ) : null}
 
-      {notice ? (
-        <p
-          role="status"
-          className="flex items-center justify-between gap-3 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-950"
-        >
-          {notice}
-          <Button variant="ghost" className="min-h-9" onClick={() => setNotice(undefined)}>
-            {t('errors.dismiss')}
-          </Button>
-        </p>
-      ) : null}
+      {noticeBar}
 
       {/* Mobile : une seule rangée de boutons-icônes (ajouter, rechercher, filtres, sélectionner). */}
       <FilterBar
@@ -264,6 +272,7 @@ export default function PreparePage() {
           }}
           onTag={(tagId) => void api.actions.toggleTag(ids, tagId, true)}
           onAssign={(userId) => request(ids, userId)}
+          onRemove={() => remove.request(ids)}
           onClear={clear}
         />
       ) : null}
@@ -277,6 +286,7 @@ export default function PreparePage() {
         onClose={() => setOpenId(undefined)}
       />
       {dialog}
+      {remove.dialog}
       {addDialog}
     </div>
   )

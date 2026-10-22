@@ -351,7 +351,13 @@ export function buildRpc(meta: Meta, fn: string, args: Record<string, unknown>):
   if (!proc) throw new ApiError(404, 'PGRST202', `function ${fn} not found`)
   const ctx = new Ctx(meta)
   const named = Object.entries(args).map(([k, v]) => {
-    const value = v === null || typeof v === 'string' ? v : JSON.stringify(v)
+    // Un tableau de textes (ex. `uuid[]`) devient un littéral de tableau Postgres, comme le fait PostgREST.
+    const value =
+      v === null || typeof v === 'string'
+        ? v
+        : Array.isArray(v) && v.every((x) => typeof x === 'string')
+          ? `{${v.map((x) => JSON.stringify(x)).join(',')}}`
+          : JSON.stringify(v)
     return `${q(k)} => ${ctx.param(value)}`
   })
   const call = `${q(fn)}(${named.join(', ')})`

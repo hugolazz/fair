@@ -536,6 +536,50 @@ describe('faux Supabase', () => {
     configureCache(null)
   })
 
+  it('retirer des participants : seul un admin, avec rencontres et notes ; l’entreprise reste', async () => {
+    const auth = await import('@/db/repositories/auth')
+    const teams = await import('@/db/repositories/teams')
+    const events = await import('@/db/repositories/events')
+    const targets = await import('@/db/repositories/targets')
+
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    const me = (await auth.getSession())!.user.id
+    const teamId = (await teams.fetchMembership(me))!.teamId
+    const event = await events.createEvent(teamId, {
+      name: 'Salon retrait',
+      startsOn: '2027-03-10',
+      endsOn: '2027-03-11',
+      venue: '',
+      city: '',
+      goals: '',
+    })
+    await exec(`
+      with c as (insert into companies (id, team_id, name, name_normalized) values (gen_random_uuid(), '${teamId}', 'Retirée', 'retiree') returning id),
+           ec as (insert into event_companies (id, team_id, event_id, company_id)
+                  select gen_random_uuid(), '${teamId}', '${event.id}', id from c returning id)
+      insert into meetings (id, team_id, event_id, event_company_id, owner_id, planned_at)
+      select gen_random_uuid(), '${teamId}', '${event.id}', id, '${me}', now() from ec`)
+    const [target] = await targets.listTargets(event.id)
+    expect(target?.meetings).toHaveLength(1)
+
+    // Un commercial n’en retire aucune.
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.marie, PASSWORD)
+    expect(await targets.removeTargets([target!.id])).toBe(0)
+
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    expect(await targets.removeTargets([target!.id])).toBe(1)
+    expect(await targets.listTargets(event.id)).toEqual([])
+    expect(
+      await exec(`select id from meetings where deleted_at is null and event_id = '${event.id}'`),
+    ).toEqual([])
+    expect(
+      await exec(`select id from companies where name = 'Retirée' and deleted_at is null`),
+    ).toHaveLength(1)
+  })
+
   it('inscription : nom d’usage, recherche d’une équipe par son nom, adhésion, profil modifiable', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')
