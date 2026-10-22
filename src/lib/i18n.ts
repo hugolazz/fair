@@ -9,6 +9,7 @@ import prepare from '@/locales/fr/prepare.json'
 import plan from '@/locales/fr/plan.json'
 import exportsNs from '@/locales/fr/exports.json'
 import settings from '@/locales/fr/settings.json'
+import sync from '@/locales/fr/sync.json'
 
 export const defaultNS = 'common'
 
@@ -16,7 +17,18 @@ void i18n.use(initReactI18next).init({
   lng: 'fr',
   fallbackLng: 'fr',
   defaultNS,
-  ns: ['common', 'auth', 'events', 'settings', 'import', 'manual', 'prepare', 'plan', 'exports'],
+  ns: [
+    'common',
+    'auth',
+    'events',
+    'settings',
+    'import',
+    'manual',
+    'prepare',
+    'plan',
+    'exports',
+    'sync',
+  ],
   resources: {
     fr: {
       common,
@@ -28,6 +40,7 @@ void i18n.use(initReactI18next).init({
       prepare,
       plan,
       exports: exportsNs,
+      sync,
     },
   },
   interpolation: { escapeValue: false },

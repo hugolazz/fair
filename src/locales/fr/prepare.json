@@ -147,6 +147,7 @@
     "placeholder": "Écrivez ici ce qui se dit pendant la rencontre… tout est enregistré automatiquement.",
     "saving": "Enregistrement…",
     "removed": "Note supprimée.",
+    "savedOffline": "Note gardée sur l'appareil, en attente d'envoi.",
     "interest": "Intérêt (sur 5)",
     "recontact": "À recontacter après le salon",
     "recontactBadge": "À recontacter",

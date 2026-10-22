@@ -499,6 +499,47 @@ export async function updateMeetingNote(id: string, body: string): Promise<void>
   if (!data?.length) throw new Error('not allowed or not found')
 }
 
+/** Sa propre note la plus récente sur une rencontre, s'il y en a une (évite de doubler une note écrite hors ligne). */
+export async function findMyMeetingNote(
+  meetingId: string,
+  authorId: string,
+): Promise<{ id: string } | null> {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('id')
+    .eq('meeting_id', meetingId)
+    .eq('author_id', authorId)
+    .is('deleted_at', null)
+    .order('captured_at', { ascending: false })
+    .limit(1)
+  if (error) throw error
+  return data?.[0] ? { id: data[0].id as string } : null
+}
+
+/** Crée ou met à jour une note d'identifiant connu : rejouable sans risque de doublon (file d'attente hors ligne). */
+export async function upsertMeetingNote(n: {
+  id: string
+  teamId: string
+  meetingId: string
+  authorId: string
+  body: string
+  capturedAt: string
+}): Promise<void> {
+  const { error } = await supabase.from('notes').upsert(
+    {
+      id: n.id,
+      team_id: n.teamId,
+      meeting_id: n.meetingId,
+      author_id: n.authorId,
+      body: n.body.trim(),
+      source: 'typed',
+      captured_at: n.capturedAt,
+    },
+    { onConflict: 'id' },
+  )
+  if (error) throw error
+}
+
 /** Suppression logique de sa note (champ vidé) : elle disparaît de la fiche et des exports. */
 export async function deleteMeetingNote(id: string): Promise<void> {
   const { data, error } = await supabase

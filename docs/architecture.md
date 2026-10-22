@@ -2,8 +2,12 @@
 
 Document de référence. Le schéma SQL de référence est dans `supabase/migrations/` (`schema.sql` est l'ébauche initiale).
 
-> Le **mode terrain** et le **mode hors-ligne** (base locale Dexie, synchronisation, service worker, thèmes) ont été
-> **retirés** : l'appli est utilisée connectée et lit/écrit directement sur Supabase.
+> Le **mode terrain** et l'ancien **mode hors-ligne** (base locale Dexie, synchronisation, service worker, thèmes) ont été
+> **retirés** : l'appli lit et écrit directement sur Supabase. Le hors-ligne revient **par étapes, en plus simple** :
+> étape 1 = une **file d'attente d'écritures** (notes et cases des rencontres) conservée dans IndexedDB et envoyée au retour
+> du réseau, avec une bannière de statut ; étape 2 = copie locale en lecture ; étape 3 = service worker (ouverture sans réseau).
+> Cadrage : usage au salon sur iPad et téléphone, coupures de quelques secondes à une demi-journée, conflits rares (une
+> entreprise est assignée à un seul commercial), données locales sans contrainte particulière.
 
 ## Choix techniques
 

@@ -8,7 +8,7 @@ companies, take meeting notes on your phone, keep a per-company history from one
 as Excel, CSV or PDF. Built with React, TypeScript and Supabase (Postgres with row-level security). The interface is in
 French._
 
-L'appli est utilisée connectée (pas de mode hors-ligne ni de mode terrain).
+L'appli est utilisée connectée ; les notes et les cases d'une rencontre se saisissent aussi sans réseau : elles sont gardées sur l'appareil et partent toutes seules au retour de la connexion (bannière « Hors ligne : N modifications en attente »).
 
 ![Liste des salons](docs/screenshots/salons.png)
 
@@ -148,8 +148,8 @@ pnpm lighthouse                                  # rapport HTML dans lighthouse-
 ```
 
 Lighthouse 12+ n'a plus de catégorie « PWA » : on mesure Performance, Accessibilité, Bonnes pratiques et SEO. L'installabilité
-est vérifiée par `tests/manifest.test.ts` (manifest, icônes 192 / 512 / maskable). fair n'a volontairement **pas de service
-worker** (pas de mode hors-ligne) : l'écran de connexion est audité, les écrans suivants partagent le même code d'amorçage.
+est vérifiée par `tests/manifest.test.ts` (manifest, icônes 192 / 512 / maskable). fair n'a pas encore de **service
+worker** (l'ouverture sans réseau est une étape ultérieure du hors-ligne) : l'écran de connexion est audité, les écrans suivants partagent le même code d'amorçage.
 
 ## Structure
 

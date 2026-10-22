@@ -1,0 +1,12 @@
+{
+  "offline_one": "Hors ligne : {{count}} modification en attente d'envoi.",
+  "offline_other": "Hors ligne : {{count}} modifications en attente d'envoi.",
+  "syncing_one": "Envoi de {{count}} modification…",
+  "syncing_other": "Envoi de {{count}} modifications…",
+  "synced": "Tout est synchronisé.",
+  "failed_one": "{{count}} modification n'a pas pu être envoyée : le serveur l'a refusée.",
+  "failed_other": "{{count}} modifications n'ont pas pu être envoyées : le serveur a refusé l'une d'elles.",
+  "retry": "Réessayer",
+  "discard": "Abandonner ces modifications",
+  "discardConfirm": "Abandonner définitivement les modifications refusées ? Elles ne seront jamais envoyées."
+}

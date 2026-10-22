@@ -2,15 +2,11 @@ import { CheckCircle2, NotebookPen, UserPlus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
-import {
-  addMeetingNote,
-  deleteMeetingNote,
-  fetchMeetingNotes,
-  updateMeetingNote,
-} from '@/db/repositories/targets'
+import { fetchMeetingNotes } from '@/db/repositories/targets'
 import type { Target, TargetContact } from '@/db/schemas/prepare'
 import { useReadySession } from '@/features/auth-team/session'
 import { AddContactForm } from '@/features/manual-entry/add-contact-form'
+import { useSync } from '@/features/sync/use-sync'
 import { newId } from '@/lib/ids'
 import { useAsync } from '@/lib/use-async'
 import { formatTime } from './lib/format'
@@ -35,12 +31,16 @@ const AUTOSAVE_DELAY_MS = 800
  * champ, en fermant la fiche ou en changeant d'application). La rencontre est créée toute seule à la première action
  * (note, intérêt, case…) et marquée terminée : on y est, donc on a vu la personne. On y donne aussi l'intérêt (1 à 5,
  * un appui), avec qui on a parlé (contact en cases séparées) et si la personne est à recontacter ; la prochaine étape
- * reste dans « Modifier la fiche ».
+ * reste dans « Modifier la fiche ». Tout part par la file d'attente hors ligne : sans réseau, la note est gardée sur l'appareil
+ * et s'envoie toute seule au retour de la connexion (le champ reste utilisable, la ligne d'état le dit).
  */
 export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }: Props) {
   const { t } = useTranslation('prepare')
   const { t: tm } = useTranslation('manual')
   const { session, membership } = useReadySession()
+  const sync = useSync()
+  const syncRef = useRef(sync)
+  syncRef.current = sync
   const meId = session.user.id
   const meeting = currentMeeting(target.meetings, meId)
   const notes = useAsync(
@@ -49,6 +49,8 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   )
   // Mon texte : une seule note par rencontre, qui reste affichée (et modifiable) après l'enregistrement.
   const mine = [...(notes.data ?? [])].reverse().find((n) => n.authorId === meId)
+  // La liste est lue, ou la lecture a échoué (réseau coupé) : dans les deux cas on peut écrire.
+  const notesSettled = notes.data !== undefined || notes.error !== undefined
   const [draft, setDraft] = useState('')
   const [saved, setSaved] = useState(false)
   const [removed, setRemoved] = useState(false) // champ vidé : la note a été supprimée
@@ -67,6 +69,9 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   const draftRef = useRef('') // dernier texte tapé
   const lastSaved = useRef('') // dernier texte enregistré (ou chargé)
   const noteId = useRef<string>(undefined) // ma note, dès qu'elle existe : jamais deux notes pour un même texte
+  const capturedAt = useRef<string>(undefined) // l'heure de ma note : elle ne change pas quand on la corrige
+  // On sait qu'aucune note de moi n'existe déjà (liste lue, ou rencontre créée ici) ; sinon l'envoi reprend celle qui existe.
+  const notesKnown = useRef(false)
   const markedDone = useRef(false)
   const running = useRef(false)
   const timer = useRef<number>(undefined)
@@ -86,23 +91,26 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
     creating.current = undefined
     markedDone.current = false
     noteId.current = undefined
+    capturedAt.current = undefined
     lastSaved.current = ''
   }, [meeting])
   const meetingSeen = useRef(false) // une rencontre a déjà existé ici : si elle disparaît, c'est de l'extérieur
 
   // Le champ est rempli une fois avec ma note existante ; la rencontre créée par nos soins ne l'efface pas.
   useEffect(() => {
-    if (!notes.data) return
+    if (!notesSettled) return
     const key = meeting?.id ?? 'none'
     if (seededFor.current === key) return
     seededFor.current = key
     noteId.current = mine?.id
+    capturedAt.current = mine?.capturedAt
+    notesKnown.current = notes.data !== undefined
     lastSaved.current = mine?.body ?? ''
     if (!typed.current) {
       draftRef.current = mine?.body ?? ''
       setDraft(mine?.body ?? '')
     }
-  }, [notes.data, meeting?.id, mine?.id, mine?.body])
+  }, [notesSettled, notes.data, meeting?.id, mine?.id, mine?.body, mine?.capturedAt])
 
   /** La rencontre en cours, créée à la volée (sans planification) si elle n'existe pas encore. */
   function ensureMeeting(): Promise<string> {
@@ -111,6 +119,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
     creating.current ??= (async () => {
       const id = newId()
       seededFor.current = id
+      notesKnown.current = true // rencontre toute neuve : aucune note de moi dessus
       const ok = await api.actions.saveMeeting({
         id,
         targetId: target.id,
@@ -146,11 +155,13 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
       noteCount: draftRef.current.trim() !== '' || noteId.current ? 1 : 0,
     })
     if (!empty) return
-    // La note d'un collègue, ou la mienne pas encore partie : on ne supprime rien.
-    if ((await fetchMeetingNotes(m.id)).length > 0) return
+    // La note d'un collègue (déjà lue) : on ne supprime rien. On n'attend jamais le réseau ici : l'enregistrement de la
+    // note ne doit pas dépendre d'une connexion qui peut être coupée.
+    if ((notes.data ?? []).some((n) => n.authorId !== meId)) return
     creating.current = undefined
     markedDone.current = false
     noteId.current = undefined
+    capturedAt.current = undefined
     lastSaved.current = ''
     await api.actions.deleteMeeting(target.id, m.id)
   }
@@ -241,8 +252,15 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
           setError(false)
         }
         if (!body) {
-          if (noteId.current) await deleteMeetingNote(noteId.current)
+          if (noteId.current) {
+            syncRef.current.enqueue({
+              type: 'note.delete',
+              id: noteId.current,
+              meetingId: meetingRef.current?.id ?? '',
+            })
+          }
           noteId.current = undefined
+          capturedAt.current = undefined
           lastSaved.current = ''
           if (mounted.current) setRemoved(true)
           await dropIfEmpty()
@@ -253,8 +271,20 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
           await api.actions.updateMeetingReport(target.id, meetingId, { status: 'done' })
         }
         markedDone.current = true
-        if (noteId.current) await updateMeetingNote(noteId.current, body)
-        else noteId.current = (await addMeetingNote(membership.teamId, meetingId, meId, body)).id
+        noteId.current ??= newId()
+        capturedAt.current ??= new Date().toISOString()
+        syncRef.current.enqueue({
+          type: 'note.upsert',
+          note: {
+            id: noteId.current,
+            teamId: membership.teamId,
+            meetingId,
+            authorId: meId,
+            body,
+            capturedAt: capturedAt.current,
+            adopt: !notesKnown.current,
+          },
+        })
         lastSaved.current = body
         if (mounted.current) setSaved(true)
       }
@@ -296,6 +326,12 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
   const recontact = recontactLocal ?? meeting?.recontact ?? false
   const interest = interestLocal !== undefined ? interestLocal : (meeting?.interest ?? null)
   const news = newsLocal ?? meeting?.news ?? false
+  // Hors ligne, la note est sur l'appareil mais pas encore partie : on le dit plutôt que « Note enregistrée ».
+  const noteWaiting =
+    saved &&
+    sync.snapshot.status === 'offline' &&
+    noteId.current !== undefined &&
+    sync.snapshot.keys.has(`note:${noteId.current}`)
 
   return (
     <section aria-labelledby="notepad-title" className="flex flex-col gap-3">
@@ -307,7 +343,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
         <span className="sr-only">{t('notepad.label')}</span>
         <textarea
           value={draft}
-          readOnly={!notes.data} // le temps de charger ma note : pas de texte tapé par-dessus
+          readOnly={!notesSettled} // le temps de charger ma note : pas de texte tapé par-dessus
           onChange={(e) => {
             typed.current = true
             draftRef.current = e.target.value
@@ -337,6 +373,8 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
           <span className="font-normal text-slate-600">{t('notepad.saving')}</span>
         ) : removed ? (
           t('notepad.removed')
+        ) : noteWaiting ? (
+          t('notepad.savedOffline')
         ) : saved ? (
           t('notepad.saved')
         ) : done ? (

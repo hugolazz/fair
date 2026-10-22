@@ -351,6 +351,91 @@ describe('faux Supabase', () => {
     await expect(targets.updateShowAbbrev(show.id, 'XX')).rejects.toThrow()
   })
 
+  it('file d’attente hors ligne : les envois sont rejouables sans doublon et reprennent une note existante', async () => {
+    const auth = await import('@/db/repositories/auth')
+    const teams = await import('@/db/repositories/teams')
+    const events = await import('@/db/repositories/events')
+    const { executeOp } = await import('@/db/repositories/sync')
+
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    const me = (await auth.getSession())!.user.id
+    const teamId = (await teams.fetchMembership(me))!.teamId
+    const event = await events.createEvent(teamId, {
+      name: 'Salon file',
+      startsOn: '2027-01-10',
+      endsOn: '2027-01-11',
+      venue: '',
+      city: '',
+      goals: '',
+    })
+    const rows = await exec(`
+      with c as (insert into companies (id, team_id, name, name_normalized) values (gen_random_uuid(), '${teamId}', 'Fileco', 'fileco') returning id)
+      insert into event_companies (id, team_id, event_id, company_id)
+        select gen_random_uuid(), '${teamId}', '${event.id}', id from c returning id`)
+    const targetId = String(rows[0]!.id)
+    const meetingId = crypto.randomUUID()
+    const input = {
+      id: meetingId,
+      teamId,
+      eventId: event.id,
+      targetId,
+      ownerId: me,
+      plannedAt: new Date().toISOString(),
+      durationMin: 15,
+      reminderMin: null,
+      auto: true,
+    }
+    const liveMeetings = async () =>
+      await exec(
+        `select id, interest, auto_created from meetings where id = '${meetingId}' and deleted_at is null`,
+      )
+    const liveNotes = async () =>
+      (
+        await exec(
+          `select id, body from notes where meeting_id = '${meetingId}' and deleted_at is null`,
+        )
+      ).map((n) => n.body)
+
+    // Rejouer le même envoi (reprise après coupure) ne crée pas de doublon.
+    await executeOp({ type: 'meeting.upsert', input })
+    await executeOp({ type: 'meeting.upsert', input })
+    await executeOp({
+      type: 'meeting.patch',
+      id: meetingId,
+      patch: { interest: 4, status: 'done' },
+    })
+    expect(await liveMeetings()).toEqual([{ id: meetingId, interest: 4, auto_created: true }])
+
+    const note = {
+      id: crypto.randomUUID(),
+      teamId,
+      meetingId,
+      authorId: me,
+      body: 'Premier texte',
+      capturedAt: '2027-01-10T10:00:00.000Z',
+      adopt: false,
+    }
+    await executeOp({ type: 'note.upsert', note })
+    await executeOp({ type: 'note.upsert', note: { ...note, body: 'Texte corrigé' } })
+    expect(await liveNotes()).toEqual(['Texte corrigé']) // une seule note, le dernier texte
+
+    // Écrite sans avoir pu lire l'existante (autre identifiant) : l'envoi reprend la note qui existe.
+    await executeOp({
+      type: 'note.upsert',
+      note: { ...note, id: crypto.randomUUID(), body: 'Texte hors ligne', adopt: true },
+    })
+    expect(await liveNotes()).toEqual(['Texte hors ligne'])
+
+    // Supprimer ce qui n'existe plus n'est pas une erreur.
+    await executeOp({ type: 'note.delete', id: note.id, meetingId })
+    await executeOp({ type: 'note.delete', id: note.id, meetingId })
+    await executeOp({ type: 'meeting.delete', id: meetingId })
+    await executeOp({ type: 'meeting.delete', id: meetingId })
+    await executeOp({ type: 'meeting.patch', id: meetingId, patch: { news: true } })
+    expect(await liveMeetings()).toEqual([])
+  })
+
   it('inscription : nom d’usage, recherche d’une équipe par son nom, adhésion, profil modifiable', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')

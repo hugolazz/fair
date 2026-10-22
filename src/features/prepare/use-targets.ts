@@ -3,22 +3,22 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   assignTargets,
   createTag as createTagRemote,
-  deleteMeeting as deleteMeetingRemote,
   deleteTag as deleteTagRemote,
   ensureDefaultTags,
   listTargets,
-  saveMeeting as saveMeetingRemote,
   setCompanyTag,
   unassignTargets,
   updateShowAbbrev as updateShowAbbrevRemote,
   updateTag as updateTagRemote,
-  updateMeetingReport as updateMeetingReportRemote,
   updateTargets,
   type MeetingInput,
   type MeetingReportPatch,
 } from '@/db/repositories/targets'
 import { listMembers } from '@/db/repositories/teams'
+import { newId } from '@/lib/ids'
 import { showColorFor } from '@/db/schemas/prepare'
+import { useSync } from '@/features/sync/use-sync'
+import { applyMeetingPatch, meetingFromInput, overlayMeetingOps } from './lib/overlay'
 import type { Goal, Priority, Tag, Target, TeamMember } from '@/db/schemas/prepare'
 
 type Data = { targets: Target[]; tags: Tag[]; members: TeamMember[] }
@@ -28,6 +28,8 @@ const byId = (ids: string[]) => new Set(ids)
 /**
  * État de la préparation d'un salon : cibles, tags, équipe. Les modifications sont appliquées tout de
  * suite à l'écran puis envoyées ; en cas d'échec elles sont annulées et `actionError` est renseigné.
+ * Exception : les rencontres (création, compte-rendu, suppression) passent par la file d'attente hors ligne : gardées sur
+ * l'appareil, envoyées dès que le réseau le permet, jamais annulées à l'écran (l'état des envois est dans la bannière).
  */
 export function useTargets(eventId: string, teamId: string) {
   const [data, setData] = useState<Data>()
@@ -35,6 +37,11 @@ export function useTargets(eventId: string, teamId: string) {
   const [actionError, setActionError] = useState(false)
   const [tick, setTick] = useState(0)
   const dataRef = useRef<Data>(undefined)
+  const sync = useSync()
+  const syncRef = useRef(sync)
+  useEffect(() => {
+    syncRef.current = sync
+  }, [sync])
 
   useEffect(() => {
     dataRef.current = data
@@ -62,6 +69,15 @@ export function useTargets(eventId: string, teamId: string) {
   }, [eventId, teamId, tick])
 
   const reload = useCallback(() => setTick((t) => t + 1), [])
+
+  // Une file qui vient de se vider : le serveur a pu recalculer des choses (une rencontre vide supprimée…), on relit
+  // (ajustement d'état pendant le rendu, comme `useAsync`).
+  const { lastSyncedAt, pending } = sync.snapshot
+  const [seenSync, setSeenSync] = useState(lastSyncedAt)
+  if (lastSyncedAt !== seenSync && pending === 0) {
+    setSeenSync(lastSyncedAt)
+    setTick((t) => t + 1)
+  }
 
   /**
    * Applique `local` immédiatement, puis `remote`. `local` s'applique à l'état le plus récent (forme fonctionnelle) :
@@ -250,96 +266,82 @@ export function useTargets(eventId: string, teamId: string) {
           () => deleteTagRemote(id),
         ),
 
+      /** Crée ou replanifie une rencontre : appliqué tout de suite, puis envoyé par la file d'attente (hors ligne compris). */
       saveMeeting: async (input: Omit<MeetingInput, 'teamId' | 'eventId'>): Promise<boolean> => {
         const snapshot = dataRef.current
         if (!snapshot) return false
-        try {
-          const id = await saveMeetingRemote({ ...input, teamId, eventId })
-          // Modifier le créneau ne change ni le statut, ni l'intérêt, ni la prochaine étape déjà saisis.
-          const prev = snapshot.targets
-            .find((t) => t.id === input.targetId)
-            ?.meetings.find((m) => m.id === id)
-          const meeting = {
-            id,
-            plannedAt: input.plannedAt,
-            durationMin: input.durationMin,
-            reminderMin: input.reminderMin,
-            ownerId: input.ownerId,
-            status: prev?.status ?? 'to_see',
-            interest: prev?.interest ?? null,
-            nextStep: prev?.nextStep ?? '',
-            recontact: prev?.recontact ?? false,
-            news: prev?.news ?? false,
-            autoCreated: input.auto === true,
-            contactId: prev?.contactId ?? null,
-          }
-          setData(
-            (d) =>
-              d && {
-                ...d,
-                targets: d.targets.map((t) =>
-                  t.id === input.targetId
-                    ? {
-                        ...t,
-                        meetings: [...t.meetings.filter((m) => m.id !== id), meeting].sort((a, b) =>
-                          a.plannedAt.localeCompare(b.plannedAt),
-                        ),
-                      }
-                    : t,
-                ),
-              },
-          )
-          return true
-        } catch {
-          return false
-        }
+        const id = input.id ?? newId()
+        const full = { ...input, id, teamId, eventId }
+        const prev = snapshot.targets
+          .find((t) => t.id === input.targetId)
+          ?.meetings.find((m) => m.id === id)
+        const meeting = meetingFromInput(full, prev)
+        setData(
+          (d) =>
+            d && {
+              ...d,
+              targets: d.targets.map((t) =>
+                t.id === input.targetId
+                  ? {
+                      ...t,
+                      meetings: [...t.meetings.filter((m) => m.id !== id), meeting].sort((a, b) =>
+                        a.plannedAt.localeCompare(b.plannedAt),
+                      ),
+                    }
+                  : t,
+              ),
+            },
+        )
+        syncRef.current.enqueue({ type: 'meeting.upsert', input: full })
+        return true
       },
 
-      /** Compte-rendu : statut, intérêt et prochaine étape d'une rencontre (appliqués tout de suite, annulés en cas d'échec). */
-      updateMeetingReport: (targetId: string, meetingId: string, patch: MeetingReportPatch) =>
-        run(
-          (d) => ({
-            ...d,
-            targets: d.targets.map((t) =>
-              t.id === targetId
-                ? {
-                    ...t,
-                    meetings: t.meetings.map((m) =>
-                      m.id === meetingId
-                        ? {
-                            ...m,
-                            ...(patch.status !== undefined ? { status: patch.status } : {}),
-                            ...(patch.interest !== undefined ? { interest: patch.interest } : {}),
-                            ...(patch.nextStep !== undefined ? { nextStep: patch.nextStep } : {}),
-                            ...(patch.recontact !== undefined
-                              ? { recontact: patch.recontact }
-                              : {}),
-                            ...(patch.news !== undefined ? { news: patch.news } : {}),
-                            ...(patch.contactId !== undefined
-                              ? { contactId: patch.contactId }
-                              : {}),
-                          }
-                        : m,
-                    ),
-                  }
-                : t,
-            ),
-          }),
-          () => updateMeetingReportRemote(meetingId, patch),
-        ),
+      /** Compte-rendu d'une rencontre : appliqué tout de suite, puis envoyé par la file d'attente (hors ligne compris). */
+      updateMeetingReport: async (
+        targetId: string,
+        meetingId: string,
+        patch: MeetingReportPatch,
+      ): Promise<boolean> => {
+        if (!dataRef.current) return false
+        setData(
+          (d) =>
+            d && {
+              ...d,
+              targets: d.targets.map((t) =>
+                t.id === targetId
+                  ? {
+                      ...t,
+                      meetings: t.meetings.map((m) =>
+                        m.id === meetingId ? applyMeetingPatch(m, patch) : m,
+                      ),
+                    }
+                  : t,
+              ),
+            },
+        )
+        syncRef.current.enqueue({ type: 'meeting.patch', id: meetingId, patch })
+        return true
+      },
 
-      deleteMeeting: (targetId: string, meetingId: string) =>
-        run(
-          (d) => ({
-            ...d,
-            targets: d.targets.map((t) =>
-              t.id === targetId
-                ? { ...t, meetings: t.meetings.filter((m) => m.id !== meetingId) }
-                : t,
-            ),
-          }),
-          () => deleteMeetingRemote(meetingId),
-        ),
+      /** Supprime une rencontre ; si elle n'est jamais partie sur le serveur, il n'y a rien à envoyer. */
+      deleteMeeting: async (targetId: string, meetingId: string): Promise<boolean> => {
+        if (!dataRef.current) return false
+        setData(
+          (d) =>
+            d && {
+              ...d,
+              targets: d.targets.map((t) =>
+                t.id === targetId
+                  ? { ...t, meetings: t.meetings.filter((m) => m.id !== meetingId) }
+                  : t,
+              ),
+            },
+        )
+        if (!syncRef.current.cancelUnsentMeeting(meetingId)) {
+          syncRef.current.enqueue({ type: 'meeting.delete', id: meetingId })
+        }
+        return true
+      },
     }),
     [run, patchTargets, teamId, eventId],
   )
@@ -349,12 +351,24 @@ export function useTargets(eventId: string, teamId: string) {
     return (userId: string) => map.get(userId) ?? '?'
   }, [data?.members])
 
+  // Les modifications de rencontres pas encore parties (file hors ligne, y compris relue après un rechargement de la
+  // page) sont rejouées sur ce que le serveur a renvoyé : on ne voit jamais l'ancienne version.
+  const pendingSnapshot = sync.snapshot
+  const targets = useMemo(
+    () =>
+      data
+        ? overlayMeetingOps(data.targets, pendingSnapshot.pending > 0 ? sync.pendingOps() : [])
+        : undefined,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `pendingSnapshot` change à chaque évolution de la file
+    [data, pendingSnapshot],
+  )
+
   // Typologies (Client, Prospect…) d'un côté, pastilles de salons de l'autre : mêmes liens, deux usages.
   const tags = useMemo(() => (data?.tags ?? []).filter((t) => t.kind === 'type'), [data?.tags])
   const shows = useMemo(() => (data?.tags ?? []).filter((t) => t.kind === 'show'), [data?.tags])
 
   return {
-    targets: data?.targets,
+    targets,
     tags,
     shows,
     members: data?.members ?? [],
