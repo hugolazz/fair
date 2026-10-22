@@ -7,7 +7,7 @@ import { staleStatus } from '@/lib/cache/cache'
 import { cn } from '@/lib/cn'
 import { useSync } from './use-sync'
 
-/** Combien de temps « Tout est synchronisé » (et « Prêt pour le hors ligne ») restent affichés. */
+/** Combien de temps « Tout est synchronisé » reste affiché. */
 const SYNCED_MS = 3_000
 
 const dateTime = new Intl.DateTimeFormat('fr', {
@@ -37,7 +37,7 @@ function useFlash(stamp: number | null, active: boolean): boolean {
 
 /**
  * État de l'appli face au réseau, toujours dit en clair : envois en attente (« Hors ligne : 2 modifications… »), refus du
- * serveur à traiter, données lues dans la copie locale (« Données enregistrées le … »), préparation du hors ligne.
+ * serveur à traiter, données lues dans la copie locale (« Données enregistrées le … »), préparation du hors ligne (en cours seulement : la fin est silencieuse, `data-offline-ready` la signale aux tests).
  * Rien ne s'affiche quand tout va bien.
  */
 export function SyncBanner() {
@@ -46,7 +46,6 @@ export function SyncBanner() {
   const staleSince = useSyncExternalStore(staleStatus.subscribe, staleStatus.getSnapshot)
   const prefetch = useSyncExternalStore(prefetchStatus.subscribe, prefetchStatus.getSnapshot)
   const justSynced = useFlash(snapshot.lastSyncedAt, snapshot.pending === 0)
-  const justPrefetched = useFlash(prefetch.finishedAt, prefetch.status === 'done')
 
   const lines: Line[] = []
   if (snapshot.failed > 0)
@@ -60,12 +59,12 @@ export function SyncBanner() {
     lines.push({ text: t('stale', { date: dateTime.format(new Date(staleSince)) }), tone: 'warn' })
   if (prefetch.status === 'running')
     lines.push({ text: t('prefetching', { percent: prefetch.percent }), tone: 'info' })
-  else if (justPrefetched) lines.push({ text: t('prefetched'), tone: 'ok' })
 
   return (
     <div
       role="status"
       aria-live="polite"
+      data-offline-ready={prefetch.status === 'done' ? 'true' : undefined}
       className="mx-auto flex w-full max-w-[1040px] flex-col gap-2 px-4 empty:hidden md:px-10"
     >
       {lines.map(({ text, tone }) => (

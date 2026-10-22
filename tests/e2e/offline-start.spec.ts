@@ -12,7 +12,9 @@ async function prepareOnline(page: Page, eventId: string) {
   await login(page, USERS.admin)
   await page.goto(`/events/${eventId}/participants`)
   await expect(page.getByRole('button', { name: 'Bolt' }).first()).toBeVisible()
-  await expect(page.getByText(/Prêt pour le hors ligne/)).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('[role=status][data-offline-ready=true]')).toBeAttached({
+    timeout: 20_000,
+  })
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready
   })

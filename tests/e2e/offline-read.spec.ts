@@ -69,7 +69,9 @@ test('hors ligne : on ouvre les fiches du salon depuis la copie enregistrée sur
   await page.goto(`/events/${currentEvent}/participants`)
   await expect(page.getByRole('button', { name: 'Bolt' }).first()).toBeVisible()
   // La copie du salon se prépare en arrière-plan, la bannière le dit.
-  await expect(page.getByText(/Prêt pour le hors ligne/)).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('[role=status][data-offline-ready=true]')).toBeAttached({
+    timeout: 20_000,
+  })
 
   // Plus de réseau : les fiches s'ouvrent, avec leurs contacts, et la bannière dit d'où viennent les données.
   await page.context().setOffline(true)
@@ -96,7 +98,9 @@ test('réseau trop lent : la liste s’affiche tout de suite depuis la copie, sa
   await login(page, USERS.admin)
   await page.goto(`/events/${currentEvent}/participants`)
   await expect(page.getByRole('button', { name: 'Bolt' }).first()).toBeVisible()
-  await expect(page.getByText(/Prêt pour le hors ligne/)).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('[role=status][data-offline-ready=true]')).toBeAttached({
+    timeout: 20_000,
+  })
 
   // Un réseau de salon qui ne répond pas à la lecture de la liste : elle reste suspendue, la liste vient de la copie.
   const pending: (() => void)[] = []
