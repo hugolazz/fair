@@ -155,7 +155,10 @@ export const targetRowSchema = z.object({
         planned_at: z.string().nullable(),
         planned_duration_min: z.number(),
         reminder_minutes: z.number().nullable(),
-        owner_id: z.string(),
+        owner_id: z
+          .string()
+          .nullable()
+          .transform((v) => v ?? ''), // vide = ancien membre (compte supprimé)
         status: z.string(),
         interest: z.number().nullable().default(null),
         next_step: z.string().nullable().default(null),

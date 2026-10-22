@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { computeBilan } from '@shared/exports/bilan.ts'
+import { memberNames } from '@shared/exports/select.ts'
 import { sampleData } from './fixtures'
 
 describe('bilan du salon', () => {
@@ -87,5 +88,14 @@ describe('bilan du salon', () => {
     })
     expect(empty.meetings.rate).toBeNull()
     expect(empty.topOpportunities).toEqual([])
+  })
+})
+
+describe('auteur disparu (compte supprimé ou départ de l’équipe)', () => {
+  it('s’affiche « Ancien membre », jamais « null » ni un identifiant', () => {
+    const name = memberNames(sampleData())
+    expect(name('')).toBe('Ancien membre')
+    expect(name(null)).toBe('Ancien membre')
+    expect(name('00000000-0000-0000-0000-000000000000')).toBe('Ancien membre')
   })
 })

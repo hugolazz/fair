@@ -95,6 +95,7 @@
     "assign": "Assigner",
     "done": "Modifié pour {{count}} entreprise(s)."
   },
+  "formerMember": "Ancien membre",
   "remove": {
     "action": "Retirer du salon",
     "title_one": "Retirer {{count}} entreprise du salon ?",

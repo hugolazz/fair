@@ -225,7 +225,7 @@ export async function fetchExportData(
     id: String(m.id),
     targetId: String(m.event_company_id),
     contactId: str(m.contact_id),
-    ownerId: String(m.owner_id),
+    ownerId: m.owner_id ? String(m.owner_id) : '', // vide = ancien membre (compte supprimé)
     status: (MEETING_STATUSES as readonly string[]).includes(String(m.status))
       ? (m.status as MeetingStatus)
       : 'to_see',
@@ -275,7 +275,7 @@ export async function fetchExportData(
     id: String(n.id),
     meetingId: str(n.meeting_id),
     targetId: str(n.event_company_id),
-    authorId: String(n.author_id),
+    authorId: n.author_id ? String(n.author_id) : '',
     body: String(n.body),
     source: String(n.source),
     capturedAt: String(n.captured_at),

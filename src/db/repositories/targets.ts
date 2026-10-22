@@ -487,7 +487,7 @@ export function toMeetingNote(n: Record<string, unknown>): MeetingNote {
   return {
     id: n.id as string,
     body: n.body as string,
-    authorId: n.author_id as string,
+    authorId: (n.author_id as string | null) ?? '', // vide = ancien membre (compte supprimé)
     capturedAt: n.captured_at as string,
   }
 }

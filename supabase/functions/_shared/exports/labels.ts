@@ -11,6 +11,9 @@ export const STATUS_LABEL: Record<MeetingStatus, string> = {
   skipped: 'Écarté',
 }
 
+/** Auteur d'une note ou d'une rencontre dont le compte a été supprimé (ou qui a quitté l'équipe). */
+export const FORMER_MEMBER_LABEL = 'Ancien membre'
+
 export const PRIORITY_LABEL: Record<Priority | 'none', string> = {
   A: 'Priorité A',
   B: 'Priorité B',

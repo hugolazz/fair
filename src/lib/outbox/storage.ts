@@ -74,3 +74,14 @@ export class IndexedDbStorage<P> implements OutboxStorage<P> {
 export function createStorage<P>(name: string): OutboxStorage<P> {
   return typeof indexedDB === 'undefined' ? new MemoryStorage<P>() : new IndexedDbStorage<P>(name)
 }
+
+/** Efface la file d'attente d'un utilisateur de l'appareil (suppression du compte). */
+export function deleteOutbox(name: string): Promise<void> {
+  if (typeof indexedDB === 'undefined') return Promise.resolve()
+  return new Promise((resolve) => {
+    const request = indexedDB.deleteDatabase(name)
+    request.onsuccess = () => resolve()
+    request.onerror = () => resolve()
+    request.onblocked = () => resolve()
+  })
+}

@@ -67,5 +67,18 @@
     "button": "Quitter l'équipe",
     "confirm": "Quitter l'équipe « {{team}} » ? Vous n'aurez plus accès à ses données.",
     "error": "Impossible de quitter l'équipe pour le moment."
+  },
+  "delete": {
+    "title": "Supprimer mon compte",
+    "help": "Supprime définitivement votre compte, votre profil (nom, adresse e-mail) et votre appartenance aux équipes. Les notes et rencontres que vous avez saisies restent à votre équipe, sous le nom « Ancien membre ». Propriétaire d'une équipe : la propriété passe au plus ancien admin (à défaut, au plus ancien membre) ; si vous êtes seul(e), l'équipe est fermée.",
+    "button": "Supprimer mon compte",
+    "dialogTitle": "Supprimer définitivement votre compte ?",
+    "dialogBody": "Cette action est irréversible : vous ne pourrez plus vous connecter avec cette adresse.",
+    "pending_one": "{{count}} modification n'a pas encore été envoyée : elle sera perdue.",
+    "pending_other": "{{count}} modifications n'ont pas encore été envoyées : elles seront perdues.",
+    "confirmLabel": "Pour confirmer, saisissez votre adresse e-mail ({{email}})",
+    "confirm": "Supprimer définitivement",
+    "cancel": "Annuler",
+    "error": "Le compte n'a pas pu être supprimé. Vérifiez votre connexion et réessayez."
   }
 }

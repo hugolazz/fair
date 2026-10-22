@@ -1,11 +1,11 @@
-import { DoorOpen, LogOut } from 'lucide-react'
+import { DoorOpen, LogOut, UserX } from 'lucide-react'
 import { Select } from '@/components/ui/select'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ErrorState, Loading, PageHeader } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
 import { InputField } from '@/components/ui/field'
-import { signOut } from '@/db/repositories/auth'
+import { deleteMyAccount, signOut } from '@/db/repositories/auth'
 import { changePassword, WRONG_CURRENT_PASSWORD } from '@/db/repositories/auth'
 import { updateMyDisplayName } from '@/db/repositories/profile'
 import {
@@ -18,6 +18,8 @@ import {
 } from '@/db/repositories/teams'
 import { isAdminRole } from '@/features/auth-team/roles'
 import { useReadySession } from '@/features/auth-team/session'
+import { useSync } from '@/features/sync/use-sync'
+import { Dialog } from '@/components/ui/dialog'
 import { useAsync } from '@/lib/use-async'
 import { TeamLogo } from './team-logo'
 
@@ -125,6 +127,24 @@ export default function SettingsPage() {
       await refreshMembership()
     } catch {
       setLeaveError(true)
+    }
+  }
+
+  const { snapshot } = useSync()
+  const [deleting, setDeleting] = useState(false)
+  const [deleteEmail, setDeleteEmail] = useState('')
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteError, setDeleteError] = useState(false)
+  const accountEmail = session.user.email ?? ''
+  async function onDeleteAccount(e: FormEvent) {
+    e.preventDefault()
+    setDeleteBusy(true)
+    setDeleteError(false)
+    try {
+      await deleteMyAccount(session.user.id) // la session se ferme : l'appli renvoie sur la connexion
+    } catch {
+      setDeleteError(true)
+      setDeleteBusy(false)
     }
   }
 
@@ -367,6 +387,71 @@ export default function SettingsPage() {
           </p>
         ) : null}
       </Section>
+
+      <Section title={t('delete.title')}>
+        <p className="text-sm text-slate-700">{t('delete.help')}</p>
+        <div>
+          <Button variant="danger" onClick={() => setDeleting(true)}>
+            <UserX aria-hidden className="size-4" />
+            {t('delete.button')}
+          </Button>
+        </div>
+      </Section>
+
+      <Dialog
+        open={deleting}
+        onOpenChange={(open) => {
+          if (deleteBusy) return
+          setDeleting(open)
+          if (!open) {
+            setDeleteEmail('')
+            setDeleteError(false)
+          }
+        }}
+        title={t('delete.dialogTitle')}
+        description={t('delete.dialogBody')}
+      >
+        <form onSubmit={(e) => void onDeleteAccount(e)} className="flex flex-col gap-4">
+          {snapshot.pending > 0 ? (
+            <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-950">
+              {t('delete.pending', { count: snapshot.pending })}
+            </p>
+          ) : null}
+          <InputField
+            label={t('delete.confirmLabel', { email: accountEmail })}
+            type="email"
+            autoComplete="off"
+            value={deleteEmail}
+            onChange={(e) => setDeleteEmail(e.target.value)}
+          />
+          {deleteError ? (
+            <p role="alert" className="text-sm text-red-700">
+              {t('delete.error')}
+            </p>
+          ) : null}
+          <div className="flex flex-col gap-2">
+            <Button
+              type="submit"
+              variant="danger"
+              disabled={
+                deleteBusy ||
+                deleteEmail.trim().toLowerCase() !== accountEmail.toLowerCase() ||
+                accountEmail === ''
+              }
+            >
+              {t('delete.confirm')}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={deleteBusy}
+              onClick={() => setDeleting(false)}
+            >
+              {t('delete.cancel')}
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   )
 }

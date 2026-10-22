@@ -1,5 +1,6 @@
 import type { Session } from '@supabase/supabase-js'
 import { clearCache } from '@/lib/cache/cache'
+import { deleteOutbox } from '@/lib/outbox/storage'
 import { isRetryableError } from '@/lib/network-error'
 import { supabase } from '@/lib/supabase'
 
@@ -125,6 +126,19 @@ export async function changePassword(
   const { error } = await supabase.auth.signInWithPassword({ email, password: currentPassword })
   if (error) throw new Error(WRONG_CURRENT_PASSWORD)
   await updatePassword(newPassword)
+}
+
+/**
+ * Supprime le compte de l'appelant (RPC `delete_my_account`) puis tout ce qui reste sur l'appareil : copie locale, file
+ * d'attente d'écritures, session. Les notes et rencontres saisies restent à l'équipe, sans nom.
+ */
+export async function deleteMyAccount(userId: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_my_account')
+  if (error) throw error
+  await clearCache()
+  await deleteOutbox(`fair-outbox:${userId}`)
+  // Le compte n'existe plus côté serveur : on ne garde que le nettoyage local de la session.
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined)
 }
 
 export async function signOut(): Promise<void> {

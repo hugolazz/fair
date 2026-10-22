@@ -4,6 +4,7 @@ import { prefetchEventData } from '@/db/repositories/prefetch'
 import { markFresh, markStale, readCached, writeCached } from '@/lib/cache/cache'
 import { isRetryableError } from '@/lib/network-error'
 import { useReadySession } from '@/features/auth-team/session'
+import { useTranslation } from 'react-i18next'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   assignTargets,
@@ -394,10 +395,12 @@ export function useTargets(eventId: string, teamId: string) {
     [run, patchTargets, teamId, eventId],
   )
 
+  const { t } = useTranslation('prepare')
+  const formerMember = t('formerMember')
   const memberName = useMemo(() => {
     const map = new Map((data?.members ?? []).map((m) => [m.userId, m.name]))
-    return (userId: string) => map.get(userId) ?? '?'
-  }, [data?.members])
+    return (userId: string) => map.get(userId) ?? formerMember
+  }, [data?.members, formerMember])
 
   // Les modifications de rencontres pas encore parties (file hors ligne, y compris relue après un rechargement de la
   // page) sont rejouées sur ce que le serveur a renvoyé : on ne voit jamais l'ancienne version.
