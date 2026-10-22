@@ -1,3 +1,4 @@
+import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -6,10 +7,14 @@ import { cn } from '@/lib/cn'
 import { showAbbrev } from './lib/shows'
 import type { TargetsApi } from './use-targets'
 
-/** L'abréviation d'un salon : vide = automatique. S'enregistre en quittant le champ ou avec Entrée. */
+/**
+ * Un salon de l'équipe : son abréviation (vide = automatique ; s'enregistre en quittant le champ ou avec Entrée) et sa
+ * suppression, après confirmation : le salon disparaît de toutes les entreprises.
+ */
 function AbbrevRow({ show, api }: { show: Tag; api: TargetsApi }) {
   const { t } = useTranslation('prepare')
   const [value, setValue] = useState(show.abbrev ?? '')
+  const [confirming, setConfirming] = useState(false)
   const auto = showAbbrev(show.label)
 
   function commit() {
@@ -19,18 +24,46 @@ function AbbrevRow({ show, api }: { show: Tag; api: TargetsApi }) {
   }
 
   return (
-    <li className="flex items-center gap-3">
-      <span className="min-w-0 flex-1 truncate text-sm">{show.label}</span>
-      <input
-        aria-label={t('shows.abbrevFor', { label: show.label })}
-        placeholder={auto}
-        value={value}
-        maxLength={8}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), e.currentTarget.blur())}
-        className="min-h-11 w-28 shrink-0 rounded-lg border border-slate-300 px-3 text-center md:min-h-9"
-      />
+    <li className="flex flex-col gap-2">
+      <div className="flex items-center gap-3">
+        <span className="min-w-0 flex-1 truncate text-sm">{show.label}</span>
+        <input
+          aria-label={t('shows.abbrevFor', { label: show.label })}
+          placeholder={auto}
+          value={value}
+          maxLength={8}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), e.currentTarget.blur())}
+          className="min-h-11 w-28 shrink-0 rounded-lg border border-slate-300 px-3 text-center md:min-h-9"
+        />
+        <Button
+          variant="ghost"
+          className="min-h-11 shrink-0 px-3 md:min-h-9"
+          aria-label={t('shows.deleteFor', { label: show.label })}
+          onClick={() => setConfirming(true)}
+        >
+          <Trash2 aria-hidden className="size-4" />
+        </Button>
+      </div>
+      {confirming ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-2 rounded bg-red-50 p-2 text-sm"
+        >
+          <span className="flex-1">{t('shows.confirmDelete', { label: show.label })}</span>
+          <Button
+            variant="danger"
+            className="min-h-9"
+            onClick={() => void api.actions.removeTag(show.id)}
+          >
+            {t('edit.yesDelete')}
+          </Button>
+          <Button variant="secondary" className="min-h-9" onClick={() => setConfirming(false)}>
+            {t('assign.cancel')}
+          </Button>
+        </div>
+      ) : null}
     </li>
   )
 }

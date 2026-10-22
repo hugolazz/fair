@@ -46,7 +46,14 @@ export default function PreparePage() {
   // filtre) et on la perd de vue. Le tri et les filtres reprennent la main dès qu'on les touche.
   const [pinned, setPinned] = useState<string[]>()
   const rows = useMemo(() => {
-    const sorted = sortTargets(filterTargets(api.targets ?? [], filters), sort, api.memberName)
+    // Un salon ou un tag supprimé ne laisse pas de filtre fantôme qui viderait la liste.
+    const live = new Set([...api.tags, ...api.shows].map((x) => x.id))
+    const active = {
+      ...filters,
+      tagIds: filters.tagIds.filter((id) => live.has(id)),
+      showIds: filters.showIds.filter((id) => live.has(id)),
+    }
+    const sorted = sortTargets(filterTargets(api.targets ?? [], active), sort, api.memberName)
     if (!pinned) return sorted
     const byId = new Map((api.targets ?? []).map((x) => [x.id, x]))
     const kept = pinned.flatMap((id) => {
@@ -55,7 +62,7 @@ export default function PreparePage() {
     })
     const known = new Set(pinned)
     return [...kept, ...sorted.filter((x) => !known.has(x.id))]
-  }, [api.targets, filters, sort, api.memberName, pinned])
+  }, [api.targets, api.tags, api.shows, filters, sort, api.memberName, pinned])
   const keepOrder = () => setPinned((prev) => prev ?? rows.map((r) => r.id))
   const changeFilters = (next: Filters) => {
     setPinned(undefined)

@@ -127,7 +127,7 @@ test('un admin choisit l’abréviation d’un salon dans « Modifier la fiche �
   await page.getByRole('button', { name: 'Bolt' }).first().click()
   const sheet = page.getByRole('dialog', { name: 'Bolt' })
   const edit = await openEdit(page)
-  await edit.getByText('Abréviations des salons').click()
+  await edit.getByText('Gérer les salons').click()
   const field = edit.getByLabel('Abréviation de Tech For Retail 03/26')
   await expect(field).toHaveAttribute('placeholder', 'TFR') // l’automatique est proposée
 
@@ -145,7 +145,7 @@ test('un admin choisit l’abréviation d’un salon dans « Modifier la fiche �
   // Vider le champ : retour à l’abréviation automatique.
   await page.getByRole('button', { name: 'Bolt' }).first().click()
   const edit2 = await openEdit(page)
-  await edit2.getByText('Abréviations des salons').click()
+  await edit2.getByText('Gérer les salons').click()
   const field2 = edit2.getByLabel('Abréviation de Tech For Retail 03/26')
   await expect(field2).toHaveValue('TFR26')
   await field2.fill('')
@@ -156,4 +156,76 @@ test('un admin choisit l’abréviation d’un salon dans « Modifier la fiche �
   expect(await sql('select short_label from tags where id = $1', [tag!.id])).toEqual([
     { short_label: null },
   ])
+})
+
+test('un admin supprime un salon depuis « Gérer les salons » : il disparaît de toutes les entreprises', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId, teamId, targetIds } = await seedEvent('Salon suppression', [
+    { name: 'Bolt', stand: 'B2' },
+    { name: 'Acme', stand: 'A1' },
+  ])
+  const companies = await sql<{ company_id: string }>(
+    'select company_id from event_companies order by stand_label',
+  )
+  const mk = async (label: string) =>
+    (
+      await sql<{ id: string }>(
+        `insert into tags (id, team_id, label, scope, kind, color)
+         values (gen_random_uuid(), $1, $2, 'company', 'show', '#0f766e') returning id`,
+        [teamId, label],
+      )
+    )[0]!.id
+  const keep = await mk('NRF 09/26')
+  const drop = await mk('Salon à supprimer')
+  for (const c of companies)
+    for (const tag of [keep, drop])
+      await sql(
+        `insert into taggings (tag_id, taggable_table, taggable_id, team_id) values ($1, 'companies', $2, $3)`,
+        [tag, c.company_id, teamId],
+      )
+  expect(Object.keys(targetIds)).toHaveLength(2)
+
+  await login(page, USERS.admin)
+  await page.goto(`/events/${eventId}/participants`)
+  const bolt = page.getByRole('row', { name: /Bolt/ })
+  await expect(
+    bolt.locator('[data-show-pill]').filter({ hasText: 'Salon à supprimer' }),
+  ).toBeVisible()
+
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const edit = await openEdit(page)
+  await edit.getByText('Gérer les salons').click()
+  await edit.getByRole('button', { name: 'Supprimer le salon Salon à supprimer' }).click()
+  // Confirmation d'abord : annuler ne supprime rien.
+  await edit.getByRole('button', { name: 'Annuler' }).click()
+  expect(
+    await sql('select id from tags where id = $1 and deleted_at is null', [drop]),
+  ).toHaveLength(1)
+
+  await edit.getByRole('button', { name: 'Supprimer le salon Salon à supprimer' }).click()
+  await edit.getByRole('button', { name: 'Oui, supprimer' }).click()
+  await expect(
+    edit.getByRole('button', { name: 'Supprimer le salon Salon à supprimer' }),
+  ).toHaveCount(0)
+  // Il reste l'autre salon, et la base est à jour : salon supprimé, liens retirés pour toutes les entreprises.
+  await expect(edit.getByRole('button', { name: 'Supprimer le salon NRF 09/26' })).toBeVisible()
+  expect(
+    await sql('select id from tags where id = $1 and deleted_at is null', [drop]),
+  ).toHaveLength(0)
+  expect(await sql('select tag_id from taggings where tag_id = $1', [drop])).toHaveLength(0)
+  expect(await sql('select tag_id from taggings where tag_id = $1', [keep])).toHaveLength(2)
+
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
+  await expect(
+    bolt.locator('[data-show-pill]').filter({ hasText: 'Salon à supprimer' }),
+  ).toHaveCount(0)
+  await expect(
+    page
+      .getByRole('row', { name: /Acme/ })
+      .locator('[data-show-pill]')
+      .filter({ hasText: 'Salon à supprimer' }),
+  ).toHaveCount(0)
 })
