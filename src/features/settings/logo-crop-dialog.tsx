@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
-import { downloadTeamLogo, LOGO_MAX_BYTES, replaceTeamLogo } from '@/db/repositories/teams'
+import { downloadTeamLogo, LOGO_MAX_BYTES, uploadTeamLogo } from '@/db/repositories/teams'
 import {
   clampInsets,
   fitOutput,
@@ -90,7 +90,7 @@ export function LogoCropDialog({
       ctx.drawImage(loaded.bitmap, rect.x, rect.y, rect.w, rect.h, 0, 0, out.w, out.h)
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
       if (!blob || blob.size > LOGO_MAX_BYTES) throw new Error('too large')
-      await replaceTeamLogo(teamId, new File([blob], 'logo.png', { type: 'image/png' }))
+      await uploadTeamLogo(teamId, new File([blob], 'logo.png', { type: 'image/png' }))
       onSaved()
     } catch {
       setState('saveError')

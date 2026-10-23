@@ -47,19 +47,32 @@ test('recadrer le logo : rognage automatique des marges vides, puis enregistreme
 }) => {
   await resetBackend('team')
   const original = png(80, 40, [30, 15, 20, 10]) // un petit rectangle au milieu d'un grand fond transparent
+  // Faux stockage : chaque fichier envoyé est resservi sous son nom (comme le vrai), l'ancien reste servi sous l'ancien.
+  const files = new Map<string, Buffer>([['team/logo.png', original]])
   let uploaded: Buffer | undefined
-  await page.route('**/storage/v1/object/sign/**', (route) =>
-    route.fulfill({ json: { signedURL: '/object/sign/attachments/logo.png?token=e2e' } }),
-  )
-  await page.route('**/storage/v1/object/sign/attachments/logo.png**', (route) =>
-    route.fulfill({ contentType: 'image/png', body: original }),
-  )
+  let uploadedPath = ''
+  // Adresse signée (POST), puis l'image elle-même (GET) : même préfixe.
+  await page.route('**/storage/v1/object/sign/**', (route) => {
+    const path = decodeURIComponent(
+      new URL(route.request().url()).pathname.split('/sign/attachments/')[1] ?? '',
+    )
+    if (route.request().method() === 'GET')
+      return route.fulfill({ contentType: 'image/png', body: files.get(path) ?? original })
+    return route.fulfill({ json: { signedURL: `/object/sign/attachments/${path}?token=e2e` } })
+  })
   // Téléchargement (GET) et envoi (POST) passent par la même adresse.
   await page.route('**/storage/v1/object/attachments/**', (route) => {
+    const path = decodeURIComponent(
+      new URL(route.request().url()).pathname.split('/object/attachments/')[1] ?? '',
+    )
     if (route.request().method() === 'GET')
-      return route.fulfill({ contentType: 'image/png', body: original })
+      return route.fulfill({ contentType: 'image/png', body: files.get(path) ?? original })
     uploaded = route.request().postDataBuffer() ?? undefined
-    return route.fulfill({ json: { Key: 'attachments/team/logo.png' } })
+    uploadedPath = path
+    const start = uploaded!.indexOf(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+    const end = uploaded!.indexOf('IEND', start) + 8
+    files.set(path, uploaded!.subarray(start, end))
+    return route.fulfill({ json: { Key: `attachments/${path}` } })
   })
   await sql('update teams set logo_path = $1', ['team/logo.png'])
 
@@ -82,4 +95,13 @@ test('recadrer le logo : rognage automatique des marges vides, puis enregistreme
   expect(at).toBeGreaterThan(-1)
   expect([uploaded!.readUInt32BE(at + 16), uploaded!.readUInt32BE(at + 20)]).toEqual([22, 12])
   await expect(dialog).toHaveCount(0)
+
+  // Chaque version a son propre nom (pas de cache qui resserve l'ancien logo) ; rouvrir le recadrage charge la nouvelle.
+  expect(uploadedPath).toMatch(/^[0-9a-f-]+\/logo-[0-9a-f-]+\.png$/)
+  expect(uploadedPath).not.toBe('team/logo.png')
+  await page.getByRole('button', { name: 'Recadrer' }).click()
+  const again = page.getByRole('dialog', { name: 'Recadrer le logo' })
+  await expect(again.getByRole('slider', { name: /Marge à gauche/ })).toBeVisible()
+  const width = await again.getByRole('img').evaluate((img: HTMLImageElement) => img.naturalWidth)
+  expect(width).toBe(22) // le logo déjà recadré, pas l'original de 80 px
 })

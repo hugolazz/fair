@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { cacheKeys } from '@/db/cache-keys'
 import { cachedRead } from '@/lib/cache/cache'
+import { newId } from '@/lib/ids'
 import { supabase } from '@/lib/supabase'
 
 export const TEAM_ROLES = ['owner', 'admin', 'member'] as const
@@ -121,18 +122,25 @@ export async function fetchTeamLogoUrl(teamId: string): Promise<string | null> {
   return signed.data?.signedUrl ?? null
 }
 
-/** Enregistre le logo (PNG ou JPEG, 2 Mo maximum) : fichier dans le stockage privé, chemin dans l'équipe. */
+/**
+ * Enregistre le logo (PNG ou JPEG, 2 Mo maximum) : fichier dans le stockage privé, chemin dans l'équipe. **Chaque version a
+ * son propre nom** : un nom fixe serait resservi par le cache (navigateur, réseau de diffusion) et on retrouverait l'ancien
+ * logo après un remplacement ou un recadrage. L'ancien fichier est retiré une fois le nouveau en place.
+ */
 export async function uploadTeamLogo(teamId: string, file: File): Promise<void> {
   if (!(LOGO_TYPES as readonly string[]).includes(file.type) || file.size > LOGO_MAX_BYTES) {
     throw new Error('invalid logo')
   }
-  const path = `${teamId}/logo.${file.type === 'image/png' ? 'png' : 'jpg'}`
+  const { data } = await supabase.from('teams').select('logo_path').eq('id', teamId).single()
+  const oldPath = (data as { logo_path: string | null } | null)?.logo_path
+  const path = `${teamId}/logo-${newId()}.${file.type === 'image/png' ? 'png' : 'jpg'}`
   const up = await supabase.storage
     .from('attachments')
-    .upload(path, file, { contentType: file.type, upsert: true })
+    .upload(path, file, { contentType: file.type, cacheControl: '60' })
   if (up.error) throw up.error
   const { error } = await supabase.from('teams').update({ logo_path: path }).eq('id', teamId)
   if (error) throw error
+  if (oldPath) await supabase.storage.from('attachments').remove([oldPath])
 }
 
 /** Le fichier du logo (pour le recadrer). */
@@ -144,15 +152,6 @@ export async function downloadTeamLogo(teamId: string): Promise<Blob> {
   const file = await supabase.storage.from('attachments').download(path)
   if (file.error || !file.data) throw file.error ?? new Error('download failed')
   return file.data
-}
-
-/** Remplace le logo par une nouvelle version (recadrage) ; l'ancien fichier est retiré s'il porte un autre nom. */
-export async function replaceTeamLogo(teamId: string, file: File): Promise<void> {
-  const { data } = await supabase.from('teams').select('logo_path').eq('id', teamId).single()
-  const oldPath = (data as { logo_path: string | null } | null)?.logo_path
-  await uploadTeamLogo(teamId, file)
-  const newPath = `${teamId}/logo.${file.type === 'image/png' ? 'png' : 'jpg'}`
-  if (oldPath && oldPath !== newPath) await supabase.storage.from('attachments').remove([oldPath])
 }
 
 export async function removeTeamLogo(teamId: string): Promise<void> {
