@@ -8,9 +8,11 @@ import { cn } from '@/lib/cn'
 export function Wordmark({ className }: { className?: string }) {
   const { t } = useTranslation()
   return (
+    // Logo de marque : couleur d'accentuation exacte (un logo est exempté des règles de contraste, WCAG 1.4.3).
     <span
+      data-brand-logo
       className={cn(
-        'text-brand-text font-serif text-[2rem] leading-none font-normal tracking-[-0.02em] normal-case italic',
+        'text-brand-600 font-serif text-[2rem] leading-none font-normal tracking-[-0.02em] normal-case italic',
         className,
       )}
     >

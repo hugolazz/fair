@@ -28,7 +28,7 @@ function HeaderLogoImage() {
       <img
         src={url}
         alt={t('teamLogoAlt', { team: teamName })}
-        className="max-h-11 max-w-[min(100%,16rem)] object-contain"
+        className="h-12 w-auto max-w-[min(100%,20rem)] object-contain"
       />
     </Link>
   )
@@ -49,7 +49,7 @@ function TeamLogoBannerImage() {
       <img
         src={url}
         alt={t('teamLogoAlt', { team: teamName })}
-        className="max-h-16 max-w-[min(100%,16rem)] object-contain"
+        className="h-16 w-auto max-w-[min(100%,20rem)] object-contain"
       />
     </div>
   )

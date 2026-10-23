@@ -104,6 +104,11 @@ body,
   height: 100%;
 }
 
+/* La barre de défilement ne décale plus la mise en page : l'en-tête (logo centré) est identique sur toutes les pages. */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
   -webkit-tap-highlight-color: transparent;

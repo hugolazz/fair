@@ -30,12 +30,22 @@ test('l’accueil n’affiche aucun logo sans image, et le logo de l’équipe c
   const logo = page.getByRole('img', { name: /Logo de l.équipe/ })
   await expect(logo).toBeVisible()
   // Centré horizontalement dans la page, au-dessus du titre.
-  const [box, view, title] = await Promise.all([
+  const [box, area, title] = await Promise.all([
     logo.boundingBox(),
-    page.viewportSize(),
+    page.locator('header').boundingBox(),
+
     page.getByRole('heading', { name: 'Vos salons' }).boundingBox(),
   ])
-  expect(Math.abs(box!.x + box!.width / 2 - view!.width / 2)).toBeLessThan(2)
+  expect(Math.abs(box!.x + box!.width / 2 - (area!.x + area!.width / 2))).toBeLessThan(2)
+  // Assez grand pour se lire à côté du reste de l'en-tête (même une petite image est agrandie à 48 px).
+  expect(box!.height).toBeGreaterThanOrEqual(44)
+  // Même position sur une page qui défile (réglages) : la barre de défilement ne décale pas l'en-tête.
+  await page.goto('/settings')
+  const onSettings = await page
+    .getByRole('img', { name: /Logo de l.équipe/ })
+    .first()
+    .boundingBox()
+  expect(Math.abs(onSettings!.x - box!.x)).toBeLessThan(1)
   expect(box!.y + box!.height).toBeLessThanOrEqual(title!.y)
 })
 
@@ -56,10 +66,11 @@ test('mobile : le logo est centré en haut de l’accueil (l’en-tête n’a pa
   const logo = page.getByRole('img', { name: /Logo de l.équipe/ })
   await expect(logo).toBeVisible()
   await expect(logo).toHaveCount(1) // une seule image (pas de doublon avec l'en-tête)
-  const [box, title] = await Promise.all([
+  const [box, area, title] = await Promise.all([
     logo.boundingBox(),
+    page.locator('main').boundingBox(),
     page.getByRole('heading', { name: 'Vos salons' }).boundingBox(),
   ])
-  expect(Math.abs(box!.x + box!.width / 2 - 195)).toBeLessThan(2)
+  expect(Math.abs(box!.x + box!.width / 2 - (area!.x + area!.width / 2))).toBeLessThan(2)
   expect(box!.y + box!.height).toBeLessThanOrEqual(title!.y)
 })
