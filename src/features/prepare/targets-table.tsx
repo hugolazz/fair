@@ -6,6 +6,7 @@ import {
   type Priority,
   type Tag,
   type Target,
+  type TargetContact,
   type TeamMember,
 } from '@/db/schemas/prepare'
 import { canPrepareTarget, useCan } from '@/features/auth-team/roles'
@@ -25,6 +26,7 @@ import {
   type ColumnKey,
   type ColumnPrefs,
 } from './lib/columns'
+import { interestOf, newsOf, recontactOf, statusOf } from './lib/column-values'
 import { formatSlot } from './lib/format'
 import type { Sort, SortKey } from './lib/sort'
 import { useColumnDrag } from './use-column-drag'
@@ -53,6 +55,11 @@ type Props = ListProps & {
   onAssign: (id: string, userId: string) => void
   onUnassign: (id: string, userId: string) => void
   onToggleTag: (id: string, tagId: string, on: boolean) => void
+  /** Contact clé (premier contact) de chaque entreprise, par identifiant d'entreprise. */
+  keyContacts: Record<string, TargetContact>
+  /** Colonne « Actualité » : seulement si l'équipe a activé la case optionnelle, sous l'intitulé qu'elle lui donne. */
+  newsEnabled: boolean
+  newsTitle: string
   /** Colonnes visibles, leur ordre et leur largeur (« Modifier les colonnes », ou à la souris sur l'en-tête). */
   columns: ColumnPrefs
   onColumnsChange: (next: ColumnPrefs) => void
@@ -63,7 +70,7 @@ const HEADER_HEIGHT = 48 // en-tête collant (h-12)
 // Les colonnes (visibles, largeur) viennent du réglage de l'utilisateur : `lib/columns.ts`.
 const GRID = 'grid items-center'
 
-const COLUMNS: { key: SortKey | null; label: ColumnKey; className?: string }[] = [
+const COLUMNS: { key: SortKey | null; label: ColumnKey }[] = [
   { key: 'priority', label: 'priority' },
   { key: 'name', label: 'company' },
   { key: 'stand', label: 'stand' },
@@ -71,6 +78,21 @@ const COLUMNS: { key: SortKey | null; label: ColumnKey; className?: string }[] =
   { key: null, label: 'shows' },
   { key: 'assignee', label: 'assignees' },
   { key: 'meeting', label: 'meeting' },
+  { key: 'industry', label: 'industry' },
+  { key: 'country', label: 'country' },
+  { key: 'city', label: 'city' },
+  { key: null, label: 'website' },
+  { key: null, label: 'history' },
+  { key: 'contacts', label: 'contacts' },
+  { key: null, label: 'keyName' },
+  { key: null, label: 'keyJob' },
+  { key: null, label: 'keyEmail' },
+  { key: null, label: 'keyPhone' },
+  { key: null, label: 'keyLinkedin' },
+  { key: 'interest', label: 'interest' },
+  { key: null, label: 'status' },
+  { key: null, label: 'recontact' },
+  { key: null, label: 'news' },
 ]
 
 /** Tableau dense (desktop) : tri par colonne, sélection (Maj pour une plage), édition rapide de la priorité et de l'objectif. */
@@ -90,9 +112,10 @@ export function TargetsTable(p: Props) {
     startReorder,
     consumeClick,
   } = useColumnDrag(p.columns, p.onColumnsChange)
-  const visible = visibleColumns(prefs)
-  const template = gridTemplate(prefs)
-  const minWidth = tableMinWidth(prefs)
+  const exclude: ColumnKey[] = p.newsEnabled ? [] : ['news']
+  const visible = visibleColumns(prefs, exclude)
+  const template = gridTemplate(prefs, exclude)
+  const minWidth = tableMinWidth(prefs, exclude)
   const { ref, onScroll, start, end, totalHeight, offsetTop } = useVirtualRows(
     p.rows.length,
     ROW_HEIGHT,
@@ -134,7 +157,7 @@ export function TargetsTable(p: Props) {
         {visible.map((key, index) => {
           const c = COLUMNS.find((x) => x.label === key)!
           const active = c.key !== null && p.sort.key === c.key
-          const label = t(`columns.${c.label}`)
+          const label = key === 'news' ? p.newsTitle : t(`columns.${c.label}`)
           const moving = dragging?.key === key
           const dropBefore = dragging !== null && dragging.before === key && !moving
           const dropAfter =
@@ -210,7 +233,33 @@ export function TargetsTable(p: Props) {
           {p.rows.slice(start, end).map((row, i) => {
             const isSelected = p.selected.has(row.id)
             const next = row.meetings[0]
+            const kc = p.keyContacts[row.companyId]
+            const text = (value: string, extra = '') => (
+              <div role="cell" className={cn('truncate px-2', extra)} title={value || undefined}>
+                {value}
+              </div>
+            )
+            const interest = interestOf(row)
+            const status = statusOf(row)
             const cells: Record<ColumnKey, ReactNode> = {
+              industry: text(row.industry),
+              country: text(row.country),
+              city: text(row.city),
+              website: text(row.domain || row.website),
+              history: text(row.history.replace(/\s+/g, ' ').trim()),
+              contacts: text(row.contactCount ? String(row.contactCount) : '', 'tabular-nums'),
+              keyName: text(kc?.name ?? ''),
+              keyJob: text(kc?.jobTitle ?? ''),
+              keyEmail: text(kc?.email ?? ''),
+              keyPhone: text(kc?.phone ?? ''),
+              keyLinkedin: text(kc?.linkedin ?? ''),
+              interest: text(
+                interest === null ? '' : t('history.interestOf', { n: interest }),
+                'tabular-nums',
+              ),
+              status: text(status ? t(`report.status.${status}`) : ''),
+              recontact: text(recontactOf(row) ? t('notepad.yes') : ''),
+              news: text(newsOf(row) ? t('notepad.yes') : ''),
               priority: (
                 <div role="cell" className="px-2">
                   <Select

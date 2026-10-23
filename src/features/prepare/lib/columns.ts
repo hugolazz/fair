@@ -9,8 +9,29 @@ export const COLUMN_KEYS = [
   'shows',
   'assignees',
   'meeting',
+  // Colonnes supplémentaires : décochées par défaut (« Modifier les colonnes »).
+  'industry',
+  'country',
+  'city',
+  'website',
+  'history',
+  'contacts',
+  'keyName',
+  'keyJob',
+  'keyEmail',
+  'keyPhone',
+  'keyLinkedin',
+  'interest',
+  'status',
+  'recontact',
+  'news',
 ] as const
 export type ColumnKey = (typeof COLUMN_KEYS)[number]
+
+/** Les colonnes d'origine du tableau, affichées par défaut. */
+export const BASE_COLUMNS: readonly ColumnKey[] = COLUMN_KEYS.slice(0, 7)
+/** Les colonnes supplémentaires, masquées tant qu'on ne les a pas cochées. */
+export const OPTIONAL_COLUMNS: readonly ColumnKey[] = COLUMN_KEYS.slice(7)
 
 /** Largeur d'origine d'une colonne : fixe (rem), ou souple (minimum en rem, part de l'espace restant en fr). */
 type Track = { kind: 'fixed'; rem: number } | { kind: 'flex'; min: number; fr: number }
@@ -23,6 +44,21 @@ export const COLUMN_TRACKS: Record<ColumnKey, Track> = {
   shows: { kind: 'flex', min: 9, fr: 1.8 },
   assignees: { kind: 'flex', min: 6, fr: 1 },
   meeting: { kind: 'fixed', rem: 8 },
+  industry: { kind: 'flex', min: 7, fr: 1.2 },
+  country: { kind: 'fixed', rem: 7 },
+  city: { kind: 'fixed', rem: 7 },
+  website: { kind: 'flex', min: 8, fr: 1.2 },
+  history: { kind: 'flex', min: 12, fr: 2.2 },
+  contacts: { kind: 'fixed', rem: 5.5 },
+  keyName: { kind: 'flex', min: 8, fr: 1.4 },
+  keyJob: { kind: 'flex', min: 8, fr: 1.3 },
+  keyEmail: { kind: 'flex', min: 10, fr: 1.6 },
+  keyPhone: { kind: 'fixed', rem: 8.5 },
+  keyLinkedin: { kind: 'flex', min: 8, fr: 1.3 },
+  interest: { kind: 'fixed', rem: 5.5 },
+  status: { kind: 'fixed', rem: 7.5 },
+  recontact: { kind: 'fixed', rem: 6.5 },
+  news: { kind: 'fixed', rem: 6.5 },
 }
 
 /** « Entreprise » reste toujours affichée : sans elle, une ligne ne dirait plus de qui elle parle. */
@@ -45,27 +81,34 @@ export type ColumnPrefs = {
   order: ColumnKey[]
   widths: Partial<Record<ColumnKey, number>>
 }
-export const DEFAULT_PREFS: ColumnPrefs = { hidden: [], order: [...COLUMN_KEYS], widths: {} }
+export const DEFAULT_PREFS: ColumnPrefs = {
+  hidden: [...OPTIONAL_COLUMNS],
+  order: [...COLUMN_KEYS],
+  widths: {},
+}
 
 const isKey = (v: unknown): v is ColumnKey => (COLUMN_KEYS as readonly unknown[]).includes(v)
 
 export const clampWidth = (px: number): number =>
   Math.min(WIDTH_MAX, Math.max(WIDTH_MIN, Math.round(px)))
 
-/** Un ordre lu du stockage (partiel, doublons, clés inconnues) → un ordre complet et sans doublon. */
-function normalizeOrder(raw: unknown): ColumnKey[] {
-  const seen = Array.isArray(raw) ? [...new Set(raw.filter(isKey))] : []
-  return [...seen, ...COLUMN_KEYS.filter((k) => !seen.includes(k))]
-}
-
-/** Un réglage lu du stockage (peut être ancien, incomplet ou altéré) → un réglage valide. */
+/**
+ * Un réglage lu du stockage (peut être ancien, incomplet ou altéré) → un réglage valide. Une colonne que le réglage ne
+ * connaît pas encore (ajoutée depuis) est ajoutée à la fin, et masquée s'il s'agit d'une colonne supplémentaire : un
+ * nouveau tableau ne change pas d'aspect tout seul.
+ */
 export function normalizePrefs(raw: unknown): ColumnPrefs {
-  const out: ColumnPrefs = { hidden: [], order: [...COLUMN_KEYS], widths: {} }
+  const out: ColumnPrefs = { hidden: [...OPTIONAL_COLUMNS], order: [...COLUMN_KEYS], widths: {} }
   if (!raw || typeof raw !== 'object') return out
   const { hidden, order, widths } = raw as { hidden?: unknown; order?: unknown; widths?: unknown }
-  if (Array.isArray(hidden))
-    out.hidden = [...new Set(hidden.filter(isKey))].filter((k) => !ALWAYS_VISIBLE.includes(k))
-  out.order = normalizeOrder(order)
+  const known = Array.isArray(order) ? [...new Set(order.filter(isKey))] : []
+  const added = COLUMN_KEYS.filter((k) => !known.includes(k))
+  out.order = [...known, ...added]
+  const hiddenKeys = Array.isArray(hidden) ? [...new Set(hidden.filter(isKey))] : []
+  out.hidden = [
+    ...hiddenKeys.filter((k) => !ALWAYS_VISIBLE.includes(k)),
+    ...added.filter((k) => OPTIONAL_COLUMNS.includes(k) && !hiddenKeys.includes(k)),
+  ]
   if (widths && typeof widths === 'object')
     for (const [key, value] of Object.entries(widths))
       if (isKey(key) && typeof value === 'number' && Number.isFinite(value))
@@ -74,13 +117,14 @@ export function normalizePrefs(raw: unknown): ColumnPrefs {
 }
 
 export const isDefaultPrefs = (p: ColumnPrefs): boolean =>
-  p.hidden.length === 0 &&
+  p.hidden.length === OPTIONAL_COLUMNS.length &&
+  OPTIONAL_COLUMNS.every((k) => p.hidden.includes(k)) &&
   Object.keys(p.widths).length === 0 &&
   p.order.every((k, i) => k === COLUMN_KEYS[i])
 
 /** Colonnes affichées, dans l'ordre choisi. */
-export const visibleColumns = (p: ColumnPrefs): ColumnKey[] =>
-  p.order.filter((k) => !p.hidden.includes(k))
+export const visibleColumns = (p: ColumnPrefs, exclude: readonly ColumnKey[] = []): ColumnKey[] =>
+  p.order.filter((k) => !p.hidden.includes(k) && !exclude.includes(k))
 
 const rem = (n: number) => `${Math.round(n * 1000) / 1000}rem`
 const fr = (n: number) => `${Math.round(n * 1000) / 1000}fr`
@@ -93,8 +137,8 @@ function trackOf(key: ColumnKey, p: ColumnPrefs): string {
 }
 
 /** `grid-template-columns` du tableau : la case de sélection, puis les colonnes visibles dans l'ordre choisi. */
-export const gridTemplate = (p: ColumnPrefs): string =>
-  [`${SELECT_WIDTH}px`, ...visibleColumns(p).map((k) => trackOf(k, p))].join(' ')
+export const gridTemplate = (p: ColumnPrefs, exclude: readonly ColumnKey[] = []): string =>
+  [`${SELECT_WIDTH}px`, ...visibleColumns(p, exclude).map((k) => trackOf(k, p))].join(' ')
 
 /** Plus petite largeur qu'une colonne peut prendre sans réglage : son minimum d'origine (en pixels). */
 export function minWidthOf(key: ColumnKey): number {
@@ -106,9 +150,9 @@ export function minWidthOf(key: ColumnKey): number {
  * Largeur minimale du tableau. Réglage d'origine : 46 rem, comme avant. Sinon la somme des largeurs réglées ou des
  * minimums des colonnes visibles (+ la case de sélection), pour que masquer ou élargir ne tasse pas celles qui restent.
  */
-export function tableMinWidth(p: ColumnPrefs): string {
+export function tableMinWidth(p: ColumnPrefs, exclude: readonly ColumnKey[] = []): string {
   if (isDefaultPrefs(p)) return '46rem'
-  const px = visibleColumns(p).reduce(
+  const px = visibleColumns(p, exclude).reduce(
     (sum, k) => sum + (p.widths[k] ?? minWidthOf(k)),
     SELECT_WIDTH,
   )
@@ -139,14 +183,15 @@ export function moveColumn(p: ColumnPrefs, key: ColumnKey, before: ColumnKey | n
   return order.every((k, i) => k === p.order[i]) ? p : { ...p, order }
 }
 
-/** Décale une colonne d'un cran vers la gauche (-1) ou la droite (+1), parmi toutes les colonnes. */
-export function shiftColumn(p: ColumnPrefs, key: ColumnKey, direction: -1 | 1): ColumnPrefs {
-  const i = p.order.indexOf(key)
-  const j = i + direction
-  if (i < 0 || j < 0 || j >= p.order.length) return p
-  const order = [...p.order]
-  ;[order[i], order[j]] = [order[j]!, order[i]!]
-  return { ...p, order }
+/** Décale une colonne d'un cran vers la gauche (-1) ou la droite (+1) parmi les colonnes **affichées** (clavier). */
+export function shiftVisible(p: ColumnPrefs, key: ColumnKey, direction: -1 | 1): ColumnPrefs {
+  const shown = visibleColumns(p)
+  const i = shown.indexOf(key)
+  if (i < 0) return p
+  const target = direction === -1 ? shown[i - 1] : shown[i + 2]
+  if (direction === -1 && target === undefined) return p
+  if (direction === 1 && i === shown.length - 1) return p
+  return moveColumn(p, key, target ?? null)
 }
 
 /**

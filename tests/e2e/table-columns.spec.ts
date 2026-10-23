@@ -140,9 +140,7 @@ test('tirer un en-tête change la colonne de place, sans trier ; les cellules su
   ])
 })
 
-test('« Modifier les colonnes » : afficher / masquer, monter / descendre, rétablir', async ({
-  page,
-}) => {
+test('« Modifier les colonnes » : afficher / masquer, rétablir', async ({ page }) => {
   await resetBackend('team')
   const { eventId } = await seedEvent('Salon menu', [{ name: 'Bolt', stand: 'B2' }])
   await login(page, USERS.admin)
@@ -162,17 +160,17 @@ test('« Modifier les colonnes » : afficher / masquer, monter / descendre, rét
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
     .analyze()
   expect(violations.map((v) => `${v.id} : ${v.nodes[0]?.html.slice(0, 120)}`)).toEqual([])
-  // Plus de curseurs de largeur : on règle à la souris sur l'en-tête.
+  // Plus de curseurs ni de flèches : largeur et place se règlent à la souris sur l'en-tête.
   await expect(panel.getByRole('slider')).toHaveCount(0)
+  await expect(panel.getByRole('button', { name: /Monter|Descendre/ })).toHaveCount(0)
 
   await panel.getByRole('checkbox', { name: 'Stand' }).uncheck()
   await panel.getByRole('checkbox', { name: 'RDV' }).uncheck()
-  await panel.getByRole('button', { name: 'Monter la colonne Assigné à' }).click()
   await page.keyboard.press('Escape')
-  await expect.poll(order).toEqual(['priority', 'company', 'tags', 'assignees', 'shows'])
+  await expect.poll(order).toEqual(['priority', 'company', 'tags', 'shows', 'assignees'])
 
   await page.reload()
-  await expect.poll(order).toEqual(['priority', 'company', 'tags', 'assignees', 'shows'])
+  await expect.poll(order).toEqual(['priority', 'company', 'tags', 'shows', 'assignees'])
   await page.getByRole('button', { name: 'Modifier les colonnes' }).click()
   await panel.getByRole('button', { name: "Rétablir les colonnes d'origine" }).click()
   await page.keyboard.press('Escape')

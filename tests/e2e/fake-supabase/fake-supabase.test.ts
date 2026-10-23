@@ -612,6 +612,26 @@ describe('faux Supabase', () => {
     await teams.setMemberPermissions(teamId, DEFAULT_MEMBER_PERMISSIONS)
   })
 
+  it('contact clé de chaque entreprise : le premier contact saisi, pour les colonnes du tableau', async () => {
+    const auth = await import('@/db/repositories/auth')
+    const teams = await import('@/db/repositories/teams')
+    const targets = await import('@/db/repositories/targets')
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    const me = (await auth.getSession())!.user.id
+    const teamId = (await teams.fetchMembership(me))!.teamId
+    const rows = await exec(`
+      with c as (insert into companies (id, team_id, name, name_normalized) values (gen_random_uuid(), '${teamId}', 'Cléco', 'cleco') returning id)
+      insert into contacts (id, team_id, company_id, first_name, last_name, job_title)
+      select v.id::uuid, '${teamId}', c.id, v.f, v.l, v.j from c,
+        (values ('00000000-0000-7000-8000-0000000000a1', 'Ada', 'Lovelace', 'CTO'),
+                ('00000000-0000-7000-8000-0000000000a2', 'Zoé', 'Autre', 'RH')) as v(id, f, l, j)
+      returning company_id`)
+    const companyId = String(rows[0]!.company_id)
+    const key = await targets.fetchKeyContactsNetwork()
+    expect(key[companyId]).toMatchObject({ name: 'Ada Lovelace', jobTitle: 'CTO' })
+  })
+
   it('inscription : nom d’usage, recherche d’une équipe par son nom, adhésion, profil modifiable', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')

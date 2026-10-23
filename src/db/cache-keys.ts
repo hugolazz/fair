@@ -5,6 +5,7 @@ export const cacheKeys = {
   history: (companyId: string, eventId: string) => `history:${companyId}:${eventId}`,
   membership: (userId: string) => `membership:${userId}`,
   displayName: (userId: string) => `profile:${userId}:name`,
+  keyContacts: (teamId: string) => `keyContacts:${teamId}`,
   events: () => 'events:list',
   event: (eventId: string) => `events:${eventId}`,
   /** Participants, tags et équipe d'un salon (ce que lit `useTargets`). */

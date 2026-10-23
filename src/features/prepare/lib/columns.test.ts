@@ -9,7 +9,8 @@ import {
   moveColumn,
   normalizePrefs,
   setWidth,
-  shiftColumn,
+  OPTIONAL_COLUMNS,
+  shiftVisible,
   tableMinWidth,
   toggleColumn,
   visibleColumns,
@@ -52,7 +53,8 @@ describe('colonnes du tableau des participants', () => {
 
   it('« Entreprise » reste toujours affichée', () => {
     expect(toggleColumn(DEFAULT_PREFS, 'company', false)).toBe(DEFAULT_PREFS)
-    expect(normalizePrefs({ hidden: ['company', 'stand'] }).hidden).toEqual(['stand'])
+    expect(normalizePrefs({ hidden: ['company', 'stand'] }).hidden).not.toContain('company')
+    expect(normalizePrefs({ hidden: ['company', 'stand'] }).hidden).toContain('stand')
   })
 
   it('la largeur se règle en pixels, seule la colonne tirée change ; les autres gardent leur largeur d’origine', () => {
@@ -101,17 +103,17 @@ describe('colonnes du tableau des participants', () => {
   })
 
   it('décaler d’un cran (boutons du menu, clavier) ; sans effet aux extrémités', () => {
-    expect(visibleColumns(shiftColumn(DEFAULT_PREFS, 'stand', -1)).slice(0, 3)).toEqual([
+    expect(visibleColumns(shiftVisible(DEFAULT_PREFS, 'stand', -1)).slice(0, 3)).toEqual([
       'priority',
       'stand',
       'company',
     ])
-    expect(shiftColumn(DEFAULT_PREFS, 'priority', -1)).toBe(DEFAULT_PREFS)
-    expect(shiftColumn(DEFAULT_PREFS, 'meeting', 1)).toBe(DEFAULT_PREFS)
+    expect(shiftVisible(DEFAULT_PREFS, 'priority', -1)).toBe(DEFAULT_PREFS)
+    expect(shiftVisible(DEFAULT_PREFS, 'meeting', 1)).toBe(DEFAULT_PREFS)
   })
 
   it('une colonne masquée garde sa place dans l’ordre', () => {
-    const hidden = toggleColumn(shiftColumn(DEFAULT_PREFS, 'stand', -1), 'stand', false)
+    const hidden = toggleColumn(shiftVisible(DEFAULT_PREFS, 'stand', -1), 'stand', false)
     expect(visibleColumns(hidden)).toEqual([
       'priority',
       'company',
@@ -139,21 +141,57 @@ describe('colonnes du tableau des participants', () => {
     expect(dropTarget(rects, 390)).toBeNull() // au-delà du milieu de la dernière : à la fin
   })
 
+  it('par défaut, les colonnes supplémentaires sont masquées', () => {
+    expect(DEFAULT_PREFS.hidden).toEqual([...OPTIONAL_COLUMNS])
+    expect(visibleColumns(DEFAULT_PREFS)).toHaveLength(7)
+    const shown = toggleColumn(DEFAULT_PREFS, 'keyName', true)
+    expect(visibleColumns(shown).at(-1)).toBe('keyName')
+    expect(isDefaultPrefs(shown)).toBe(false)
+    expect(isDefaultPrefs(toggleColumn(shown, 'keyName', false))).toBe(true)
+  })
+
+  it('un réglage mémorisé avant l’ajout des colonnes supplémentaires ne change pas d’aspect', () => {
+    const before = normalizePrefs({
+      hidden: ['stand'],
+      order: ['priority', 'company', 'stand', 'tags', 'shows', 'assignees', 'meeting'],
+      widths: { shows: 200 },
+    })
+    expect(visibleColumns(before)).toEqual([
+      'priority',
+      'company',
+      'tags',
+      'shows',
+      'assignees',
+      'meeting',
+    ])
+    expect(before.hidden).toEqual(['stand', ...OPTIONAL_COLUMNS])
+    // Un réglage qui connaît déjà une colonne supplémentaire la garde affichée si on l'avait cochée.
+    const kept = normalizePrefs({ hidden: ['news'], order: [...DEFAULT_PREFS.order] })
+    expect(kept.hidden).toEqual(['news'])
+    expect(visibleColumns(kept)).toContain('industry')
+  })
+
   it('un réglage mémorisé ancien, incomplet ou altéré est nettoyé', () => {
     expect(normalizePrefs(null)).toEqual(DEFAULT_PREFS)
     expect(normalizePrefs('x')).toEqual(DEFAULT_PREFS)
     // Ancien format (curseurs en %) : ignoré ; ordre partiel complété ; doublons et clés inconnues retirés.
-    expect(
-      normalizePrefs({
-        hidden: ['stand', 'stand', 'inconnue', 42],
-        order: ['tags', 'tags', 'fly', 'company'],
-        scale: { tags: 150 },
-        widths: { shows: 5000, tags: 'large', meeting: 120, fly: 10 },
-      }),
-    ).toEqual({
-      hidden: ['stand'],
-      order: ['tags', 'company', 'priority', 'stand', 'shows', 'assignees', 'meeting'],
-      widths: { shows: WIDTH_MAX, meeting: 120 },
+    const clean = normalizePrefs({
+      hidden: ['stand', 'stand', 'inconnue', 42],
+      order: ['tags', 'tags', 'fly', 'company'],
+      scale: { tags: 150 },
+      widths: { shows: 5000, tags: 'large', meeting: 120, fly: 10 },
     })
+    expect(clean.order.slice(0, 7)).toEqual([
+      'tags',
+      'company',
+      'priority',
+      'stand',
+      'shows',
+      'assignees',
+      'meeting',
+    ])
+    expect(clean.order).toHaveLength(DEFAULT_PREFS.order.length)
+    expect(clean.hidden).toEqual(['stand', ...OPTIONAL_COLUMNS])
+    expect(clean.widths).toEqual({ shows: WIDTH_MAX, meeting: 120 })
   })
 })

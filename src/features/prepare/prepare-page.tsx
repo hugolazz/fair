@@ -21,7 +21,10 @@ import { TargetsCards } from './targets-cards'
 import { TargetsTable } from './targets-table'
 import { useAssignFlow } from './use-assign-flow'
 import { useRemoveFlow } from './use-remove-flow'
+import { newsTitleOf } from '@shared/exports/labels.ts'
+import { visibleColumns } from './lib/columns'
 import { useColumnPrefs } from './use-column-prefs'
+import { useKeyContacts } from './use-key-contacts'
 import { useTargets } from './use-targets'
 
 /** Préparation du salon : tableau des participants (desktop) / cartes (mobile), filtres, actions en masse, fiche. */
@@ -45,6 +48,13 @@ export default function PreparePage() {
   const anchor = useRef<string>(undefined)
   const { request, dialog } = useAssignFlow(api, api.targets)
   const [columnPrefs, setColumnPrefs] = useColumnPrefs()
+  const newsTitle = newsTitleOf(membership.newsLabel)
+  const hiddenColumns = membership.newsEnabled ? [] : (['news'] as const)
+  // Les contacts clés ne sont chargés que si une colonne « contact clé » est affichée.
+  const keyContacts = useKeyContacts(
+    membership.teamId,
+    isDesktop && visibleColumns(columnPrefs, hiddenColumns).some((k) => k.startsWith('key')),
+  )
 
   // Après un changement de priorité, la liste garde son ordre : sinon la ligne saute à sa nouvelle place (ou sort du
   // filtre) et on la perd de vue. Le tri et les filtres reprennent la main dès qu'on les touche.
@@ -203,7 +213,12 @@ export default function PreparePage() {
         collapsible={!isDesktop}
         desktopAction={
           <>
-            <ColumnsMenu prefs={columnPrefs} onChange={setColumnPrefs} />
+            <ColumnsMenu
+              prefs={columnPrefs}
+              onChange={setColumnPrefs}
+              exclude={hiddenColumns}
+              newsTitle={newsTitle}
+            />
             <Button variant="secondary" className="min-h-9" onClick={() => setAdding(true)}>
               <Plus aria-hidden className="size-4" />
               {tm('company.open')}
@@ -243,6 +258,9 @@ export default function PreparePage() {
       ) : isDesktop ? (
         <TargetsTable
           columns={columnPrefs}
+          keyContacts={keyContacts}
+          newsEnabled={membership.newsEnabled}
+          newsTitle={newsTitle}
           onColumnsChange={setColumnPrefs}
           {...common}
           sort={sort}

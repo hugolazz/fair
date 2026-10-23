@@ -142,6 +142,31 @@ export async function fetchContactsNetwork(companyId: string): Promise<TargetCon
   return (data ?? []).map(toTargetContact)
 }
 
+/**
+ * Le contact clé de chaque entreprise de l'équipe (le premier contact par ordre de saisie), pour les colonnes
+ * « contact clé » du tableau des participants. Lu en une fois, hors ligne depuis la copie locale.
+ */
+export const fetchKeyContacts = (teamId: string): Promise<Record<string, TargetContact>> =>
+  cachedRead(cacheKeys.keyContacts(teamId), () => fetchKeyContactsNetwork())
+
+export async function fetchKeyContactsNetwork(): Promise<Record<string, TargetContact>> {
+  const out: Record<string, TargetContact> = {}
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('contacts')
+      .select('id, company_id, first_name, last_name, job_title, email, phone, linkedin_url')
+      .is('deleted_at', null)
+      .order('id')
+      .range(from, from + PAGE - 1)
+    if (error) throw error
+    for (const row of data ?? []) {
+      const companyId = String(row.company_id)
+      out[companyId] ??= toTargetContact(row as Record<string, unknown>) // trié par id : le premier vu est le contact clé
+    }
+    if ((data ?? []).length < PAGE) return out
+  }
+}
+
 export type NewContact = {
   firstName: string
   lastName: string

@@ -1,6 +1,18 @@
 import { PRIORITIES, type Target } from '@/db/schemas/prepare'
+import { interestOf } from './column-values'
 
-export type SortKey = 'priority' | 'name' | 'stand' | 'industry' | 'goal' | 'assignee' | 'meeting'
+export type SortKey =
+  | 'priority'
+  | 'name'
+  | 'stand'
+  | 'industry'
+  | 'country'
+  | 'city'
+  | 'contacts'
+  | 'interest'
+  | 'goal'
+  | 'assignee'
+  | 'meeting'
 export type Sort = { key: SortKey; dir: 'asc' | 'desc' }
 
 // Tri « naturel » : B2 avant B12, accents et casse ignorés.
@@ -23,6 +35,14 @@ function valueOf(
       return t.stand || null
     case 'industry':
       return t.industry || null
+    case 'country':
+      return t.country || null
+    case 'city':
+      return t.city || null
+    case 'contacts':
+      return t.contactCount
+    case 'interest':
+      return interestOf(t)
     case 'goal':
       return t.goal
     case 'assignee':

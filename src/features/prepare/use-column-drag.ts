@@ -6,6 +6,7 @@ import {
   moveColumn,
   SELECT_WIDTH,
   setWidth,
+  shiftVisible,
   visibleColumns,
   WIDTH_MAX,
   WIDTH_MIN,
@@ -102,11 +103,13 @@ export function useColumnDrag(base: ColumnPrefs, onCommit: (next: ColumnPrefs) =
     )
   }
 
-  /** Flèches gauche / droite sur la poignée : la même chose au clavier (Maj : pas ×4). */
+  /** Flèches gauche / droite sur la poignée : la largeur au clavier (Maj : pas ×4) ; avec Alt, la place de la colonne. */
   function onHandleKey(e: KeyboardEvent, key: ColumnKey) {
     const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
     if (!dir) return
     e.preventDefault()
+    // Alt + flèche : la colonne change de place (alternative au glisser).
+    if (e.altKey) return onCommit(shiftVisible(base, key, dir === 1 ? 1 : -1))
     const now = cell(key)?.getBoundingClientRect().width ?? WIDTH_MIN
     onCommit(setWidth(base, key, now + dir * WIDTH_STEP * (e.shiftKey ? 4 : 1)))
   }
