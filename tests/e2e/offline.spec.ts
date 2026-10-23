@@ -52,7 +52,7 @@ test('hors ligne : la note est gardée sur l’appareil, puis part toute seule a
 
   // Retour du réseau : tout part, une seule note, la rencontre est créée et terminée.
   await backOnline(page)
-  await expect(page.getByText('Tout est synchronisé.')).toBeVisible()
+  await expect(page.locator('[role=status][data-pending="0"]')).toBeAttached()
   await expect(sheet.getByText('Note enregistrée.')).toBeVisible()
   expect((await liveNotes()).map((n) => n.body)).toEqual(['Note prise sans réseau. Suite.'])
   expect(
@@ -91,7 +91,7 @@ test('hors ligne : les cases et l’intérêt passent aussi par la file ; tout r
   await sheet.getByLabel('Actualité ?').count() // (option non activée : la case n'existe pas)
   await expect(page.getByText(WAITING)).toBeVisible()
   await backOnline(page)
-  await expect(page.getByText('Tout est synchronisé.')).toBeVisible()
+  await expect(page.locator('[role=status][data-pending="0"]')).toBeAttached()
   expect(
     await sql<{ interest: number; status: string }>(
       'select interest, status from meetings where deleted_at is null',
@@ -125,7 +125,7 @@ test('les modifications en attente survivent à un rechargement de la page, et p
 
   await page.unroute('**/rest/v1/**')
   await page.evaluate(() => window.dispatchEvent(new Event('online')))
-  await expect(page.getByText('Tout est synchronisé.')).toBeVisible()
+  await expect(page.locator('[role=status][data-pending="0"]')).toBeAttached()
   expect((await liveNotes()).map((n) => n.body)).toEqual(['Note avant rechargement.'])
 })
 
@@ -167,6 +167,6 @@ test('une note écrite sans avoir pu lire l’existante reprend celle qui existe
   // Le réseau redevient normal : l'existante est reprise et mise à jour, une seule note en base.
   await page.unroute('**/rest/v1/notes**')
   await page.evaluate(() => window.dispatchEvent(new Event('online')))
-  await expect(page.getByText('Tout est synchronisé.')).toBeVisible()
+  await expect(page.locator('[role=status][data-pending="0"]')).toBeAttached()
   expect((await liveNotes()).map((n) => n.body)).toEqual(['Nouveau texte.'])
 })

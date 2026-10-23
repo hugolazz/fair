@@ -42,7 +42,7 @@ test('hors ligne : l’appli se rouvre sans réseau et une note écrite là part
 
   await page.context().setOffline(false)
   await page.evaluate(() => window.dispatchEvent(new Event('online')))
-  await expect(page.getByText('Tout est synchronisé.')).toBeVisible()
+  await expect(page.locator('[role=status][data-pending="0"]')).toBeAttached()
   await expect
     .poll(async () =>
       (await sql<{ body: string }>('select body from notes where deleted_at is null')).map(

@@ -1,14 +1,11 @@
 import { CloudOff, RefreshCw } from 'lucide-react'
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { prefetchStatus } from '@/db/repositories/prefetch'
 import { staleStatus } from '@/lib/cache/cache'
 import { cn } from '@/lib/cn'
 import { useSync } from './use-sync'
-
-/** Combien de temps « Tout est synchronisé » reste affiché. */
-const SYNCED_MS = 3_000
 
 const dateTime = new Intl.DateTimeFormat('fr', {
   day: 'numeric',
@@ -20,23 +17,8 @@ const dateTime = new Intl.DateTimeFormat('fr', {
 type Tone = 'info' | 'warn' | 'error' | 'ok'
 type Line = { text: string; tone: Tone }
 
-/** Affiche un message `ms` millisecondes après un instant donné (un horodatage qui change), puis le retire. */
-function useFlash(stamp: number | null, active: boolean): boolean {
-  const [shown, setShown] = useState(false)
-  useEffect(() => {
-    if (stamp === null || !active) return
-    const show = window.setTimeout(() => setShown(true), 0)
-    const hide = window.setTimeout(() => setShown(false), SYNCED_MS)
-    return () => {
-      window.clearTimeout(show)
-      window.clearTimeout(hide)
-    }
-  }, [stamp, active])
-  return shown
-}
-
 /**
- * État de l'appli face au réseau, toujours dit en clair : envois en attente (« Hors ligne : 2 modifications… »), refus du
+ * État de l'appli face au réseau, toujours dit en clair : envois en attente (« Hors ligne : 2 modifications… »), envoi en cours (la fin est silencieuse : `data-pending="0"` la signale aux tests), refus du
  * serveur à traiter, données lues dans la copie locale (« Données enregistrées le … »), Le téléchargement du hors ligne est silencieux (`data-offline-ready` signale sa fin aux tests).
  * Rien ne s'affiche quand tout va bien.
  */
@@ -45,7 +27,6 @@ export function SyncBanner() {
   const { snapshot, retryFailed, discardFailed } = useSync()
   const staleSince = useSyncExternalStore(staleStatus.subscribe, staleStatus.getSnapshot)
   const prefetch = useSyncExternalStore(prefetchStatus.subscribe, prefetchStatus.getSnapshot)
-  const justSynced = useFlash(snapshot.lastSyncedAt, snapshot.pending === 0)
 
   const lines: Line[] = []
   if (snapshot.failed > 0)
@@ -54,7 +35,6 @@ export function SyncBanner() {
     lines.push({ text: t('offline', { count: snapshot.pending }), tone: 'warn' })
   else if (snapshot.pending > 0)
     lines.push({ text: t('syncing', { count: snapshot.pending }), tone: 'info' })
-  else if (justSynced) lines.push({ text: t('synced'), tone: 'ok' })
   if (staleSince !== null)
     lines.push({ text: t('stale', { date: dateTime.format(new Date(staleSince)) }), tone: 'warn' })
 
@@ -62,6 +42,7 @@ export function SyncBanner() {
     <div
       role="status"
       aria-live="polite"
+      data-pending={snapshot.pending}
       data-offline-ready={prefetch.status === 'done' ? 'true' : undefined}
       className="mx-auto flex w-full max-w-[1040px] flex-col gap-2 px-4 empty:hidden md:px-10"
     >
