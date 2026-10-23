@@ -37,7 +37,7 @@ function useFlash(stamp: number | null, active: boolean): boolean {
 
 /**
  * État de l'appli face au réseau, toujours dit en clair : envois en attente (« Hors ligne : 2 modifications… »), refus du
- * serveur à traiter, données lues dans la copie locale (« Données enregistrées le … »), préparation du hors ligne (en cours seulement : la fin est silencieuse, `data-offline-ready` la signale aux tests).
+ * serveur à traiter, données lues dans la copie locale (« Données enregistrées le … »), Le téléchargement du hors ligne est silencieux (`data-offline-ready` signale sa fin aux tests).
  * Rien ne s'affiche quand tout va bien.
  */
 export function SyncBanner() {
@@ -57,8 +57,6 @@ export function SyncBanner() {
   else if (justSynced) lines.push({ text: t('synced'), tone: 'ok' })
   if (staleSince !== null)
     lines.push({ text: t('stale', { date: dateTime.format(new Date(staleSince)) }), tone: 'warn' })
-  if (prefetch.status === 'running')
-    lines.push({ text: t('prefetching', { percent: prefetch.percent }), tone: 'info' })
 
   return (
     <div
