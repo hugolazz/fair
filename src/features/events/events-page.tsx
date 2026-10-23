@@ -13,6 +13,7 @@ import { EventFormDialog } from './event-form-dialog'
 import { formatEventDates } from './event-format'
 import { eventStatus } from './lib/status'
 import { StatusBadge } from './status-badge'
+import { TeamLogoBanner } from './team-logo-banner'
 
 export default function EventsPage() {
   const { t } = useTranslation('events')
@@ -32,6 +33,7 @@ export default function EventsPage() {
 
   return (
     <>
+      <TeamLogoBanner />
       <PageHeader
         title={t('title')}
         eyebrow={firstName ? t('greeting', { name: firstName }) : undefined}
@@ -58,7 +60,7 @@ export default function EventsPage() {
               <li key={e.id}>
                 <Link
                   to={`/events/${e.id}`}
-                  className="flex h-full flex-col gap-7 rounded-3xl bg-white p-7 shadow-[0_0_0_1px_var(--color-slate-200)] transition-[transform,box-shadow] duration-[250ms] ease-out hover:-translate-y-[3px] hover:shadow-[0_0_0_1px_#d7e6e2,0_16px_32px_-20px_rgb(15_118_110/0.35)]"
+                  className="flex h-full flex-col gap-7 rounded-3xl bg-white p-7 shadow-[0_0_0_1px_var(--color-slate-200)] transition-[transform,box-shadow] duration-[250ms] ease-out hover:-translate-y-[3px] hover:shadow-[0_0_0_1px_var(--color-brand-100),0_16px_32px_-20px_color-mix(in_srgb,var(--color-brand-600)_35%,transparent)]"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <StatusBadge status={eventStatus(e)} />

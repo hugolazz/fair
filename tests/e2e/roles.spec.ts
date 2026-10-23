@@ -91,7 +91,7 @@ test.describe.serial('rôles : admin d’équipe et commercial', () => {
 
   test('un commercial ne règle pas les rôles de l’équipe', async ({ page }) => {
     await login(page, USERS.marie)
-    await page.goto('/settings')
+    await page.goto('/settings?section=equipe')
     await expect(page.getByRole('button', { name: /Rôle de/ })).toHaveCount(0)
   })
 
@@ -130,7 +130,7 @@ test.describe.serial('rôles : admin d’équipe et commercial', () => {
 
   test('un admin peut changer le rôle d’un membre', async ({ page }) => {
     await login(page, USERS.admin)
-    await page.goto('/settings')
+    await page.goto('/settings?section=equipe')
     // Menu déroulant aux couleurs de l'appli : on l'ouvre, on choisit, au clic comme au clavier.
     const select = page.getByRole('button', { name: /Rôle de paul/i })
     await select.click()

@@ -1,4 +1,5 @@
 import { configureCache } from '@/lib/cache/cache'
+import { saveAccent } from '@/lib/accent'
 import { toError } from '@/lib/to-error'
 import {
   createContext,
@@ -93,6 +94,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       refreshMembership,
     }
   }, [session, loaded, refreshMembership])
+
+  // L'appli prend la couleur de l'équipe ; déconnecté, elle reprend le vert d'origine. Pendant le chargement, on garde
+  // la dernière couleur connue (mémorisée) : pas de flash au démarrage.
+  const accent = value.status === 'ready' ? value.membership.accentColor : null
+  const settled =
+    value.status === 'ready' || value.status === 'needsTeam' || value.status === 'signedOut'
+  useEffect(() => {
+    if (settled) saveAccent(accent)
+  }, [accent, settled])
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
 }

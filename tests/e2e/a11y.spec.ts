@@ -63,6 +63,7 @@ test.describe.serial('accessibilité', () => {
     ['exports', (id) => `/events/${id}/exports`],
     ['import', (id) => `/events/${id}/import`],
     ['réglages', () => '/settings'],
+    ['réglages (équipe)', () => '/settings?section=equipe'],
   ]
   for (const [label, path] of screens) {
     test(`écran « ${label} » (admin)`, async ({ page }) => {

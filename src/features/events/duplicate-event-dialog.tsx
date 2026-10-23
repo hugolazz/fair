@@ -70,7 +70,7 @@ function DuplicateForm({ event, onClose }: { event: EventRow; onClose: () => voi
         type="checkbox"
         checked={value}
         onChange={(e) => set(e.target.checked)}
-        className="mt-1 size-4 accent-teal-700"
+        className="accent-brand-600 mt-1 size-4"
       />
       <span>
         <span className="block text-sm font-medium">{label}</span>

@@ -59,6 +59,7 @@ test.describe.serial('création de compte', () => {
     await page.getByLabel("Nom d'usage (prénom et nom)").fill('Camille Martin-Dupont')
     await page.getByRole('button', { name: 'Enregistrer', exact: true }).first().click()
     await expect(page.getByText('Profil enregistré.')).toBeVisible()
+    await page.getByRole('tab', { name: 'Équipe' }).click()
     await expect(page.getByText('Camille Martin-Dupont (vous)')).toBeVisible()
   })
 
@@ -66,7 +67,7 @@ test.describe.serial('création de compte', () => {
     await signUp(page, 'Léa', 'Durand', 'lea@fair.test')
     await page.getByRole('button', { name: 'Utiliser sans équipe' }).click()
     await expect(page.getByRole('heading', { name: 'Salons' })).toBeVisible()
-    await page.goto('/settings')
+    await page.goto('/settings?section=equipe')
     await expect(page.getByLabel("Nom de l'équipe")).toHaveValue('Équipe de Léa Durand')
   })
 

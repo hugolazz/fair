@@ -85,10 +85,10 @@
   }
   @keyframes pulse-dot {
     0% {
-      box-shadow: 0 0 0 0 rgb(15 118 110 / 0.35);
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-brand-600) 35%, transparent);
     }
     100% {
-      box-shadow: 0 0 0 7px rgb(15 118 110 / 0);
+      box-shadow: 0 0 0 7px color-mix(in srgb, var(--color-brand-600) 0%, transparent);
     }
   }
 }

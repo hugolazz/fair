@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { fetchTeamLogoUrl, removeTeamLogo, uploadTeamLogo } from '@/db/repositories/teams'
 import { useAsync } from '@/lib/use-async'
 
-/** Logo de l'équipe : affiché en en-tête des PDF d'export. Réservé aux administrateurs pour le modifier. */
+/** Logo de l'équipe : affiché en haut de l'accueil et en en-tête des PDF d'export. Réservé aux administrateurs pour le modifier. */
 export function TeamLogo({ teamId, canEdit }: { teamId: string; canEdit: boolean }) {
   const { t } = useTranslation('settings')
   const logo = useAsync(() => fetchTeamLogoUrl(teamId), [teamId])

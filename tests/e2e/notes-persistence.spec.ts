@@ -114,7 +114,7 @@ test('« Actualité ? » : une case activée dans les réglages de l’équipe, 
   await page.keyboard.press('Escape')
 
   // Un admin l'active dans les réglages.
-  await page.goto('/settings')
+  await page.goto('/settings?section=equipe')
   await page.getByLabel('Ajouter la case « Actualité ? »').check()
   await expect(page.getByText('Réglage enregistré.')).toBeVisible()
 
@@ -135,7 +135,7 @@ test('« Actualité ? » : une case activée dans les réglages de l’équipe, 
 
   // Désactivée de nouveau : la case disparaît de la fiche.
   await page.keyboard.press('Escape')
-  await page.goto('/settings')
+  await page.goto('/settings?section=equipe')
   await page.getByLabel('Ajouter la case « Actualité ? »').uncheck()
   await expect(page.getByText('Réglage enregistré.')).toBeVisible()
   await page.goto(`/events/${eventId}/participants`)

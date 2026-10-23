@@ -8,7 +8,12 @@ export type TeamRole = (typeof TEAM_ROLES)[number]
 
 const membershipSchema = z.object({
   role: z.enum(TEAM_ROLES),
-  teams: z.object({ id: z.string(), name: z.string(), news_enabled: z.boolean().default(false) }),
+  teams: z.object({
+    id: z.string(),
+    name: z.string(),
+    news_enabled: z.boolean().default(false),
+    accent_color: z.string().nullable().default(null),
+  }),
 })
 export type Membership = {
   teamId: string
@@ -16,6 +21,8 @@ export type Membership = {
   role: TeamRole
   /** La case « Actualité ? » est activée pour l'équipe (réglage d'équipe). */
   newsEnabled: boolean
+  /** Couleur d'accentuation de l'équipe (#rrggbb) ; `null` = le vert d'origine. */
+  accentColor: string | null
 }
 
 export type Member = { userId: string; role: TeamRole; displayName: string }
@@ -27,7 +34,7 @@ export const fetchMembership = (userId: string): Promise<Membership | null> =>
 async function fetchMembershipNetwork(userId: string): Promise<Membership | null> {
   const { data, error } = await supabase
     .from('team_members')
-    .select('role, teams!inner(id, name, news_enabled)')
+    .select('role, teams!inner(id, name, news_enabled, accent_color)')
     .eq('user_id', userId)
     .is('teams.deleted_at', null)
     // L'équipe rejointe en dernier (il n'y a pas de sélecteur d'équipe) : quand on en quitte une, la précédente reprend la main.
@@ -42,6 +49,7 @@ async function fetchMembershipNetwork(userId: string): Promise<Membership | null
     teamName: parsed.teams.name,
     role: parsed.role,
     newsEnabled: parsed.teams.news_enabled,
+    accentColor: parsed.teams.accent_color,
   }
 }
 
@@ -81,6 +89,17 @@ export async function setNewsEnabled(teamId: string, enabled: boolean): Promise<
   const { data, error } = await supabase
     .from('teams')
     .update({ news_enabled: enabled })
+    .eq('id', teamId)
+    .select('id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
+}
+
+/** Couleur d'accentuation de toute l'équipe (admins seulement) ; `null` revient au vert d'origine. */
+export async function setTeamAccent(teamId: string, color: string | null): Promise<void> {
+  const { data, error } = await supabase
+    .from('teams')
+    .update({ accent_color: color })
     .eq('id', teamId)
     .select('id')
   if (error) throw error

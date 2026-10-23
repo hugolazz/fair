@@ -54,7 +54,7 @@ test.describe.serial('menus et calendriers', () => {
 
     // Liste déroulante aux couleurs de l'appli (Réglages → rôle d'un membre).
     await page.keyboard.press('Escape')
-    await page.goto('/settings')
+    await page.goto('/settings?section=equipe')
     const role = page.getByRole('button', { name: /^Rôle de paul Commercial/ })
     await role.click()
     await page.getByRole('option', { name: "Admin d'équipe" }).click()
@@ -80,7 +80,7 @@ test.describe.serial('menus et calendriers', () => {
     await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog', { name: /Début/ })).toHaveCount(0)
     await page.keyboard.press('Escape')
-    await page.goto('/settings')
+    await page.goto('/settings?section=equipe')
     await page.getByRole('button', { name: /^Rôle de marie Commercial/ }).click()
     await expect(page.getByRole('listbox')).toBeVisible()
     await audit('liste ouverte')

@@ -3,11 +3,13 @@ import { createRoot } from 'react-dom/client'
 import { I18nextProvider, useTranslation } from 'react-i18next'
 import { AppRouter } from '@/app/router'
 import { SessionProvider } from '@/features/auth-team/session'
+import { applyAccent, loadAccent } from '@/lib/accent'
 import { i18n } from '@/lib/i18n'
 import { registerServiceWorker } from '@/lib/pwa/register'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import './index.css'
 
+applyAccent(loadAccent()) // avant le premier affichage : pas de flash de la couleur d'origine
 registerServiceWorker()
 
 function Root() {

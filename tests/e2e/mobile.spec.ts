@@ -36,6 +36,7 @@ const SCREENS: [string, (id: string) => string][] = [
   ['vue équipe', (id) => `/events/${id}/team`],
   ['exports', (id) => `/events/${id}/exports`],
   ['réglages', () => '/settings'],
+  ['réglages (équipe)', () => '/settings?section=equipe'],
 ]
 
 for (const [label, path] of SCREENS) {

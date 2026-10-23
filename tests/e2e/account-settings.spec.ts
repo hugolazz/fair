@@ -7,6 +7,33 @@ test.describe.serial('réglages du compte', () => {
     await resetBackend('team')
   })
 
+  test('deux onglets : Mon compte et Équipe, au clic, au clavier et par l’adresse', async ({
+    page,
+  }) => {
+    await login(page, USERS.admin)
+    await page.goto('/settings')
+    const account = page.getByRole('tab', { name: 'Mon compte' })
+    const team = page.getByRole('tab', { name: 'Équipe' })
+    await expect(account).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('heading', { name: 'Mot de passe' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Membres' })).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: 'Supprimer mon compte' })).toBeVisible()
+
+    await account.focus()
+    await page.keyboard.press('ArrowRight')
+    await expect(team).toHaveAttribute('aria-selected', 'true')
+    await expect(team).toBeFocused()
+    await expect(page).toHaveURL(/section=equipe/)
+    await expect(page.getByRole('heading', { name: 'Membres' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: "Quitter l'équipe" })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Mot de passe' })).toHaveCount(0)
+
+    await page.reload() // l'adresse garde l'onglet
+    await expect(team).toHaveAttribute('aria-selected', 'true')
+    await account.click()
+    await expect(page.getByRole('heading', { name: 'Mot de passe' })).toBeVisible()
+  })
+
   test('changer son mot de passe : contrôles, puis confirmation', async ({ page }) => {
     await login(page, USERS.admin)
     await page.goto('/settings')
@@ -58,7 +85,7 @@ test.describe.serial('réglages du compte', () => {
     page,
   }) => {
     await login(page, USERS.marie)
-    await page.goto('/settings')
+    await page.goto('/settings?section=equipe')
     await expect(page.getByRole('heading', { name: "Quitter l'équipe" })).toBeVisible()
 
     // Annuler la confirmation : on reste dans l'équipe.
@@ -85,7 +112,7 @@ test.describe.serial('réglages du compte', () => {
     await page.getByLabel('Mot de passe').fill('e2e-password-1')
     await page.getByRole('button', { name: 'Créer mon compte' }).click()
     await page.getByRole('button', { name: 'Utiliser sans équipe' }).click()
-    await page.goto('/settings')
+    await page.goto('/settings?section=equipe')
     page.once('dialog', (d) => void d.accept())
     await page.getByRole('button', { name: "Quitter l'équipe" }).click()
     await expect(page.getByRole('heading', { name: 'Rejoignez une équipe' })).toBeVisible()

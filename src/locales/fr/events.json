@@ -1,6 +1,7 @@
 {
   "title": "Vos salons",
   "greeting": "Bonjour {{name}}",
+  "teamLogoAlt": "Logo de l'équipe {{team}}",
   "back": "Salons",
   "new": "Nouveau salon",
   "empty": {
