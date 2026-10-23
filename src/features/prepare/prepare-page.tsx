@@ -11,6 +11,7 @@ import { AddCompanyDialog } from '@/features/manual-entry/add-company-dialog'
 import { useEvent } from '@/features/events/event-context'
 import { useMediaQuery } from '@/lib/use-media-query'
 import { BulkBar } from './bulk-bar'
+import { ColumnsMenu } from './columns-menu'
 import { FilterBar } from './filter-bar'
 import { emptyFilters, filterTargets, type Filters } from './lib/filter'
 import { rangeSelect } from './lib/misc'
@@ -20,6 +21,7 @@ import { TargetsCards } from './targets-cards'
 import { TargetsTable } from './targets-table'
 import { useAssignFlow } from './use-assign-flow'
 import { useRemoveFlow } from './use-remove-flow'
+import { useColumnPrefs } from './use-column-prefs'
 import { useTargets } from './use-targets'
 
 /** Préparation du salon : tableau des participants (desktop) / cartes (mobile), filtres, actions en masse, fiche. */
@@ -42,6 +44,7 @@ export default function PreparePage() {
   const [openId, setOpenId] = useState<string>()
   const anchor = useRef<string>(undefined)
   const { request, dialog } = useAssignFlow(api, api.targets)
+  const [columnPrefs, setColumnPrefs] = useColumnPrefs()
 
   // Après un changement de priorité, la liste garde son ordre : sinon la ligne saute à sa nouvelle place (ou sort du
   // filtre) et on la perd de vue. Le tri et les filtres reprennent la main dès qu'on les touche.
@@ -199,10 +202,13 @@ export default function PreparePage() {
         shown={rows.length}
         collapsible={!isDesktop}
         desktopAction={
-          <Button variant="secondary" className="min-h-9" onClick={() => setAdding(true)}>
-            <Plus aria-hidden className="size-4" />
-            {tm('company.open')}
-          </Button>
+          <>
+            <ColumnsMenu prefs={columnPrefs} onChange={setColumnPrefs} />
+            <Button variant="secondary" className="min-h-9" onClick={() => setAdding(true)}>
+              <Plus aria-hidden className="size-4" />
+              {tm('company.open')}
+            </Button>
+          </>
         }
         before={
           <Button
@@ -236,6 +242,7 @@ export default function PreparePage() {
         </p>
       ) : isDesktop ? (
         <TargetsTable
+          columns={columnPrefs}
           {...common}
           sort={sort}
           onSort={(key: SortKey) => {

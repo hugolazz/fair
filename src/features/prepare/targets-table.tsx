@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
-import { useMemo, type MouseEvent } from 'react'
+import { Fragment, useMemo, type MouseEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   PRIORITIES,
@@ -15,6 +15,13 @@ import { Select } from '@/components/ui/select'
 import { PriorityBadge } from './atoms'
 import { ShowPills } from './show-pills'
 import { TagPicker } from './tag-picker'
+import {
+  gridTemplate,
+  tableMinWidth,
+  visibleColumns,
+  type ColumnKey,
+  type ColumnPrefs,
+} from './lib/columns'
 import { formatSlot } from './lib/format'
 import type { Sort, SortKey } from './lib/sort'
 import { useVirtualRows } from './use-virtual-rows'
@@ -42,16 +49,16 @@ type Props = ListProps & {
   onAssign: (id: string, userId: string) => void
   onUnassign: (id: string, userId: string) => void
   onToggleTag: (id: string, tagId: string, on: boolean) => void
+  /** Colonnes visibles et leur largeur (« Modifier les colonnes »). */
+  columns: ColumnPrefs
 }
 
 const ROW_HEIGHT = 52
 const HEADER_HEIGHT = 48 // en-tête collant (h-12)
-// case · prio · entreprise · stand · tags · salons · assignés · rdv
-const GRID =
-  'grid grid-cols-[2.75rem_3rem_minmax(12rem,2.4fr)_4.5rem_minmax(7rem,1.4fr)_minmax(9rem,1.8fr)_minmax(6rem,1fr)_8rem] items-center'
-const MIN_WIDTH = 'min-w-[46rem]'
+// Les colonnes (visibles, largeur) viennent du réglage de l'utilisateur : `lib/columns.ts`.
+const GRID = 'grid items-center'
 
-const COLUMNS: { key: SortKey | null; label: string; className?: string }[] = [
+const COLUMNS: { key: SortKey | null; label: ColumnKey; className?: string }[] = [
   { key: 'priority', label: 'priority' },
   { key: 'name', label: 'company' },
   { key: 'stand', label: 'stand' },
@@ -67,6 +74,9 @@ export function TargetsTable(p: Props) {
   const canPrepareAll = useCan('prepare_all_targets')
   const canAssignOthers = useCan('assign_others')
   const tagById = useMemo(() => new Map(p.tags.map((tag) => [tag.id, tag])), [p.tags])
+  const visible = visibleColumns(p.columns)
+  const template = gridTemplate(p.columns)
+  const minWidth = tableMinWidth(p.columns)
   const { ref, onScroll, start, end, totalHeight, offsetTop } = useVirtualRows(
     p.rows.length,
     ROW_HEIGHT,
@@ -85,9 +95,9 @@ export function TargetsTable(p: Props) {
     >
       <div
         role="row"
+        style={{ gridTemplateColumns: template, minWidth }}
         className={cn(
           GRID,
-          MIN_WIDTH,
           'sticky top-0 z-10 h-12 bg-slate-50 px-2 text-[13px] font-medium text-slate-600 shadow-[0_1px_0_0_var(--color-slate-200)]',
         )}
       >
@@ -103,7 +113,7 @@ export function TargetsTable(p: Props) {
             onChange={p.onToggleAll}
           />
         </div>
-        {COLUMNS.map((c) => {
+        {COLUMNS.filter((c) => visible.includes(c.label)).map((c) => {
           const active = c.key !== null && p.sort.key === c.key
           return (
             <div
@@ -136,18 +146,90 @@ export function TargetsTable(p: Props) {
         })}
       </div>
 
-      <div style={{ height: totalHeight }} className={cn(MIN_WIDTH, 'px-2')}>
+      <div style={{ height: totalHeight, minWidth }} className="px-2">
         <div style={{ transform: `translateY(${offsetTop}px)` }}>
           {p.rows.slice(start, end).map((row, i) => {
             const isSelected = p.selected.has(row.id)
             const next = row.meetings[0]
+            const cells: Record<ColumnKey, ReactNode> = {
+              priority: (
+                <div role="cell" className="px-2">
+                  <Select
+                    value={row.priority ?? ''}
+                    disabled={!canPrepareTarget(canPrepareAll, row.assigneeIds, p.meId)}
+                    onChange={(e) =>
+                      p.onPriority(row.id, (e.target.value || null) as Priority | null)
+                    }
+                    aria-label={t('priority.set', { p: row.priority ?? t('priority.none') })}
+                    display={<PriorityBadge priority={row.priority} />}
+                    className="rounded-full"
+                  >
+                    {PRIORITIES.map((pr) => (
+                      <option key={pr} value={pr}>
+                        {t(`priority.${pr}`)}
+                      </option>
+                    ))}
+                    <option value="">{t('priority.none')}</option>
+                  </Select>
+                </div>
+              ),
+              company: (
+                <div role="cell" className="min-w-0 px-2">
+                  <button
+                    type="button"
+                    onClick={() => p.onOpen(row.id)}
+                    className="max-w-full truncate text-left text-base font-medium hover:underline"
+                  >
+                    {row.name}
+                  </button>
+                </div>
+              ),
+              stand: (
+                <div role="cell" className="truncate px-2">
+                  {row.stand}
+                </div>
+              ),
+              tags: (
+                <div role="cell" className="min-w-0 px-2">
+                  <TagPicker
+                    target={row}
+                    tags={p.tags}
+                    tagById={tagById}
+                    onToggle={(tagId, on) => p.onToggleTag(row.id, tagId, on)}
+                  />
+                </div>
+              ),
+              shows: (
+                <div role="cell" className="min-w-0 px-2">
+                  <ShowPills tagIds={row.tagIds} shows={p.shows} compact max={2} />
+                </div>
+              ),
+              assignees: (
+                <div role="cell" className="min-w-0 px-2">
+                  <AssignPicker
+                    target={row}
+                    members={p.members}
+                    meId={p.meId}
+                    nameOf={p.nameOf}
+                    canAssignOthers={canAssignOthers}
+                    onAssign={(userId) => p.onAssign(row.id, userId)}
+                    onUnassign={(userId) => p.onUnassign(row.id, userId)}
+                  />
+                </div>
+              ),
+              meeting: (
+                <div role="cell" className="truncate px-2 text-slate-700">
+                  {next ? formatSlot(next.plannedAt) : ''}
+                </div>
+              ),
+            }
             return (
               <div
                 key={row.id}
                 role="row"
                 aria-rowindex={start + i + 2}
                 aria-selected={isSelected}
-                style={{ height: ROW_HEIGHT }}
+                style={{ height: ROW_HEIGHT, gridTemplateColumns: template }}
                 onClick={(e) => {
                   const target = e.target as HTMLElement
                   // Les listes (priorité, tags, assignation) sont rendues hors de la ligne mais leurs clics remontent
@@ -172,62 +254,9 @@ export function TargetsTable(p: Props) {
                     onClick={(e: MouseEvent) => p.onToggle(row.id, e.shiftKey)}
                   />
                 </div>
-                <div role="cell" className="px-2">
-                  <Select
-                    value={row.priority ?? ''}
-                    disabled={!canPrepareTarget(canPrepareAll, row.assigneeIds, p.meId)}
-                    onChange={(e) =>
-                      p.onPriority(row.id, (e.target.value || null) as Priority | null)
-                    }
-                    aria-label={t('priority.set', { p: row.priority ?? t('priority.none') })}
-                    display={<PriorityBadge priority={row.priority} />}
-                    className="rounded-full"
-                  >
-                    {PRIORITIES.map((pr) => (
-                      <option key={pr} value={pr}>
-                        {t(`priority.${pr}`)}
-                      </option>
-                    ))}
-                    <option value="">{t('priority.none')}</option>
-                  </Select>
-                </div>
-                <div role="cell" className="min-w-0 px-2">
-                  <button
-                    type="button"
-                    onClick={() => p.onOpen(row.id)}
-                    className="max-w-full truncate text-left text-base font-medium hover:underline"
-                  >
-                    {row.name}
-                  </button>
-                </div>
-                <div role="cell" className="truncate px-2">
-                  {row.stand}
-                </div>
-                <div role="cell" className="min-w-0 px-2">
-                  <TagPicker
-                    target={row}
-                    tags={p.tags}
-                    tagById={tagById}
-                    onToggle={(tagId, on) => p.onToggleTag(row.id, tagId, on)}
-                  />
-                </div>
-                <div role="cell" className="min-w-0 px-2">
-                  <ShowPills tagIds={row.tagIds} shows={p.shows} compact max={2} />
-                </div>
-                <div role="cell" className="min-w-0 px-2">
-                  <AssignPicker
-                    target={row}
-                    members={p.members}
-                    meId={p.meId}
-                    nameOf={p.nameOf}
-                    canAssignOthers={canAssignOthers}
-                    onAssign={(userId) => p.onAssign(row.id, userId)}
-                    onUnassign={(userId) => p.onUnassign(row.id, userId)}
-                  />
-                </div>
-                <div role="cell" className="truncate px-2 text-slate-700">
-                  {next ? formatSlot(next.plannedAt) : ''}
-                </div>
+                {visible.map((key) => (
+                  <Fragment key={key}>{cells[key]}</Fragment>
+                ))}
               </div>
             )
           })}

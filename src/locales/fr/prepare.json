@@ -17,6 +17,14 @@
     "none": "Aucun objectif",
     "label": "Objectif de la rencontre"
   },
+  "columnsMenu": {
+    "button": "Modifier les colonnes",
+    "title": "Colonnes du tableau",
+    "help": "Cochez les colonnes à afficher et réglez leur largeur. Ce réglage est personnel et mémorisé sur cet appareil.",
+    "always": "toujours affichée",
+    "width": "Largeur de la colonne {{column}}",
+    "reset": "Rétablir les colonnes d'origine"
+  },
   "columns": {
     "select": "Sélection",
     "priority": "Prio",
