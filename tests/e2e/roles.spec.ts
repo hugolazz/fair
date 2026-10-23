@@ -36,7 +36,7 @@ test.describe.serial('rôles : admin d’équipe et commercial', () => {
     await expect(page.getByRole('link', { name: 'Nouveau salon' })).toHaveCount(0)
 
     await page.goto(`/events/${eventId}/import`)
-    await expect(page.getByText("Cette page est réservée aux admins d'équipe.")).toBeVisible()
+    await expect(page.getByText("Vous n'avez pas le droit d'utiliser cette page.")).toBeVisible()
 
     await openEvent(page, 'Salon rôles')
     await expect(page.getByRole('link', { name: 'Importer des participants' })).toHaveCount(0)

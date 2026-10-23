@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Link, Navigate, Outlet } from 'react-router-dom'
 import { EmptyState, ErrorState, Loading } from '@/components/page-states'
 import { Button } from '@/components/ui/button'
-import { useIsAdmin } from '@/features/auth-team/roles'
+import { useCan } from '@/features/auth-team/roles'
 import { useSession } from '@/features/auth-team/session'
+import type { PermissionKey } from '@/lib/permissions'
 
 /** Redirige selon l'état : déconnecté → /login, sans équipe → /onboarding. */
 export function RequireReady() {
@@ -17,16 +18,22 @@ export function RequireReady() {
   return <Outlet />
 }
 
-/** Page réservée aux admins d'équipe (la base refuse de toute façon l'écriture à un commercial). */
-export function RequireAdmin({ children }: { children: React.ReactNode }) {
+/** Page qui demande un droit (la base refuse de toute façon l'écriture sans lui) : un admin l'a toujours. */
+export function RequirePermission({
+  permission,
+  children,
+}: {
+  permission: PermissionKey
+  children: React.ReactNode
+}) {
   const { t } = useTranslation()
-  const admin = useIsAdmin()
-  if (admin) return <>{children}</>
+  const allowed = useCan(permission)
+  if (allowed) return <>{children}</>
   return (
     <EmptyState
       icon={<Lock className="size-10" />}
-      title={t('roles.adminOnly')}
-      body={t('roles.adminOnlyBody')}
+      title={t('roles.noPermission')}
+      body={t('roles.noPermissionBody')}
       action={
         <Button asChild variant="secondary">
           <Link to="..">{t('actions.back')}</Link>

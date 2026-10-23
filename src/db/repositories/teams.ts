@@ -3,6 +3,7 @@ import { cacheKeys } from '@/db/cache-keys'
 import { cachedRead } from '@/lib/cache/cache'
 import { newsLabelOf } from '@shared/exports/labels.ts'
 import { newId } from '@/lib/ids'
+import { effectivePermissions, normalizePermissions, type Permissions } from '@/lib/permissions'
 import { supabase } from '@/lib/supabase'
 
 export const TEAM_ROLES = ['owner', 'admin', 'member'] as const
@@ -16,6 +17,7 @@ const membershipSchema = z.object({
     news_enabled: z.boolean().default(false),
     accent_color: z.string().nullable().default(null),
     news_label: z.string().nullable().default(null),
+    member_permissions: z.unknown().default(null),
   }),
 })
 export type Membership = {
@@ -26,6 +28,10 @@ export type Membership = {
   newsEnabled: boolean
   /** Intitulé de la case optionnelle des notes (réglage d'équipe) ; « Actualité ? » par défaut. */
   newsLabel: string
+  /** Droits des commerciaux de l'équipe (réglage des admins). */
+  memberPermissions: Permissions
+  /** Ce que **moi** je peux faire : tout pour un admin, le réglage de l'équipe pour un commercial. */
+  permissions: Permissions
   /** Couleur d'accentuation de l'équipe (#rrggbb) ; `null` = le vert d'origine. */
   accentColor: string | null
 }
@@ -33,13 +39,31 @@ export type Membership = {
 export type Member = { userId: string; role: TeamRole; displayName: string }
 
 /** Équipe de l'utilisateur ; sans réseau, la dernière connue (l'appli s'ouvre hors ligne). */
-export const fetchMembership = (userId: string): Promise<Membership | null> =>
-  cachedRead(cacheKeys.membership(userId), () => fetchMembershipNetwork(userId))
+export async function fetchMembership(userId: string): Promise<Membership | null> {
+  const membership = await cachedRead(cacheKeys.membership(userId), () =>
+    fetchMembershipNetwork(userId),
+  )
+  return membership && completeMembership(membership)
+}
+
+/** Une copie locale enregistrée avant l'arrivée d'un réglage n'a pas ce champ : on le complète (valeurs par défaut). */
+function completeMembership(m: Membership): Membership {
+  const memberPermissions = normalizePermissions(m.memberPermissions)
+  return {
+    ...m,
+    newsLabel: m.newsLabel ?? newsLabelOf(null),
+    accentColor: m.accentColor ?? null,
+    memberPermissions,
+    permissions: effectivePermissions(m.role, memberPermissions),
+  }
+}
 
 async function fetchMembershipNetwork(userId: string): Promise<Membership | null> {
   const { data, error } = await supabase
     .from('team_members')
-    .select('role, teams!inner(id, name, news_enabled, accent_color, news_label)')
+    .select(
+      'role, teams!inner(id, name, news_enabled, accent_color, news_label, member_permissions)',
+    )
     .eq('user_id', userId)
     .is('teams.deleted_at', null)
     // L'équipe rejointe en dernier (il n'y a pas de sélecteur d'équipe) : quand on en quitte une, la précédente reprend la main.
@@ -49,6 +73,7 @@ async function fetchMembershipNetwork(userId: string): Promise<Membership | null
   const row = data?.[0]
   if (!row) return null
   const parsed = membershipSchema.parse({ role: row.role, teams: row.teams })
+  const memberPermissions = normalizePermissions(parsed.teams.member_permissions)
   return {
     teamId: parsed.teams.id,
     teamName: parsed.teams.name,
@@ -56,6 +81,8 @@ async function fetchMembershipNetwork(userId: string): Promise<Membership | null
     newsEnabled: parsed.teams.news_enabled,
     newsLabel: newsLabelOf(parsed.teams.news_label),
     accentColor: parsed.teams.accent_color,
+    memberPermissions,
+    permissions: effectivePermissions(parsed.role, memberPermissions),
   }
 }
 
@@ -95,6 +122,20 @@ export async function setNewsEnabled(teamId: string, enabled: boolean): Promise<
   const { data, error } = await supabase
     .from('teams')
     .update({ news_enabled: enabled })
+    .eq('id', teamId)
+    .select('id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
+}
+
+/** Droits de tous les commerciaux de l'équipe (propriétaire et admins seulement ; la base refuse les autres). */
+export async function setMemberPermissions(
+  teamId: string,
+  permissions: Permissions,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from('teams')
+    .update({ member_permissions: permissions })
     .eq('id', teamId)
     .select('id')
   if (error) throw error

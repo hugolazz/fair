@@ -8,7 +8,7 @@ import {
   type Target,
   type TeamMember,
 } from '@/db/schemas/prepare'
-import { canPrepareTarget, useIsAdmin } from '@/features/auth-team/roles'
+import { canPrepareTarget, useCan } from '@/features/auth-team/roles'
 import { cn } from '@/lib/cn'
 import { AssignPicker } from './assign-picker'
 import { Select } from '@/components/ui/select'
@@ -64,7 +64,8 @@ const COLUMNS: { key: SortKey | null; label: string; className?: string }[] = [
 /** Tableau dense (desktop) : tri par colonne, sélection (Maj pour une plage), édition rapide de la priorité et de l'objectif. */
 export function TargetsTable(p: Props) {
   const { t } = useTranslation('prepare')
-  const admin = useIsAdmin()
+  const canPrepareAll = useCan('prepare_all_targets')
+  const canAssignOthers = useCan('assign_others')
   const tagById = useMemo(() => new Map(p.tags.map((tag) => [tag.id, tag])), [p.tags])
   const { ref, onScroll, start, end, totalHeight, offsetTop } = useVirtualRows(
     p.rows.length,
@@ -174,7 +175,7 @@ export function TargetsTable(p: Props) {
                 <div role="cell" className="px-2">
                   <Select
                     value={row.priority ?? ''}
-                    disabled={!canPrepareTarget(admin, row.assigneeIds, p.meId)}
+                    disabled={!canPrepareTarget(canPrepareAll, row.assigneeIds, p.meId)}
                     onChange={(e) =>
                       p.onPriority(row.id, (e.target.value || null) as Priority | null)
                     }
@@ -219,7 +220,7 @@ export function TargetsTable(p: Props) {
                     members={p.members}
                     meId={p.meId}
                     nameOf={p.nameOf}
-                    admin={admin}
+                    canAssignOthers={canAssignOthers}
                     onAssign={(userId) => p.onAssign(row.id, userId)}
                     onUnassign={(userId) => p.onUnassign(row.id, userId)}
                   />

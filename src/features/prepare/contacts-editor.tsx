@@ -18,6 +18,8 @@ type Props = {
   contacts: readonly TargetContact[]
   /** Appelé après chaque ajout, modification ou suppression : la fiche recharge ses contacts. */
   onChanged: () => void
+  /** Droit « modifier les fiches entreprise et leurs contacts » : sans lui, on peut seulement en ajouter. */
+  canEdit: boolean
 }
 
 const toForm = (c: TargetContact): ContactForm => {
@@ -33,7 +35,7 @@ const toForm = (c: TargetContact): ContactForm => {
 }
 
 /** Contacts d'une entreprise : modifier, supprimer ou ajouter, chaque information dans sa case. */
-export function ContactsEditor({ teamId, companyId, contacts, onChanged }: Props) {
+export function ContactsEditor({ teamId, companyId, contacts, onChanged, canEdit }: Props) {
   const { t } = useTranslation('prepare')
   const { t: tm } = useTranslation('manual')
   const [editing, setEditing] = useState<string>()
@@ -122,7 +124,7 @@ export function ContactsEditor({ teamId, companyId, contacts, onChanged }: Props
                       {tm('addContact.cancel')}
                     </Button>
                   </div>
-                ) : (
+                ) : canEdit ? (
                   <div className="mt-2 flex gap-2">
                     <Button
                       variant="secondary"
@@ -143,7 +145,7 @@ export function ContactsEditor({ teamId, companyId, contacts, onChanged }: Props
                       {t('planning.remove')}
                     </Button>
                   </div>
-                )}
+                ) : null}
               </>
             )}
           </li>

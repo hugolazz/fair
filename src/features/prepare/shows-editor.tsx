@@ -69,17 +69,17 @@ function AbbrevRow({ show, api }: { show: Tag; api: TargetsApi }) {
 }
 
 /**
- * Salons de l'entreprise (« Modifier la fiche ») : on coche ceux où elle était ou sera. Un admin peut aussi ajouter un
- * salon qui n'existe pas encore (création de tag réservée aux admins) ; sa couleur est automatique.
+ * Salons de l'entreprise (« Modifier la fiche ») : on coche ceux où elle était ou sera. Avec le droit « gérer les tags et pastilles »
+ * (admins : toujours), on peut aussi ajouter un salon qui n'existe pas encore ; sa couleur est automatique.
  */
 export function ShowsEditor({
   target,
   api,
-  admin,
+  canManage,
 }: {
   target: Target
   api: TargetsApi
-  admin: boolean
+  canManage: boolean
 }) {
   const { t } = useTranslation('prepare')
   const [label, setLabel] = useState('')
@@ -139,7 +139,7 @@ export function ShowsEditor({
           })}
         </div>
       )}
-      {admin && api.shows.length > 0 ? (
+      {canManage && api.shows.length > 0 ? (
         <details className="rounded-lg border border-slate-200 p-3">
           <summary className="min-h-9 cursor-pointer text-sm font-medium">
             {t('shows.abbrevTitle')}
@@ -152,7 +152,7 @@ export function ShowsEditor({
           </ul>
         </details>
       ) : null}
-      {admin ? (
+      {canManage ? (
         <form
           className="flex flex-col gap-2"
           onSubmit={(e) => {

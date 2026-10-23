@@ -11,8 +11,8 @@ type Props = {
   members: readonly TeamMember[]
   meId: string
   nameOf: (userId: string) => string
-  /** Un commercial ne gère que sa propre assignation (RLS) ; un admin assigne ou retire n'importe qui. */
-  admin: boolean
+  /** Sans le droit « assigner des collègues », on ne gère que sa propre assignation (RLS). */
+  canAssignOthers: boolean
   onAssign: (userId: string) => void
   onUnassign: (userId: string) => void
 }
@@ -26,13 +26,13 @@ export function AssignPicker({
   members,
   meId,
   nameOf,
-  admin,
+  canAssignOthers,
   onAssign,
   onUnassign,
 }: Props) {
   const { t } = useTranslation('prepare')
   const [open, setOpen] = useState(false)
-  const choices = members.filter((m) => admin || m.userId === meId)
+  const choices = members.filter((m) => canAssignOthers || m.userId === meId)
   const who = target.assigneeIds.length
     ? target.assigneeIds.map((u) => (u === meId ? t('assign.me') : nameOf(u))).join(', ')
     : t('assign.unassigned')

@@ -19,6 +19,7 @@ import { isAdminRole } from '@/features/auth-team/roles'
 import { useReadySession } from '@/features/auth-team/session'
 import { useAsync } from '@/lib/use-async'
 import { AccentPicker } from './accent-picker'
+import { PermissionsTable } from './permissions-table'
 import { Section } from './section'
 import { TeamLogo } from './team-logo'
 
@@ -173,6 +174,12 @@ export function TeamTab() {
       {isAdmin ? (
         <Section title={t('appearance.title')}>
           <AccentPicker />
+        </Section>
+      ) : null}
+
+      {isAdmin ? (
+        <Section title={t('permissions.title')}>
+          <PermissionsTable />
         </Section>
       ) : null}
 

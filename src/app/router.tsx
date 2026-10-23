@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { Loading } from '@/components/page-states'
 import { AppLayout } from './app-layout'
-import { RedirectIfSignedIn, RequireAdmin, RequireReady, RequireSignedIn } from './guards'
+import { RedirectIfSignedIn, RequirePermission, RequireReady, RequireSignedIn } from './guards'
 
 const LoginPage = lazy(() => import('@/features/auth-team/login-page'))
 const ForgotPasswordPage = lazy(() => import('@/features/auth-team/forgot-password-page'))
@@ -48,9 +48,9 @@ const router = createBrowserRouter([
           {
             path: '/events/:eventId/import',
             element: (
-              <RequireAdmin>
+              <RequirePermission permission="import_participants">
                 <ImportPage />
-              </RequireAdmin>
+              </RequirePermission>
             ),
           },
           {

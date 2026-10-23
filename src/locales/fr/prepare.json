@@ -194,6 +194,7 @@
     "otherContacts": "Autres contacts ({{count}})",
     "noContact": "Aucun contact renseigné pour cette entreprise.",
     "more": "Plus de détails : préparation, tags, assignation, rendez-vous, contacts",
+    "companyReadOnly": "Vous n'avez pas le droit de modifier les informations de cette entreprise : demandez à un admin.",
     "prepReadOnly": "Cette entreprise ne vous est pas assignée : seuls un admin d'équipe et le commercial assigné peuvent modifier sa préparation. Assignez-vous-la pour la préparer.",
     "seeOnPlan": "Voir sur le plan du salon",
     "close": "Fermer la fiche",

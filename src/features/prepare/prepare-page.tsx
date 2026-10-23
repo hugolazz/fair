@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { EmptyState, ErrorState, Loading } from '@/components/page-states'
 import { ImportTemplateButton } from '@/components/import-template-button'
 import { Button } from '@/components/ui/button'
-import { useIsAdmin } from '@/features/auth-team/roles'
+import { useCan } from '@/features/auth-team/roles'
 import { useReadySession } from '@/features/auth-team/session'
 import { AddCompanyDialog } from '@/features/manual-entry/add-company-dialog'
 import { useEvent } from '@/features/events/event-context'
@@ -26,7 +26,7 @@ import { useTargets } from './use-targets'
 export default function PreparePage() {
   const { t } = useTranslation('prepare')
   const { t: tm } = useTranslation('manual')
-  const admin = useIsAdmin()
+  const canImport = useCan('import_participants')
   const [adding, setAdding] = useState(false)
   const [notice, setNotice] = useState<string>()
   const { event } = useEvent()
@@ -139,12 +139,12 @@ export default function PreparePage() {
           body={t('filters.none')}
           action={
             <div className="flex flex-wrap justify-center gap-2">
-              {admin ? (
+              {canImport ? (
                 <Button asChild>
                   <Link to="../import">{t('import')}</Link>
                 </Button>
               ) : null}
-              <Button variant={admin ? 'secondary' : 'primary'} onClick={() => setAdding(true)}>
+              <Button variant={canImport ? 'secondary' : 'primary'} onClick={() => setAdding(true)}>
                 <Plus aria-hidden className="size-4" />
                 {tm('company.open')}
               </Button>

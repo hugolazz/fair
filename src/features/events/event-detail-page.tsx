@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { deleteEvent, updateEvent } from '@/db/repositories/events'
 import { eventToForm } from '@/db/schemas/event'
-import { useIsAdmin } from '@/features/auth-team/roles'
+import { useCan } from '@/features/auth-team/roles'
 import { DuplicateEventDialog } from './duplicate-event-dialog'
 import { useEvent } from './event-context'
 import { EventFormDialog } from './event-form-dialog'
@@ -17,7 +17,9 @@ export default function EventDetailPage() {
   const { t: tc } = useTranslation()
   const { event, reload } = useEvent()
   const navigate = useNavigate()
-  const admin = useIsAdmin()
+  const canImport = useCan('import_participants')
+  const canEdit = useCan('edit_events')
+  const canCreate = useCan('create_events')
   const [editing, setEditing] = useState(false)
   const [duplicating, setDuplicating] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -52,21 +54,25 @@ export default function EventDetailPage() {
         <Button asChild>
           <Link to="participants">{t('detail.prepare')}</Link>
         </Button>
-        {admin ? (
-          <>
-            <Button asChild variant="secondary">
-              <Link to="import">{t('detail.import')}</Link>
-            </Button>
-            <Button variant="secondary" onClick={() => setEditing(true)}>
-              {tc('actions.edit')}
-            </Button>
-            <Button variant="secondary" onClick={() => setDuplicating(true)}>
-              {t('detail.duplicate')}
-            </Button>
-            <Button variant="quiet" onClick={() => setConfirming(true)}>
-              {tc('actions.delete')}
-            </Button>
-          </>
+        {canImport ? (
+          <Button asChild variant="secondary">
+            <Link to="import">{t('detail.import')}</Link>
+          </Button>
+        ) : null}
+        {canEdit ? (
+          <Button variant="secondary" onClick={() => setEditing(true)}>
+            {tc('actions.edit')}
+          </Button>
+        ) : null}
+        {canCreate ? (
+          <Button variant="secondary" onClick={() => setDuplicating(true)}>
+            {t('detail.duplicate')}
+          </Button>
+        ) : null}
+        {canEdit ? (
+          <Button variant="quiet" onClick={() => setConfirming(true)}>
+            {tc('actions.delete')}
+          </Button>
         ) : null}
       </div>
 

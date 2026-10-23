@@ -5,6 +5,70 @@
     "account": "Mon compte",
     "team": "Équipe"
   },
+  "permissions": {
+    "title": "Droits des commerciaux",
+    "help": "Réglez ce que peuvent faire les commerciaux de l'équipe. Les propriétaires et admins ont toujours tous les droits. Chacun peut toujours consulter les salons, entreprises et notes de l'équipe, s'assigner lui-même et tenir ses propres rendez-vous et notes. Chaque case s'applique tout de suite.",
+    "right": "Droit",
+    "members": "Commerciaux",
+    "admins": "Admins",
+    "memberCell": "Commerciaux : {{right}}",
+    "adminCell": "Admins : {{right}} (toujours autorisé)",
+    "saved": "Droits enregistrés.",
+    "error": "Les droits n'ont pas pu être enregistrés.",
+    "reset": "Rétablir les droits par défaut",
+    "groups": {
+      "events": "Salons",
+      "companies": "Entreprises",
+      "preparation": "Préparation et rencontres",
+      "organisation": "Organisation"
+    },
+    "items": {
+      "create_events": {
+        "label": "Créer et dupliquer un salon",
+        "hint": "Sans ce droit, seuls les admins ouvrent un nouveau salon."
+      },
+      "edit_events": {
+        "label": "Modifier et supprimer un salon",
+        "hint": "Nom, dates, lieu, objectifs ; suppression du salon."
+      },
+      "import_participants": {
+        "label": "Importer des participants depuis un fichier",
+        "hint": "Donne aussi la création des entreprises, contacts et pastilles de salons de l'import."
+      },
+      "add_companies": {
+        "label": "Ajouter une entreprise à la main",
+        "hint": "Saisie d'une entreprise (et de ses contacts) dans un salon."
+      },
+      "edit_companies": {
+        "label": "Modifier les fiches entreprise et leurs contacts",
+        "hint": "Informations, historique, modification et suppression des contacts. Ajouter une entreprise déjà connue la complète : cela demande aussi ce droit."
+      },
+      "remove_participants": {
+        "label": "Retirer des participants d'un salon",
+        "hint": "Retire aussi leurs rencontres et notes de ce salon."
+      },
+      "prepare_all_targets": {
+        "label": "Préparer toutes les entreprises",
+        "hint": "Priorité et stand. Sans ce droit : seulement les entreprises qui leur sont assignées."
+      },
+      "assign_others": {
+        "label": "Assigner des collègues",
+        "hint": "Sans ce droit, un commercial peut seulement s'assigner lui-même."
+      },
+      "edit_colleagues_meetings": {
+        "label": "Modifier et planifier les rendez-vous des collègues",
+        "hint": "Sans ce droit, chacun ne gère que ses propres rendez-vous."
+      },
+      "manage_tags": {
+        "label": "Gérer les tags et les pastilles de salons",
+        "hint": "Créer, renommer, abréger et supprimer. Appliquer un tag à une entreprise reste permis à tous."
+      },
+      "edit_plan": {
+        "label": "Gérer le plan du salon",
+        "hint": "Importer le plan, placer et déplacer les stands."
+      }
+    }
+  },
   "appearance": {
     "title": "Couleur de l'équipe",
     "help": "Couleur des boutons, des liens et des éléments sélectionnés, pour toute l'équipe : chacun la voit à sa prochaine ouverture de l'appli. Les couleurs trop claires sont foncées automatiquement pour rester lisibles.",

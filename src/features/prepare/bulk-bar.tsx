@@ -3,7 +3,7 @@ import { Select } from '@/components/ui/select'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { PRIORITIES, type Priority, type Tag, type TeamMember } from '@/db/schemas/prepare'
-import { useIsAdmin } from '@/features/auth-team/roles'
+import { useCan } from '@/features/auth-team/roles'
 
 type Props = {
   count: number
@@ -13,7 +13,7 @@ type Props = {
   onPriority: (p: Priority | null) => void
   onTag: (tagId: string) => void
   onAssign: (userId: string) => void
-  /** Retrait des participants du salon (admins seulement). */
+  /** Retrait des participants du salon (droit « retirer des participants »). */
   onRemove: () => void
   onClear: () => void
 }
@@ -24,7 +24,8 @@ const selectCls =
 /** Barre d'actions en masse : chaque liste applique son choix tout de suite à la sélection. */
 export function BulkBar(p: Props) {
   const { t } = useTranslation('prepare')
-  const admin = useIsAdmin()
+  const canAssignOthers = useCan('assign_others')
+  const canRemove = useCan('remove_participants')
 
   /** Applique la valeur choisie puis remet la liste sur son libellé. */
   const pick = (apply: (value: string) => void) => (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -36,8 +37,8 @@ export function BulkBar(p: Props) {
     <option key="me" value={p.meId}>
       {t('assign.me')}
     </option>,
-    // Un commercial ne s'assigne que lui-même (RLS) ; l'admin d'équipe répartit sur toute l'équipe.
-    ...(admin ? p.members : [])
+    // Sans le droit « assigner des collègues », on ne s'assigne que soi-même (RLS).
+    ...(canAssignOthers ? p.members : [])
       .filter((m) => m.userId !== p.meId)
       .map((m) => (
         <option key={m.userId} value={m.userId}>
@@ -95,7 +96,7 @@ export function BulkBar(p: Props) {
         <option value="">{t('bulk.assign')}</option>
         {memberOptions}
       </Select>
-      {admin ? (
+      {canRemove ? (
         <Button
           variant="ghost"
           className="text-danger min-h-11 px-3 md:min-h-9 md:px-4"

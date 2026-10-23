@@ -580,6 +580,38 @@ describe('faux Supabase', () => {
     ).toHaveLength(1)
   })
 
+  it('droits des commerciaux : un admin les régle pour l’équipe, un commercial ne le peut pas', async () => {
+    const auth = await import('@/db/repositories/auth')
+    const teams = await import('@/db/repositories/teams')
+    const { DEFAULT_MEMBER_PERMISSIONS } = await import('@/lib/permissions')
+
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    const adminId = (await auth.getSession())!.user.id
+    const before = await teams.fetchMembership(adminId)
+    expect(before!.memberPermissions).toEqual(DEFAULT_MEMBER_PERMISSIONS)
+    expect(Object.values(before!.permissions).every(Boolean)).toBe(true) // un admin a tout
+    const teamId = before!.teamId
+
+    await teams.setMemberPermissions(teamId, {
+      ...DEFAULT_MEMBER_PERMISSIONS,
+      import_participants: true,
+    })
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.marie, PASSWORD)
+    const marie = await teams.fetchMembership((await auth.getSession())!.user.id)
+    expect(marie!.permissions.import_participants).toBe(true)
+    expect(marie!.permissions.create_events).toBe(false)
+    // Un commercial ne modifie pas le tableau.
+    await expect(
+      teams.setMemberPermissions(teamId, { ...DEFAULT_MEMBER_PERMISSIONS, create_events: true }),
+    ).rejects.toBeDefined()
+
+    await auth.signOut()
+    await auth.signInWithPassword(USERS.admin, PASSWORD)
+    await teams.setMemberPermissions(teamId, DEFAULT_MEMBER_PERMISSIONS)
+  })
+
   it('inscription : nom d’usage, recherche d’une équipe par son nom, adhésion, profil modifiable', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')

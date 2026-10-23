@@ -7,7 +7,7 @@ import { Dialog } from '@/components/ui/dialog'
 import { InputField, TextareaField } from '@/components/ui/field'
 import { updateCompany, updateTargets } from '@/db/repositories/targets'
 import type { Target, TargetContact } from '@/db/schemas/prepare'
-import { canPrepareTarget, useIsAdmin } from '@/features/auth-team/roles'
+import { canPrepareTarget, useCan } from '@/features/auth-team/roles'
 import { normalizeStand } from '@/features/import/lib/text'
 import {
   emptyCompanyForm,
@@ -98,8 +98,11 @@ function EditBody({
 }: Omit<Props, 'open' | 'onOpenChange'>) {
   const { t } = useTranslation('prepare')
   const { t: tm } = useTranslation('manual')
-  const admin = useIsAdmin()
-  const canPrepare = canPrepareTarget(admin, target.assigneeIds, meId)
+  const canPrepareAll = useCan('prepare_all_targets')
+  const canAssignOthers = useCan('assign_others')
+  const canEditCompany = useCan('edit_companies')
+  const canManageTags = useCan('manage_tags')
+  const canPrepare = canPrepareTarget(canPrepareAll, target.assigneeIds, meId)
   const { request, dialog } = useAssignFlow(api, api.targets)
   const [form, setForm] = useState<CompanyForm>(() => formOf(target))
   const [errors, setErrors] = useState<CompanyErrors>({})
@@ -111,9 +114,9 @@ function EditBody({
     setSaved(false)
     setForm({ ...form, [k]: e.target.value })
   }
-  // Un commercial ne s'assigne que lui-même ; un admin assigne n'importe qui.
+  // Sans le droit « assigner des collègues », on ne s'assigne que soi-même.
   const available = api.members.filter(
-    (m) => !target.assigneeIds.includes(m.userId) && (admin || m.userId === meId),
+    (m) => !target.assigneeIds.includes(m.userId) && (canAssignOthers || m.userId === meId),
   )
 
   async function save(e: FormEvent) {
@@ -125,8 +128,8 @@ function EditBody({
     if (Object.keys(next).length > 0) return
     setBusy(true)
     try {
-      await updateCompany(target.companyId, toCompanyPatch(form))
-      // Priorité et stand sont ceux de ce salon : réservés à l'admin et au commercial assigné.
+      if (canEditCompany) await updateCompany(target.companyId, toCompanyPatch(form))
+      // Priorité et stand sont ceux de ce salon : avec le droit de tout préparer, ou pour le commercial assigné.
       if (canPrepare) {
         await updateTargets([target.id], {
           priority: form.priority || null,
@@ -153,6 +156,7 @@ function EditBody({
         <h3 className="font-semibold">{t('edit.company')}</h3>
         <InputField
           label={tm('company.name')}
+          disabled={!canEditCompany}
           value={form.name}
           onChange={set('name')}
           autoComplete="off"
@@ -160,6 +164,7 @@ function EditBody({
         />
         <InputField
           label={tm('company.website')}
+          disabled={!canEditCompany}
           value={form.website}
           onChange={set('website')}
           autoComplete="off"
@@ -168,6 +173,7 @@ function EditBody({
         <div className="grid grid-cols-2 gap-3">
           <InputField
             label={tm('company.industry')}
+            disabled={!canEditCompany}
             value={form.industry}
             onChange={set('industry')}
           />
@@ -179,9 +185,15 @@ function EditBody({
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <InputField label={tm('company.city')} value={form.city} onChange={set('city')} />
+          <InputField
+            label={tm('company.city')}
+            disabled={!canEditCompany}
+            value={form.city}
+            onChange={set('city')}
+          />
           <InputField
             label={tm('company.country')}
+            disabled={!canEditCompany}
             value={form.country}
             onChange={set('country')}
           />
@@ -206,6 +218,7 @@ function EditBody({
           label={tm('company.history')}
           placeholder={tm('company.historyPlaceholder')}
           rows={6}
+          disabled={!canEditCompany}
           value={form.history}
           onChange={(e) => {
             setSaved(false)
@@ -222,8 +235,17 @@ function EditBody({
             {t('edit.saved')}
           </p>
         ) : null}
+        {!canEditCompany ? (
+          <p role="note" className="rounded-lg bg-slate-100 p-3 text-sm text-slate-800">
+            {t('sheet.companyReadOnly')}
+          </p>
+        ) : null}
         <div>
-          <Button type="submit" disabled={busy} className="min-h-12">
+          <Button
+            type="submit"
+            disabled={busy || (!canEditCompany && !canPrepare)}
+            className="min-h-12"
+          >
             {t('edit.save')}
           </Button>
         </div>
@@ -232,7 +254,7 @@ function EditBody({
       <Section
         title={t('sheet.tags')}
         action={
-          admin ? (
+          canManageTags ? (
             <Button variant="ghost" className="min-h-9" onClick={() => setManagingTags(true)}>
               <Settings2 aria-hidden className="size-4" />
               {t('sheet.manageTags')}
@@ -267,7 +289,7 @@ function EditBody({
       </Section>
 
       <Section title={t('shows.title')}>
-        <ShowsEditor target={target} api={api} admin={admin} />
+        <ShowsEditor target={target} api={api} canManage={canManageTags} />
       </Section>
 
       <Section title={t('sheet.assignees')}>
@@ -291,7 +313,7 @@ function EditBody({
               className="inline-flex min-h-11 items-center gap-1 rounded-full bg-slate-100 pr-1 pl-3 text-sm md:min-h-9"
             >
               {u === meId ? t('assign.me') : api.memberName(u)}
-              {admin || u === meId ? (
+              {canAssignOthers || u === meId ? (
                 <button
                   type="button"
                   aria-label={t('sheet.removeAssignee', { name: api.memberName(u) })}
@@ -346,6 +368,7 @@ function EditBody({
           companyId={target.companyId}
           contacts={contacts}
           onChanged={onContactsChanged}
+          canEdit={canEditCompany}
         />
       </Section>
 

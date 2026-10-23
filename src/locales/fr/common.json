@@ -13,8 +13,8 @@
     "skipToContent": "Aller au contenu"
   },
   "roles": {
-    "adminOnly": "Cette page est réservée aux admins d'équipe.",
-    "adminOnlyBody": "Demandez à un admin de l'équipe si vous avez besoin de cette action."
+    "noPermission": "Vous n'avez pas le droit d'utiliser cette page.",
+    "noPermissionBody": "Demandez à un admin de l'équipe si vous avez besoin de cette action."
   },
   "nav": {
     "events": "Salons",
