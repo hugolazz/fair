@@ -1,6 +1,19 @@
 // Libellés (français) du contenu des fichiers générés. Les textes de l'interface, eux, sont dans src/locales.
 import type { MeetingStatus, Priority } from './types.ts'
 
+/** Intitulé d'origine de la case optionnelle des notes de rencontre (réglage d'équipe `news_label`). */
+export const DEFAULT_NEWS_LABEL = 'Actualité ?'
+
+/** Intitulé de la case : celui de l'équipe, ou celui d'origine s'il est vide. */
+export const newsLabelOf = (raw: string | null | undefined): string =>
+  raw?.trim() ? raw.trim() : DEFAULT_NEWS_LABEL
+
+/** Titre d'une colonne ou d'un badge : l'intitulé sans son « ? » final (« Actualité ? » → « Actualité »). */
+export function newsTitleOf(label: string): string {
+  const title = label.replace(/[\s?]+$/u, '')
+  return title || label
+}
+
 export const STATUS_LABEL: Record<MeetingStatus, string> = {
   to_see: 'À voir',
   in_progress: 'En cours',

@@ -1,3 +1,4 @@
+import { newsLabelOf } from './labels.ts'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type {
   ContactRec,
@@ -92,7 +93,7 @@ export async function fetchExportData(
 
   const teamRes = await client
     .from('teams')
-    .select('id, name, logo_path, news_enabled')
+    .select('id, name, logo_path, news_enabled, news_label')
     .eq('id', teamId)
     .single()
   if (teamRes.error || !teamRes.data) throw new Error('team not found')
@@ -326,6 +327,7 @@ export async function fetchExportData(
       name: String(t.name),
       logo: await loadLogo(client, str(t.logo_path)),
       newsEnabled: t.news_enabled === true,
+      newsLabel: newsLabelOf(str(t.news_label)),
     },
     event: {
       id: eventId,

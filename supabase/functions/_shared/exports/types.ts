@@ -25,6 +25,8 @@ export type TeamInfo = {
   logo: { bytes: Uint8Array; mime: 'image/png' | 'image/jpeg' } | null
   /** La case « Actualité ? » est activée pour l'équipe : sa colonne figure alors dans les exports. */
   newsEnabled: boolean
+  /** Intitulé de la case (réglage d'équipe), « Actualité ? » par défaut : sa colonne porte cet intitulé sans « ? ». */
+  newsLabel: string
 }
 
 export type EventInfo = {

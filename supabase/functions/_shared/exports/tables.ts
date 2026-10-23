@@ -1,5 +1,5 @@
 import { memberNames, showsNews, usesShows } from './select.ts'
-import { statusLabel } from './labels.ts'
+import { newsTitleOf, statusLabel } from './labels.ts'
 import { formatDate, formatDateTime, wallClock } from './format.ts'
 import type { ContactRec, ExportData, MeetingRec, Priority } from './types.ts'
 
@@ -45,16 +45,21 @@ export const SALON_COLUMNS: Column[] = [
   col('notes', 'Notes du salon', 'longtext', 70),
 ]
 
-const NEWS_COLUMN = col('news', 'Actualité', 'text', 12)
+const newsColumn = (label: string) => col('news', newsTitleOf(label), 'text', 12)
 const SHOWS_COLUMN = col('shows', 'Salons', 'text', 34)
 
 /**
  * Les colonnes de l'export : celles du salon, plus « Salons » (juste après « Commentaire », donc après les 14 colonnes
  * de l'import) si des entreprises en ont, et « Actualité » (juste après « À recontacter ») si elle est utilisée.
  */
-export function salonColumns(withNews: boolean, withShows = false): Column[] {
+export function salonColumns(
+  withNews: boolean,
+  withShows = false,
+  newsLabel = 'Actualité ?',
+): Column[] {
   const out = [...SALON_COLUMNS]
-  if (withNews) out.splice(out.findIndex((c) => c.key === 'recontact') + 1, 0, NEWS_COLUMN)
+  if (withNews)
+    out.splice(out.findIndex((c) => c.key === 'recontact') + 1, 0, newsColumn(newsLabel))
   if (withShows) out.splice(IMPORT_COLUMNS.length, 0, SHOWS_COLUMN)
   return out
 }
@@ -167,7 +172,7 @@ export function buildSalonTable(data: ExportData): Table {
   return {
     id: 'salon',
     title: 'Salon',
-    columns: salonColumns(showsNews(data), usesShows(data)),
+    columns: salonColumns(showsNews(data), usesShows(data), data.team.newsLabel),
     rows,
   }
 }

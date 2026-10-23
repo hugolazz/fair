@@ -67,6 +67,7 @@ export function sampleData(withLogo = true): ExportData {
       name: 'Équipe Démo',
       logo: withLogo ? { bytes: LOGO_PNG, mime: 'image/png' } : null,
       newsEnabled: false,
+      newsLabel: 'Actualité ?',
     },
     event: {
       id: 'e1',

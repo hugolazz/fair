@@ -1,6 +1,6 @@
 import { computeBilan } from './bilan.ts'
 import { formatDate, formatDateTime, formatEventDates, percent } from './format.ts'
-import { SOURCE_LABEL, interestLabel, priorityLabel, statusLabel } from './labels.ts'
+import { SOURCE_LABEL, interestLabel, newsTitleOf, priorityLabel, statusLabel } from './labels.ts'
 import { COLORS, MARGIN, PAGE_H, PRIORITY_COLORS, PdfWriter } from './pdf-writer.ts'
 import { memberNames, showsNews } from './select.ts'
 import type { ExportData, MeetingRec, TargetRec } from './types.ts'
@@ -133,7 +133,7 @@ function entreprises(w: PdfWriter, data: ExportData) {
       { label: 'Statut', weight: 1.3 },
       { label: 'Intérêt', weight: 1, align: 'right' },
       { label: 'Recontacter', weight: 1.3 },
-      ...(news ? [{ label: 'Actualité', weight: 1.1 }] : []),
+      ...(news ? [{ label: newsTitleOf(data.team.newsLabel), weight: 1.1 }] : []),
     ],
     rows: targets.map((t) => {
       const ms = (meetingsOf.get(t.id) ?? [])
@@ -177,7 +177,7 @@ function rencontres(w: PdfWriter, data: ExportData) {
       { label: 'Statut', weight: 1.5 },
       { label: 'Intérêt', weight: 0.9, align: 'right' },
       { label: 'Recontacter', weight: 1.3 },
-      ...(showsNews(data) ? [{ label: 'Actualité', weight: 1.1 }] : []),
+      ...(showsNews(data) ? [{ label: newsTitleOf(data.team.newsLabel), weight: 1.1 }] : []),
     ],
     rows: ms.map((m) => [
       formatDateTime(m.plannedAt, data.event.timezone),

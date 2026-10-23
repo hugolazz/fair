@@ -11,8 +11,10 @@ import {
   removeMember,
   renameTeam,
   setNewsEnabled,
+  setNewsLabel,
   updateMemberRole,
 } from '@/db/repositories/teams'
+import { DEFAULT_NEWS_LABEL } from '@shared/exports/labels.ts'
 import { isAdminRole } from '@/features/auth-team/roles'
 import { useReadySession } from '@/features/auth-team/session'
 import { useAsync } from '@/lib/use-async'
@@ -72,6 +74,22 @@ export function TeamTab() {
     }
   }
 
+  const [labelDraft, setLabelDraft] = useState(
+    membership.newsLabel === DEFAULT_NEWS_LABEL ? '' : membership.newsLabel,
+  )
+  async function onSaveNewsLabel(e: FormEvent) {
+    e.preventDefault()
+    setNewsError(false)
+    setNewsSaved(false)
+    try {
+      await setNewsLabel(teamId, labelDraft)
+      await refreshMembership()
+      setNewsSaved(true)
+    } catch {
+      setNewsError(true)
+    }
+  }
+
   async function onRename(e: FormEvent) {
     e.preventDefault()
     if (!teamName.trim()) return
@@ -118,9 +136,26 @@ export function TeamTab() {
                 checked={newsOn}
                 onChange={(e) => void onToggleNews(e.target.checked)}
               />
-              <span>{t('team.newsToggle')}</span>
+              <span>{t('team.newsToggle', { label: membership.newsLabel })}</span>
             </label>
             <p className="text-sm text-slate-700">{t('team.newsHelp')}</p>
+            <form
+              onSubmit={(e) => void onSaveNewsLabel(e)}
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+            >
+              <div className="flex-1">
+                <InputField
+                  label={t('team.newsLabel')}
+                  placeholder={DEFAULT_NEWS_LABEL}
+                  value={labelDraft}
+                  onChange={(e) => setLabelDraft(e.target.value)}
+                  maxLength={40}
+                />
+              </div>
+              <Button type="submit" variant="secondary">
+                {t('team.newsLabelSave')}
+              </Button>
+            </form>
             {newsSaved ? (
               <p role="status" className="text-sm text-emerald-800">
                 {t('team.newsSaved')}

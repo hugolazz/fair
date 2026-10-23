@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { ErrorState } from '@/components/page-states'
 import { fetchHistory } from '@/db/repositories/targets'
 import type { HistoryEntry } from '@/db/schemas/prepare'
+import { newsTitleOf } from '@shared/exports/labels.ts'
 import { useReadySession } from '@/features/auth-team/session'
 import { useAsync } from '@/lib/use-async'
 import { formatDay } from './lib/format'
@@ -17,10 +18,12 @@ function Entry({
   entry,
   defaultOpen,
   showNews,
+  newsTitle,
 }: {
   entry: HistoryEntry
   defaultOpen: boolean
   showNews: boolean
+  newsTitle: string
 }) {
   const { t } = useTranslation('prepare')
   return (
@@ -49,7 +52,7 @@ function Entry({
             {m.recontact || (showNews && m.news) ? (
               <p className="flex flex-wrap gap-1.5">
                 {m.recontact ? <span className={BADGE}>{t('history.recontact')}</span> : null}
-                {showNews && m.news ? <span className={BADGE}>{t('history.news')}</span> : null}
+                {showNews && m.news ? <span className={BADGE}>{newsTitle}</span> : null}
               </p>
             ) : null}
             {m.notes.map((n) => (
@@ -113,7 +116,13 @@ export function HistorySection({ companyId, eventId, history }: Props) {
           </summary>
           <div className="flex flex-col gap-2 border-t border-slate-100 p-2">
             {past.map((e, i) => (
-              <Entry key={e.id} entry={e} defaultOpen={i === 0} showNews={membership.newsEnabled} />
+              <Entry
+                key={e.id}
+                entry={e}
+                defaultOpen={i === 0}
+                showNews={membership.newsEnabled}
+                newsTitle={newsTitleOf(membership.newsLabel)}
+              />
             ))}
           </div>
         </details>

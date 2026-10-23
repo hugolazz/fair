@@ -443,7 +443,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
             checked={news}
             onChange={(e) => void setNews(e.target.checked)}
           />
-          <span className="flex-1 text-base font-medium">{t('notepad.news')}</span>
+          <span className="flex-1 text-base font-medium">{membership.newsLabel}</span>
           <span className="text-sm font-semibold" aria-hidden>
             {news ? t('notepad.yes') : t('notepad.no')}
           </span>

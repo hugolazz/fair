@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { login, openEdit, resetBackend, seedEvent, sql, USERS } from './support'
+import { login, logout, openEdit, resetBackend, seedEvent, sql, USERS } from './support'
 
 // Régression : une note et « À recontacter » saisis sur une entreprise sans rencontre créaient la rencontre en base, mais
 // l'état local de la page l'oubliait : en rouvrant la fiche, le champ était vide et la case décochée.
@@ -141,6 +141,50 @@ test('« Actualité ? » : une case activée dans les réglages de l’équipe, 
   await page.goto(`/events/${eventId}/participants`)
   await page.getByRole('button', { name: 'Bolt' }).first().click()
   await expect(sheet.getByLabel('Actualité ?')).toHaveCount(0)
+})
+
+test('l’intitulé de la case optionnelle se personnalise pour toute l’équipe (même comportement)', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId } = await seedEvent('Salon intitulé', [{ name: 'Bolt', stand: 'B2' }])
+  await login(page, USERS.admin)
+  await page.goto('/settings?section=equipe')
+  await page.getByLabel('Ajouter la case « Actualité ? »').check()
+  await expect(page.getByText('Réglage enregistré.')).toBeVisible()
+
+  // L'admin choisit un autre intitulé : la case, son libellé dans les réglages et le titre des exports suivent.
+  await page.getByLabel('Intitulé de la case').fill('Démo demandée ?')
+  await page.getByRole('button', { name: "Enregistrer l'intitulé" }).click()
+  await expect(page.getByLabel('Ajouter la case « Démo demandée ? »')).toBeVisible()
+  await expect(page.getByLabel('Intitulé de la case')).toHaveValue('Démo demandée ?')
+
+  await page.goto(`/events/${eventId}/participants`)
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Bolt' })
+  await expect(sheet.getByLabel('Actualité ?')).toHaveCount(0)
+  const custom = sheet.getByLabel('Démo demandée ?')
+  await expect(custom).not.toBeChecked() // décochée de base
+  await custom.check()
+  await expect(sheet.getByText('Rencontre marquée comme terminée.')).toBeVisible()
+
+  // Un commercial de l'équipe voit le même intitulé.
+  await page.keyboard.press('Escape')
+  await logout(page)
+  await login(page, USERS.marie)
+  await page.goto(`/events/${eventId}/participants`)
+  await page.getByRole('button', { name: 'Bolt' }).first().click()
+  await expect(sheet.getByLabel('Démo demandée ?')).not.toBeChecked() // sa propre rencontre : décochée
+  await expect(sheet.getByLabel('Actualité ?')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await logout(page)
+
+  // Intitulé vidé : retour à « Actualité ? ».
+  await login(page, USERS.admin)
+  await page.goto('/settings?section=equipe')
+  await page.getByLabel('Intitulé de la case').fill('')
+  await page.getByRole('button', { name: "Enregistrer l'intitulé" }).click()
+  await expect(page.getByLabel('Ajouter la case « Actualité ? »')).toBeVisible()
 })
 
 test('la note s’enregistre toute seule : à la pause, à la fermeture de la fiche, sans jamais doubler la note', async ({

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { cacheKeys } from '@/db/cache-keys'
 import { cachedRead } from '@/lib/cache/cache'
+import { newsLabelOf } from '@shared/exports/labels.ts'
 import { newId } from '@/lib/ids'
 import { supabase } from '@/lib/supabase'
 
@@ -14,6 +15,7 @@ const membershipSchema = z.object({
     name: z.string(),
     news_enabled: z.boolean().default(false),
     accent_color: z.string().nullable().default(null),
+    news_label: z.string().nullable().default(null),
   }),
 })
 export type Membership = {
@@ -22,6 +24,8 @@ export type Membership = {
   role: TeamRole
   /** La case « Actualité ? » est activée pour l'équipe (réglage d'équipe). */
   newsEnabled: boolean
+  /** Intitulé de la case optionnelle des notes (réglage d'équipe) ; « Actualité ? » par défaut. */
+  newsLabel: string
   /** Couleur d'accentuation de l'équipe (#rrggbb) ; `null` = le vert d'origine. */
   accentColor: string | null
 }
@@ -35,7 +39,7 @@ export const fetchMembership = (userId: string): Promise<Membership | null> =>
 async function fetchMembershipNetwork(userId: string): Promise<Membership | null> {
   const { data, error } = await supabase
     .from('team_members')
-    .select('role, teams!inner(id, name, news_enabled, accent_color)')
+    .select('role, teams!inner(id, name, news_enabled, accent_color, news_label)')
     .eq('user_id', userId)
     .is('teams.deleted_at', null)
     // L'équipe rejointe en dernier (il n'y a pas de sélecteur d'équipe) : quand on en quitte une, la précédente reprend la main.
@@ -50,6 +54,7 @@ async function fetchMembershipNetwork(userId: string): Promise<Membership | null
     teamName: parsed.teams.name,
     role: parsed.role,
     newsEnabled: parsed.teams.news_enabled,
+    newsLabel: newsLabelOf(parsed.teams.news_label),
     accentColor: parsed.teams.accent_color,
   }
 }
@@ -90,6 +95,18 @@ export async function setNewsEnabled(teamId: string, enabled: boolean): Promise<
   const { data, error } = await supabase
     .from('teams')
     .update({ news_enabled: enabled })
+    .eq('id', teamId)
+    .select('id')
+  if (error) throw error
+  if (!data?.length) throw new Error('not allowed or not found')
+}
+
+/** Intitulé de la case optionnelle des notes, pour toute l'équipe (admins seulement) ; vide = « Actualité ? ». */
+export async function setNewsLabel(teamId: string, label: string): Promise<void> {
+  const clean = label.trim()
+  const { data, error } = await supabase
+    .from('teams')
+    .update({ news_label: clean === '' ? null : clean })
     .eq('id', teamId)
     .select('id')
   if (error) throw error
