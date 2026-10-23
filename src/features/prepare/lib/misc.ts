@@ -1,4 +1,4 @@
-import type { Target } from '@/db/schemas/prepare'
+import { buildSearchKey, type Target } from '@/db/schemas/prepare'
 import { sortTargets } from './sort'
 
 // --- Assignations ---------------------------------------------------------------------------------
@@ -52,11 +52,29 @@ export function visibleRange(o: {
 
 // --- Ma liste -----------------------------------------------------------------------------------------------
 
-/** Mes cibles, par priorité (A, B, C, sans priorité), puis prochain rendez-vous, puis nom. */
-export function myList(targets: Target[], userId: string): Target[] {
-  const mine = targets.filter((t) => t.assigneeIds.includes(userId))
-  return sortTargets(mine, [
+/** Statuts d'une rencontre qui a eu lieu (comme le bilan : vu, à relancer, pas intéressé). */
+const SEEN_STATUSES = ['done', 'follow_up', 'not_interested']
+
+/** Cette entreprise a-t-elle été vue par cette personne ? Une de ses rencontres a eu lieu (« Vu »). */
+export const isSeenBy = (t: Target, userId: string): boolean =>
+  t.meetings.some((m) => m.ownerId === userId && SEEN_STATUSES.includes(m.status))
+
+/**
+ * Mes cibles, par priorité (A, B, C, sans priorité), puis prochain rendez-vous, puis nom ; **celles que j'ai déjà vues
+ * en dernier**. `search` filtre sur le nom, le stand, le secteur, la ville, le pays ou le site (accents et casse ignorés).
+ */
+export function myList(targets: Target[], userId: string, search = ''): Target[] {
+  const terms = buildSearchKey([search]).split(/\s+/).filter(Boolean)
+  const mine = targets.filter(
+    (t) => t.assigneeIds.includes(userId) && terms.every((w) => t.searchKey.includes(w)),
+  )
+  const sorted = sortTargets(mine, [
     { key: 'priority', dir: 'asc' },
     { key: 'meeting', dir: 'asc' },
   ])
+  // Partition stable : les entreprises vues descendent en bas de la liste, sans changer leur ordre entre elles.
+  return [
+    ...sorted.filter((t) => !isSeenBy(t, userId)),
+    ...sorted.filter((t) => isSeenBy(t, userId)),
+  ]
 }

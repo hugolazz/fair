@@ -287,7 +287,10 @@
     "title": "Ma liste",
     "subtitle": "Mes cibles, de la plus prioritaire à la moins prioritaire.",
     "empty": "Aucune cible ne vous est assignée pour ce salon.",
-    "emptyHint": "Assignez-vous des entreprises depuis l'onglet Participants.",
+    "emptyHint": "Assignez-vous des entreprises depuis l'onglet Participants, ou ajoutez-en avec le bouton +.",
+    "search": "Rechercher dans ma liste",
+    "noResult": "Aucune entreprise de votre liste ne correspond à cette recherche.",
+    "seen": "Vue",
     "count": "{{count}} cibles",
     "reminder": "Rappel : {{name}} à {{time}}",
     "nextMeeting": "RDV {{when}}"

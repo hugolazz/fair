@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { toHistory, type HistoryRow } from '@/db/schemas/prepare'
 import { buildIcs, dueReminders } from './ics'
-import { findAssignmentConflicts, isContested, myList, rangeSelect, visibleRange } from './misc'
+import {
+  findAssignmentConflicts,
+  isContested,
+  isSeenBy,
+  myList,
+  rangeSelect,
+  visibleRange,
+} from './misc'
 import { target } from './test-helpers'
 
 describe('findAssignmentConflicts', () => {
@@ -98,6 +105,48 @@ describe('myList', () => {
       }),
     ]
     expect(myList(ts, 'moi').map((t) => t.id)).toEqual(['5', '6', '2', '1', '4'])
+  })
+
+  const seenMeeting = (status: string, ownerId = 'moi') => [
+    { ...meet('2027-05-12T09:00:00Z')[0]!, status, ownerId },
+  ]
+
+  it('une entreprise que j’ai vue descend en bas de la liste, sans changer l’ordre des autres', () => {
+    const ts = [
+      target('1', 'Vue A', { assigneeIds: ['moi'], priority: 'A', meetings: seenMeeting('done') }),
+      target('2', 'Zeta B', { assigneeIds: ['moi'], priority: 'B' }),
+      target('3', 'Alpha B', { assigneeIds: ['moi'], priority: 'B' }),
+      target('4', 'Vue C', {
+        assigneeIds: ['moi'],
+        priority: 'C',
+        meetings: seenMeeting('follow_up'),
+      }),
+    ]
+    // Les non vues d'abord (priorité puis nom), puis les vues dans leur ordre de priorité.
+    expect(myList(ts, 'moi').map((t) => t.id)).toEqual(['3', '2', '1', '4'])
+  })
+
+  it('« vue » : une rencontre qui a eu lieu, la mienne ; à voir, en cours, manquée, écartée ou celle d’un collègue ne comptent pas', () => {
+    const seen = (status: string, owner?: string) =>
+      isSeenBy(target('x', 'X', { meetings: seenMeeting(status, owner) }), 'moi')
+    for (const status of ['done', 'follow_up', 'not_interested']) expect(seen(status)).toBe(true)
+    for (const status of ['to_see', 'in_progress', 'missed', 'skipped'])
+      expect(seen(status)).toBe(false)
+    expect(seen('done', 'marie')).toBe(false)
+    expect(isSeenBy(target('y', 'Y'), 'moi')).toBe(false)
+  })
+
+  it('la recherche filtre mes cibles (nom, stand, secteur…), accents et casse ignorés', () => {
+    const ts = [
+      target('1', 'Décathlon', { assigneeIds: ['moi'], stand: 'B12', industry: 'Retail' }),
+      target('2', 'Acme', { assigneeIds: ['moi'], stand: 'A1', industry: 'Industrie' }),
+      target('3', 'Decathlon Pro', { assigneeIds: ['marie'] }),
+    ]
+    expect(myList(ts, 'moi', 'decath').map((t) => t.id)).toEqual(['1']) // pas la cible d'une collègue
+    expect(myList(ts, 'moi', 'b12').map((t) => t.id)).toEqual(['1'])
+    expect(myList(ts, 'moi', 'retail decathlon').map((t) => t.id)).toEqual(['1'])
+    expect(myList(ts, 'moi', 'zzz')).toEqual([])
+    expect(myList(ts, 'moi', '  ').map((t) => t.id)).toEqual(['2', '1'])
   })
 })
 

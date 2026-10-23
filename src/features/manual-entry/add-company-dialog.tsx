@@ -21,10 +21,12 @@ type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAdded: (result: AddCompanyResult, name: string) => void
+  /** « Ma liste » : l'entreprise ajoutée m'est toujours assignée (pas de case à cocher). */
+  alwaysAssign?: boolean
 }
 
 /** Ajout d'une entreprise (et de son contact clé) sans passer par un fichier. */
-export function AddCompanyDialog({ eventId, open, onOpenChange, onAdded }: Props) {
+export function AddCompanyDialog({ eventId, open, onOpenChange, onAdded, alwaysAssign }: Props) {
   const { t } = useTranslation('manual')
   return (
     <Dialog
@@ -34,7 +36,12 @@ export function AddCompanyDialog({ eventId, open, onOpenChange, onAdded }: Props
       description={t('company.body')}
     >
       {/* Démonté à la fermeture : le formulaire repart vide à chaque ouverture. */}
-      <CompanyForm eventId={eventId} onClose={() => onOpenChange(false)} onAdded={onAdded} />
+      <CompanyForm
+        eventId={eventId}
+        onClose={() => onOpenChange(false)}
+        onAdded={onAdded}
+        alwaysAssign={alwaysAssign}
+      />
     </Dialog>
   )
 }
@@ -43,7 +50,8 @@ function CompanyForm({
   eventId,
   onClose,
   onAdded,
-}: Pick<Props, 'eventId' | 'onAdded'> & { onClose: () => void }) {
+  alwaysAssign = false,
+}: Pick<Props, 'eventId' | 'onAdded' | 'alwaysAssign'> & { onClose: () => void }) {
   const { t } = useTranslation('manual')
   const { t: tc } = useTranslation()
   const { session, membership } = useReadySession()
@@ -69,7 +77,7 @@ function CompanyForm({
         teamId: membership.teamId,
         eventId,
         meId: session.user.id,
-        assignToMe,
+        assignToMe: alwaysAssign || assignToMe,
         form,
       })
       onClose()
@@ -142,15 +150,17 @@ function CompanyForm({
         />
       </fieldset>
 
-      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
-        <input
-          type="checkbox"
-          className="size-5"
-          checked={assignToMe}
-          onChange={(e) => setAssignToMe(e.target.checked)}
-        />
-        {t('company.assignToMe')}
-      </label>
+      {alwaysAssign ? null : (
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+          <input
+            type="checkbox"
+            className="size-5"
+            checked={assignToMe}
+            onChange={(e) => setAssignToMe(e.target.checked)}
+          />
+          {t('company.assignToMe')}
+        </label>
+      )}
 
       {failed ? (
         <p role="alert" className="text-sm text-red-700">
