@@ -70,6 +70,8 @@ function db(extra: { targets?: number } = {}) {
         priority: 'A',
         objective: 'demo',
         prep_comment: 'Parler du POC',
+        created_at: '2027-01-10T09:00:00.000Z',
+        import_batch_id: 'batch-1',
         deleted_at: null,
       },
       {
@@ -80,6 +82,8 @@ function db(extra: { targets?: number } = {}) {
         priority: null,
         objective: null,
         prep_comment: null,
+        created_at: '2027-05-12T10:30:00.000Z',
+        import_batch_id: null,
         deleted_at: null,
       },
       {
@@ -183,7 +187,6 @@ function db(extra: { targets?: number } = {}) {
         status: 'done',
         planned_at: '2027-05-12T08:30:00Z',
         planned_duration_min: 20,
-        is_unplanned: false,
         interest: 4,
         need: 'POC',
         budget: null,
@@ -202,7 +205,6 @@ function db(extra: { targets?: number } = {}) {
         status: 'inconnu',
         planned_at: null,
         planned_duration_min: 15,
-        is_unplanned: true,
         interest: null,
         need: null,
         budget: null,
@@ -221,7 +223,6 @@ function db(extra: { targets?: number } = {}) {
         status: 'done',
         planned_at: null,
         planned_duration_min: 15,
-        is_unplanned: false,
         interest: null,
         need: null,
         budget: null,
@@ -339,6 +340,14 @@ describe('lecture des données d’un salon', () => {
     expect(d.followUps).toHaveLength(1)
   })
 
+  it('retient quand et comment chaque entreprise a été ajoutée (rencontres imprévues du bilan)', async () => {
+    const { client } = fakeClient(db(), { 't1/logo.png': LOGO_PNG })
+    const data = await fetchExportData(client, 'e1', NOW)
+    const byId = Object.fromEntries(data.targets.map((t) => [t.id, t]))
+    expect(byId['ec1']).toMatchObject({ addedAt: '2027-01-10T09:00:00.000Z', imported: true })
+    expect(byId['ec2']).toMatchObject({ addedAt: '2027-05-12T10:30:00.000Z', imported: false })
+  })
+
   it('ne lit que ce qui est actif : ni supprimé, ni d’un autre salon, ni désassigné', async () => {
     const { client } = fakeClient(db())
     const d = await fetchExportData(client, 'e1', NOW)
@@ -367,7 +376,6 @@ describe('lecture des données d’un salon', () => {
     const d = await fetchExportData(client, 'e1', NOW)
     expect(d.meetings.find((m) => m.id === 'm2')).toMatchObject({
       status: 'to_see',
-      unplanned: true,
       plannedAt: null,
     })
     expect(d.meetings.find((m) => m.id === 'm1')).toMatchObject({

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { buildBilanPdf } from '@shared/exports/pdf-bilan.ts'
 import { buildEventReportPdf } from '@shared/exports/pdf-reports.ts'
 import { PdfWriter } from '@shared/exports/pdf-writer.ts'
 import { bigData, sampleData } from './fixtures'
@@ -49,9 +48,9 @@ describe('PDF global du salon', () => {
     const s = pdf.pages[2]!
     expect(s).toMatch(/Entreprises ciblées 6/)
     expect(s).toMatch(/Entreprises rencontrées 4 \(67 %\)/)
-    expect(s).toMatch(/Rencontres prévues 7/)
-    expect(s).toMatch(/Rencontres réalisées 5 \(71 %\)/)
-    expect(s).toMatch(/Rencontres imprévues 1/)
+    expect(s).toMatch(/Rencontres manquées \(entreprises assignées sans activité\) 2/)
+    expect(s).toMatch(/Rencontres imprévues \(entreprises ajoutées pendant le salon\) 1/)
+    expect(s).not.toMatch(/prévues 7|Rencontres réalisées/)
     expect(s).toContain('Par commercial')
     expect(s).toContain('Marie')
   })
@@ -119,62 +118,6 @@ describe('PDF global du salon', () => {
   })
 })
 
-describe('bilan en une page', () => {
-  it('tient sur UNE page avec les indicateurs, répartitions, top opportunités et actions', async () => {
-    const bytes = await buildBilanPdf(sampleData())
-    expect(isPdf(bytes)).toBe(true)
-    const pdf = await readPdf(bytes)
-    expect(pdf.pages).toHaveLength(1)
-    const t = pdf.pages[0]!
-    expect(t).toContain('Bilan du salon')
-    expect(t).toContain('Tech For Retail 2027')
-    expect(t).toContain('4 / 6') // entreprises rencontrées
-    expect(t).toContain('5 / 7') // rencontres réalisées / prévues
-    expect(t).toContain('rencontres réalisées (71 %)')
-    expect(t).toContain('Vu 3')
-    expect(t).toContain('À relancer 2')
-    expect(t).toContain('Priorité A')
-    expect(t).toContain('Top opportunités')
-    expect(t).toContain('5/5')
-    expect(t).toContain('Carrefour')
-    expect(t).toContain('Envoyer le devis')
-    expect(t).toContain('Actions de suivi en attente (3)')
-    expect(t).toContain('Envoyer le devis détaillé')
-    expect(t).toContain('généré avec fair')
-    expect(t).toContain('page 1 / 1')
-    expect(pdf.images).toBe(1)
-  })
-
-  it('reste sur une page même avec des centaines d’entreprises et de rencontres', async () => {
-    const d = bigData()
-    d.members = Array.from({ length: 30 }, (_, i) => ({
-      userId: `u${i + 1}`,
-      name: `Commercial ${i + 1}`,
-    }))
-    d.targets.forEach((t, i) => (t.assigneeIds = [`u${(i % 30) + 1}`]))
-    d.meetings.forEach((m, i) => (m.ownerId = `u${(i % 30) + 1}`))
-    const pdf = await readPdf(await buildBilanPdf(d))
-    expect(pdf.pages).toHaveLength(1)
-    expect(pdf.pages[0]).toContain('Bilan du salon')
-    expect(pdf.pages[0]).toMatch(/\+ \d+ autres?/) // les listes longues sont tronquées
-  })
-
-  it('fonctionne sans aucune donnée', async () => {
-    const pdf = await readPdf(
-      await buildBilanPdf({
-        ...sampleData(false),
-        targets: [],
-        meetings: [],
-        notes: [],
-        contacts: [],
-        followUps: [],
-      }),
-    )
-    expect(pdf.pages).toHaveLength(1)
-    expect(pdf.pages[0]).toContain('Aucune action en attente')
-  })
-})
-
 describe('mise en page : rien ne dépasse, rien ne se chevauche', () => {
   const W = 595.28
   const H = 841.89
@@ -214,8 +157,6 @@ describe('mise en page : rien ne dépasse, rien ne se chevauche', () => {
   })
   it('PDF global, gros volume', async () =>
     check((await readPdfBoxes(await buildEventReportPdf(bigData()))).slice(0, 8)))
-  it('bilan', async () => check(await readPdfBoxes(await buildBilanPdf(sampleData()))))
-  it('bilan, gros volume', async () => check(await readPdfBoxes(await buildBilanPdf(bigData()))))
 })
 
 describe('moteur de mise en page', () => {

@@ -25,6 +25,13 @@ export function wallClock(iso: string | null, tz: string): Date | null {
   return new Date(Date.UTC(+p.year!, +p.month! - 1, +p.day!, +p.hour!, +p.minute!))
 }
 
+/** Jour calendaire (`AAAA-MM-JJ`) d'un instant, dans un fuseau : `null` si l'instant est invalide. */
+export function localDay(iso: string | null, tz: string): string | null {
+  if (!iso || Number.isNaN(Date.parse(iso))) return null
+  const p = parts(iso, tz)
+  return `${p.year}-${p.month}-${p.day}`
+}
+
 /** « 12/05/2027 14:30 » (fuseau du salon). */
 export function formatDateTime(iso: string | null, tz: string): string {
   if (!iso || Number.isNaN(Date.parse(iso))) return ''

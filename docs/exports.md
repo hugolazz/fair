@@ -37,11 +37,17 @@ CSV (aucun écran ne permet de renseigner « Désinscrit » ; la donnée `opt_ou
 
 ## 2. Bilan
 
-Prévues vs réalisées, répartition par statut / priorité / commercial, top 10 des opportunités, actions de suivi en attente. **Export en PDF
-d'une seule page** (listes tronquées « + n autres » jusqu'à tenir sur une page).
+Trois chiffres, une répartition par priorité et par commercial, le top 10 des opportunités et les actions de suivi en attente. Il n'y a **pas
+de notion de rencontre « prévue »** (l'appli ne planifie pas à l'avance comme un agenda) et **plus de PDF du bilan** (le compte-rendu PDF de
+l'onglet Exports garde une synthèse avec les mêmes chiffres).
 
-- Une rencontre **prévue** est planifiée à l'avance ; **réalisée** = vu, à relancer ou pas intéressé ; **manquée** = manqué ou écarté ;
-  **imprévue** = hors planning.
+- **Entreprises rencontrées** : au moins une rencontre **réalisée** (vu, à relancer ou pas intéressé).
+- **Rencontres manquées** : entreprises **assignées** à un commercial et restées **sans aucune activité** (aucune rencontre réalisée par personne).
+  Une entreprise assignée à personne n'est jamais « manquée ».
+- **Rencontres imprévues** : entreprises **ajoutées à la main pendant le salon**. Détection sans faux positif : la participation n'a **pas de lot
+  d'import** (saisie manuelle ; un import de fichier est exclu) **et** a été créée **pendant les jours du salon** (dates du salon, **dans le fuseau
+  du salon**). Une saisie faite avant le salon (préparation) n'en est donc jamais une. Sans dates de salon, rien n'est détecté (`isUnplanned`,
+  `bilan.ts`).
 - Une **opportunité** = rencontre réalisée avec un intérêt renseigné (hors « pas intéressé »).
 
 ## 3. Architecture
@@ -50,8 +56,8 @@ d'une seule page** (listes tronquées « + n autres » jusqu'à tenir sur une pa
 supabase/functions/_shared/exports/   (code partagé, imports relatifs en .ts, alias @shared)
   types.ts   données            tables.ts  le tableau du salon (SALON_COLUMNS, buildSalonTable)
   xlsx.ts    classeur Excel     csv.ts     CSV du salon
-  bilan.ts   calculs du bilan   pdf-writer.ts / pdf-reports.ts / pdf-bilan.ts   les PDF (pdf-lib)
-  fetch.ts   lecture des données  service.ts  generateExport(data, 'xlsx' | 'csv' | 'pdf' | 'pdf-bilan')
+  bilan.ts   calculs du bilan   pdf-writer.ts / pdf-reports.ts   le PDF (pdf-lib)
+  fetch.ts   lecture des données  service.ts  generateExport(data, 'xlsx' | 'csv' | 'pdf')
 src/db/repositories/exports.ts        lecture des données du salon
 src/features/exports/                 écrans Exports (3 boutons) et Bilan
 ```

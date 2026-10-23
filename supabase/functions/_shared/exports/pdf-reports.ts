@@ -52,21 +52,11 @@ function synthese(w: PdfWriter, data: ExportData) {
     rows: [
       ['Entreprises ciblées', String(b.targets)],
       ['Entreprises rencontrées', `${b.targetsMet} (${percent(b.targetsMet, b.targets)})`],
-      ['Rencontres prévues', String(b.meetings.planned)],
-      [
-        'Rencontres réalisées',
-        `${b.meetings.held} (${b.meetings.rate === null ? '—' : `${b.meetings.rate} %`})`,
-      ],
-      ['Rencontres manquées ou écartées', String(b.meetings.missed)],
-      ['Rencontres pas encore traitées', String(b.meetings.pending)],
-      ['Rencontres imprévues', String(b.meetings.unplanned)],
+      ['Rencontres manquées (entreprises assignées sans activité)', String(b.missed)],
+      ['Rencontres imprévues (entreprises ajoutées pendant le salon)', String(b.unplanned)],
     ],
     size: 9.5,
   })
-
-  w.heading('Répartition par statut', { level: 2 })
-  w.skip(4)
-  w.bars(b.byStatus.map((s) => ({ label: statusLabel(s.status), value: s.count })))
 
   w.heading('Par priorité', { level: 2 })
   w.skip(4)
@@ -75,15 +65,13 @@ function synthese(w: PdfWriter, data: ExportData) {
       { label: 'Priorité', weight: 2 },
       { label: 'Entreprises', weight: 1.4, align: 'right' },
       { label: 'Rencontrées', weight: 1.4, align: 'right' },
-      { label: 'Rencontres', weight: 1.4, align: 'right' },
-      { label: 'Réalisées', weight: 1.4, align: 'right' },
+      { label: 'Manquées', weight: 1.4, align: 'right' },
     ],
     rows: b.byPriority.map((p) => [
       priorityLabel(p.priority === 'none' ? null : p.priority),
       String(p.targets),
       String(p.met),
-      String(p.meetings),
-      String(p.held),
+      String(p.missed),
     ]),
     fills: b.byPriority.map((p) =>
       p.priority === 'none' ? undefined : { 0: PRIORITY_COLORS[p.priority] },
@@ -97,16 +85,14 @@ function synthese(w: PdfWriter, data: ExportData) {
     columns: [
       { label: 'Commercial', weight: 2.6 },
       { label: 'Entreprises', weight: 1.3, align: 'right' },
-      { label: 'Prévues', weight: 1.1, align: 'right' },
-      { label: 'Réalisées', weight: 1.2, align: 'right' },
+      { label: 'Rencontrées', weight: 1.3, align: 'right' },
       { label: 'Manquées', weight: 1.2, align: 'right' },
       { label: 'Intérêt moyen', weight: 1.4, align: 'right' },
     ],
     rows: b.bySalesperson.map((s) => [
       s.name,
       String(s.targets),
-      String(s.planned),
-      String(s.held),
+      String(s.met),
       String(s.missed),
       s.avgInterest === null ? '—' : interestLabel(s.avgInterest),
     ]),

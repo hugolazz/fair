@@ -40,7 +40,7 @@ L'appli est utilisée connectée ; les notes et les cases d'une rencontre se sai
 - **Compte-rendu et notes** par rencontre, **historique** de l'entreprise sur les autres salons.
 - **Export** : le fichier importé, **enrichi de tout ce qui s'est passé pendant le salon** (statut, date, intérêt, à recontacter,
   prochaine étape, notes, nouveaux contacts), une ligne par contact, en Excel, CSV ou PDF. Aucun filtre, aucun réglage ; le
-  fichier se réimporte tel quel. **Bilan** du salon en PDF d'une page.
+  fichier se réimporte tel quel. **Bilan** du salon (entreprises rencontrées, manquées et imprévues).
 - **Rôles** : admin d'équipe et commercial (voir ci-dessous).
 
 ### Rôles

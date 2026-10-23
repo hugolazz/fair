@@ -9,7 +9,7 @@ import { cn } from '@/lib/cn'
 import { downloadBytes } from '@/lib/download'
 import { useExportData } from './use-export-data'
 
-type Format = Exclude<ExportKind, 'pdf-bilan'>
+type Format = ExportKind
 
 const FORMATS: { kind: Format; icon: React.ReactNode }[] = [
   { kind: 'xlsx', icon: <FileSpreadsheet className="size-6" /> },

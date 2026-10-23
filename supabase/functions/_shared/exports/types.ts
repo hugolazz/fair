@@ -61,6 +61,10 @@ export type TargetRec = {
   history: string | null
   assigneeIds: string[]
   tagIds: string[]
+  /** Quand la participation a été créée (instant ISO) ; `null` si inconnu. */
+  addedAt: string | null
+  /** Vient d'un import de fichier : une saisie à la main (ou une copie de salon) n'a pas de lot d'import. */
+  imported: boolean
 }
 
 export type ContactRec = {
@@ -85,7 +89,6 @@ export type MeetingRec = {
   status: MeetingStatus
   plannedAt: string | null
   durationMin: number | null
-  unplanned: boolean
   interest: number | null
   need: string | null
   budget: string | null

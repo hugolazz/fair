@@ -1,6 +1,5 @@
 import { buildSalonCsv } from './csv.ts'
 import { isoDay, slug } from './format.ts'
-import { buildBilanPdf } from './pdf-bilan.ts'
 import { buildEventReportPdf } from './pdf-reports.ts'
 import { buildSalonTable } from './tables.ts'
 import type { ExportData } from './types.ts'
@@ -10,10 +9,9 @@ import { buildWorkbook } from './xlsx.ts'
 
 /**
  * - `xlsx` / `csv` : le fichier importé, enrichi de ce qui s'est passé pendant le salon (une ligne par contact) ;
- * - `pdf` : le compte-rendu du salon ;
- * - `pdf-bilan` : le bilan d'une page (page « Bilan »).
+ * - `pdf` : le compte-rendu du salon.
  */
-export type ExportKind = 'xlsx' | 'csv' | 'pdf' | 'pdf-bilan'
+export type ExportKind = 'xlsx' | 'csv' | 'pdf'
 
 export type ExportResult = { filename: string; mime: string; bytes: Uint8Array }
 
@@ -47,12 +45,6 @@ export async function generateExport(data: ExportData, kind: ExportKind): Promis
         filename: `${base}-compte-rendu-${day}.pdf`,
         mime: MIME.pdf,
         bytes: await buildEventReportPdf(data),
-      }
-    case 'pdf-bilan':
-      return {
-        filename: `${base}-bilan-${day}.pdf`,
-        mime: MIME.pdf,
-        bytes: await buildBilanPdf(data),
       }
   }
 }

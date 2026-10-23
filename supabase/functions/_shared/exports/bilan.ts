@@ -1,12 +1,12 @@
+import { localDay } from './format.ts'
 import { memberNames } from './select.ts'
 import {
   HELD_STATUSES,
-  MEETING_STATUSES,
-  MISSED_STATUSES,
   type ExportData,
   type MeetingRec,
   type MeetingStatus,
   type Priority,
+  type TargetRec,
 } from './types.ts'
 
 // Bilan du salon : calculs purs sur les données d'export (donc sur les mêmes filtres que les fichiers).
@@ -16,16 +16,18 @@ export type PriorityRow = {
   targets: number
   /** Entreprises avec au moins une rencontre réalisée. */
   met: number
-  meetings: number
-  held: number
+  /** Entreprises assignées restées sans aucune activité. */
+  missed: number
 }
 
 export type SalespersonRow = {
   userId: string
   name: string
+  /** Entreprises qui lui sont assignées. */
   targets: number
-  planned: number
-  held: number
+  /** Entreprises distinctes qu'il a rencontrées (une de ses rencontres a eu lieu). */
+  met: number
+  /** Parmi ses entreprises assignées : celles restées sans aucune activité. */
   missed: number
   avgInterest: number | null
 }
@@ -53,22 +55,12 @@ export type PendingAction = {
 
 export type Bilan = {
   targets: number
+  /** Entreprises avec au moins une rencontre réalisée (vu, à relancer, pas intéressé). */
   targetsMet: number
-  meetings: {
-    /** Rencontres prévues (planifiées à l'avance). */
-    planned: number
-    /** Parmi les prévues : réalisées (vu, à relancer, pas intéressé). */
-    held: number
-    /** Parmi les prévues : manquées ou écartées. */
-    missed: number
-    /** Parmi les prévues : pas encore traitées. */
-    pending: number
-    /** Rencontres imprévues (hors planning). */
-    unplanned: number
-    /** Taux de réalisation en % (réalisées / prévues), null sans rencontre prévue. */
-    rate: number | null
-  }
-  byStatus: { status: MeetingStatus; count: number }[]
+  /** « Manquées » : entreprises assignées à un commercial et restées sans aucune activité (aucune rencontre réalisée). */
+  missed: number
+  /** « Imprévues » : entreprises ajoutées à la main (hors import) pendant les jours du salon. */
+  unplanned: number
   byPriority: PriorityRow[]
   bySalesperson: SalespersonRow[]
   topOpportunities: Opportunity[]
@@ -77,30 +69,35 @@ export type Bilan = {
 
 const PRIORITY_RANK: Record<string, number> = { A: 0, B: 1, C: 2, none: 3 }
 const isHeld = (m: MeetingRec) => HELD_STATUSES.includes(m.status)
-const isMissed = (m: MeetingRec) => MISSED_STATUSES.includes(m.status)
 
 export const OPPORTUNITIES_LIMIT = 10
+
+/**
+ * Une entreprise « imprévue » : ajoutée à la main (pas par un import de fichier) **pendant les jours du salon**, dans le
+ * fuseau du salon. Une saisie faite avant le salon, ou une participation importée, n'en est jamais une ; sans dates de
+ * salon, rien n'est détecté.
+ */
+export function isUnplanned(t: TargetRec, event: ExportData['event']): boolean {
+  if (t.imported || !event.startsOn) return false
+  const day = localDay(t.addedAt, event.timezone)
+  return day !== null && day >= event.startsOn && day <= (event.endsOn ?? event.startsOn)
+}
 
 export function computeBilan(data: ExportData): Bilan {
   const owner = memberNames(data)
   const targetById = new Map(data.targets.map((t) => [t.id, t]))
   const meetings = data.meetings.filter((m) => targetById.has(m.targetId))
-  const planned = meetings.filter((m) => !m.unplanned)
-  const held = planned.filter(isHeld).length
-  const missed = planned.filter(isMissed).length
-
   const metTargets = new Set(meetings.filter(isHeld).map((m) => m.targetId))
+  // Manquée : assignée à un commercial, sans aucune activité (aucune rencontre réalisée par personne).
+  const isMissed = (t: TargetRec) => t.assigneeIds.length > 0 && !metTargets.has(t.id)
 
   const byPriority: PriorityRow[] = (['A', 'B', 'C', 'none'] as const).map((p) => {
     const ts = data.targets.filter((t) => (t.priority ?? 'none') === p)
-    const ids = new Set(ts.map((t) => t.id))
-    const ms = meetings.filter((m) => ids.has(m.targetId))
     return {
       priority: p,
       targets: ts.length,
       met: ts.filter((t) => metTargets.has(t.id)).length,
-      meetings: ms.length,
-      held: ms.filter(isHeld).length,
+      missed: ts.filter(isMissed).length,
     }
   })
 
@@ -110,25 +107,21 @@ export function computeBilan(data: ExportData): Bilan {
   ])
   const bySalesperson: SalespersonRow[] = [...userIds]
     .map((userId) => {
-      const mine = meetings.filter((m) => m.ownerId === userId)
-      const mp = mine.filter((m) => !m.unplanned)
-      const interests = mine
-        .filter(isHeld)
-        .map((m) => m.interest)
-        .filter((i): i is number => i !== null)
+      const held = meetings.filter((m) => m.ownerId === userId && isHeld(m))
+      const interests = held.map((m) => m.interest).filter((i): i is number => i !== null)
+      const assigned = data.targets.filter((t) => t.assigneeIds.includes(userId))
       return {
         userId,
         name: owner(userId),
-        targets: data.targets.filter((t) => t.assigneeIds.includes(userId)).length,
-        planned: mp.length,
-        held: mp.filter(isHeld).length,
-        missed: mp.filter(isMissed).length,
+        targets: assigned.length,
+        met: new Set(held.map((m) => m.targetId)).size,
+        missed: assigned.filter(isMissed).length,
         avgInterest: interests.length
           ? interests.reduce((a, b) => a + b, 0) / interests.length
           : null,
       }
     })
-    .sort((a, b) => b.held - a.held || a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }))
+    .sort((a, b) => b.met - a.met || a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }))
 
   const topOpportunities: Opportunity[] = meetings
     .filter((m) => isHeld(m) && m.status !== 'not_interested' && m.interest !== null)
@@ -190,18 +183,8 @@ export function computeBilan(data: ExportData): Bilan {
   return {
     targets: data.targets.length,
     targetsMet: metTargets.size,
-    meetings: {
-      planned: planned.length,
-      held,
-      missed,
-      pending: planned.length - held - missed,
-      unplanned: meetings.length - planned.length,
-      rate: planned.length === 0 ? null : Math.round((held / planned.length) * 100),
-    },
-    byStatus: MEETING_STATUSES.map((status) => ({
-      status,
-      count: meetings.filter((m) => m.status === status).length,
-    })),
+    missed: data.targets.filter(isMissed).length,
+    unplanned: data.targets.filter((t) => isUnplanned(t, data.event)).length,
     byPriority,
     bySalesperson,
     topOpportunities,

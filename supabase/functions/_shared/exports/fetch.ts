@@ -102,7 +102,9 @@ export async function fetchExportData(
   const ecRows = await paged((from, to) =>
     client
       .from('event_companies')
-      .select('id, company_id, stand_label, priority, objective, prep_comment')
+      .select(
+        'id, company_id, stand_label, priority, objective, prep_comment, created_at, import_batch_id',
+      )
       .eq('event_id', eventId)
       .is('deleted_at', null)
       .order('id')
@@ -169,6 +171,8 @@ export async function fetchExportData(
         history: str(c.history),
         assigneeIds: assignees.get(String(r.id)) ?? [],
         tagIds: tagLinks.get(String(r.company_id)) ?? [],
+        addedAt: str(r.created_at),
+        imported: r.import_batch_id != null,
       },
     ]
   })
@@ -215,7 +219,7 @@ export async function fetchExportData(
       client
         .from('meetings')
         .select(
-          'id, event_company_id, contact_id, owner_id, status, planned_at, planned_duration_min, is_unplanned, interest, need, budget, timing, decision_maker, next_step, outcome, recontact, news',
+          'id, event_company_id, contact_id, owner_id, status, planned_at, planned_duration_min, interest, need, budget, timing, decision_maker, next_step, outcome, recontact, news',
         )
         .eq('event_id', eventId)
         .is('deleted_at', null)
@@ -232,7 +236,6 @@ export async function fetchExportData(
       : 'to_see',
     plannedAt: str(m.planned_at),
     durationMin: num(m.planned_duration_min),
-    unplanned: !!m.is_unplanned,
     interest: num(m.interest),
     need: str(m.need),
     budget: str(m.budget),

@@ -375,17 +375,15 @@ describe('generateExport', () => {
     expect(pdf.mime).toBe(MIME.pdf)
   })
 
-  it('produit un PDF lisible et le bilan d’une page', async () => {
+  it('produit un PDF lisible', async () => {
     const data = sampleData()
     const report = await readPdf((await generateExport(data, 'pdf')).bytes)
     expect(report.pages.join(' ')).toContain('Carrefour')
-    const bilan = await readPdf((await generateExport(data, 'pdf-bilan')).bytes)
-    expect(bilan.pages).toHaveLength(1)
   })
 
   it('un salon vide donne des fichiers valides', async () => {
     const empty = { ...sampleData(), targets: [], contacts: [], meetings: [], notes: [] }
-    for (const kind of ['xlsx', 'csv', 'pdf', 'pdf-bilan'] as const) {
+    for (const kind of ['xlsx', 'csv', 'pdf'] as const) {
       expect((await generateExport(empty, kind)).bytes.length).toBeGreaterThan(0)
     }
   })

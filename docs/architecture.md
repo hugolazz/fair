@@ -53,7 +53,7 @@ Règle : `features/*` → `db/repositories` + `components` + `lib` ; jamais d'ap
 ## Exports et bilan
 
 Onglets **Bilan** et **Exports** d'un salon. L'export est unique : le fichier importé enrichi de ce qui s'est passé pendant le salon (une
-ligne par contact), en Excel, CSV ou PDF, sans filtre ni réglage ; le bilan s'exporte en PDF d'une page. Génération dans le navigateur
+ligne par contact), en Excel, CSV ou PDF, sans filtre ni réglage ; le bilan s'affiche à l'écran (pas d'export). Génération dans le navigateur
 (`supabase/functions/_shared/exports/`). Voir [exports.md](exports.md).
 
 ## Rôles et vue équipe

@@ -25,6 +25,8 @@ const target = (id: string, name: string, over: Partial<TargetRec> = {}): Target
   history: null,
   assigneeIds: [],
   tagIds: [],
+  addedAt: null,
+  imported: true,
   ...over,
 })
 
@@ -42,7 +44,6 @@ const meeting = (
   status,
   plannedAt: null,
   durationMin: 15,
-  unplanned: false,
   interest: null,
   need: null,
   budget: null,
@@ -56,7 +57,7 @@ const meeting = (
 })
 
 /**
- * Salon de test : 6 entreprises, 3 commerciaux, 8 rencontres (dont 1 imprévue), notes, contacts (un désinscrit,
+ * Salon de test : 6 entreprises, 3 commerciaux, 8 rencontres (Leroy Merlin, ajoutée à la main pendant le salon), notes, contacts (un désinscrit,
  * un qui tente une injection de formule), une relance en attente.
  */
 export function sampleData(withLogo = true): ExportData {
@@ -104,10 +105,21 @@ export function sampleData(withLogo = true): ExportData {
         assigneeIds: ['u2'],
         tagIds: ['t2'],
       }),
-      target('ec3', 'Zalando', { priority: 'C', stand: 'A7', assigneeIds: ['u1'], tagIds: ['t2'] }),
+      target('ec3', 'Zalando', {
+        priority: 'C',
+        stand: 'A7',
+        assigneeIds: ['u1'],
+        tagIds: ['t2'],
+        imported: false,
+        addedAt: '2027-04-20T10:00:00.000Z', // saisie à la main avant le salon : pas une rencontre imprévue
+      }),
       target('ec4', 'Fnac Darty', { assigneeIds: ['u3'] }),
       target('ec5', 'Amazon France', { priority: 'A', stand: 'E1', assigneeIds: ['u3'] }),
-      target('ec6', 'Leroy Merlin', { priority: 'B' }),
+      target('ec6', 'Leroy Merlin', {
+        priority: 'B',
+        imported: false,
+        addedAt: '2027-05-12T14:00:00.000Z', // saisie à la main pendant le salon : rencontre imprévue
+      }),
     ],
     contacts: [
       {
@@ -184,7 +196,6 @@ export function sampleData(withLogo = true): ExportData {
       }),
       meeting('m7', 'ec6', 'u2', 'done', {
         plannedAt: null,
-        unplanned: true,
         interest: 4,
         nextStep: 'Démo à planifier',
       }),
