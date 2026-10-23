@@ -75,7 +75,7 @@ export default function EventLayout() {
                   cn(
                     'inline-flex min-h-11 min-w-11 items-center justify-center border-b-2 pb-0.5 text-sm font-medium whitespace-nowrap transition-colors duration-200',
                     isActive
-                      ? 'border-brand-600 text-brand-600'
+                      ? 'border-brand-600 text-brand-text'
                       : 'border-transparent text-slate-600 hover:text-slate-900',
                   )
                 }

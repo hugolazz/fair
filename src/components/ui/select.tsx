@@ -249,7 +249,7 @@ export const Select = forwardRef<HTMLSelectElement, Props>(function Select(
                 >
                   <span className="truncate">{o.label}</span>
                   {selected ? (
-                    <Check aria-hidden className="text-brand-600 size-4 shrink-0" />
+                    <Check aria-hidden className="text-brand-text size-4 shrink-0" />
                   ) : null}
                 </div>
               )

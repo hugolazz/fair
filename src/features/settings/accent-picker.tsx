@@ -7,14 +7,15 @@ import { useReadySession } from '@/features/auth-team/session'
 import { ACCENT_PRESETS, applyAccent, buildAccentPalette, DEFAULT_ACCENT } from '@/lib/accent'
 import { cn } from '@/lib/cn'
 
-type Choice = { id: string; hex: string | null; swatch: string }
+type Choice = { id: string; hex: string | null; swatch: string; on: string }
 
 const CHOICES: Choice[] = [
-  { id: 'green', hex: null, swatch: DEFAULT_ACCENT },
+  { id: 'green', hex: null, swatch: DEFAULT_ACCENT, on: '#ffffff' },
   ...ACCENT_PRESETS.map((p) => ({
     id: p.id,
     hex: p.hex,
     swatch: buildAccentPalette(p.hex)['600'],
+    on: buildAccentPalette(p.hex).on,
   })),
 ]
 
@@ -61,10 +62,10 @@ export function AccentPicker() {
               title={t(`appearance.colors.${c.id}`)}
               onClick={() => choose(c.hex)}
               className={cn(
-                'inline-flex size-11 items-center justify-center rounded-full border-2 border-white text-white shadow-[0_0_0_1px_var(--color-slate-300)] transition-shadow duration-200',
+                'inline-flex size-11 items-center justify-center rounded-full border-2 border-white shadow-[0_0_0_1px_var(--color-slate-300)] transition-shadow duration-200',
                 selected && 'shadow-[0_0_0_2px_var(--color-slate-900)]',
               )}
-              style={{ backgroundColor: c.swatch }}
+              style={{ backgroundColor: c.swatch, color: c.on }}
             >
               {selected ? <Check aria-hidden className="size-5" /> : null}
             </button>

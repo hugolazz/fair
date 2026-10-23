@@ -369,7 +369,7 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
           onBlur={flush}
           placeholder={t('notepad.placeholder')}
           rows={4}
-          className="focus-visible:outline-brand-600 min-h-28 w-full rounded-xl border border-slate-300 bg-white p-3 text-base"
+          className="focus-visible:outline-brand-text min-h-28 w-full rounded-xl border border-slate-300 bg-white p-3 text-base"
         />
       </label>
       {error ? (
@@ -410,9 +410,9 @@ export function MeetingNotepad({ target, api, nameOf, contacts, onContactAdded }
               aria-pressed={interest === n}
               aria-label={t('report.interestValue', { n })}
               onClick={() => void setInterest(n)}
-              className={`focus-visible:outline-brand-600 min-h-12 rounded-xl border text-lg font-semibold ${
+              className={`focus-visible:outline-brand-text min-h-12 rounded-xl border text-lg font-semibold ${
                 interest === n
-                  ? 'bg-brand-600 border-brand-600 text-white'
+                  ? 'bg-brand-600 border-brand-600 text-brand-on'
                   : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
               }`}
             >

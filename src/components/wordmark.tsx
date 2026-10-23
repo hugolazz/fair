@@ -10,7 +10,7 @@ export function Wordmark({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        'text-brand-600 font-serif text-[2rem] leading-none font-normal tracking-[-0.02em] normal-case italic',
+        'text-brand-text font-serif text-[2rem] leading-none font-normal tracking-[-0.02em] normal-case italic',
         className,
       )}
     >

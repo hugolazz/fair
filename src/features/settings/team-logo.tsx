@@ -1,9 +1,10 @@
-import { ImagePlus, Trash2 } from 'lucide-react'
+import { Crop, ImagePlus, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { fetchTeamLogoUrl, removeTeamLogo, uploadTeamLogo } from '@/db/repositories/teams'
 import { useAsync } from '@/lib/use-async'
+import { LogoCropDialog } from './logo-crop-dialog'
 
 /** Logo de l'équipe : affiché en haut de l'accueil et en en-tête des PDF d'export. Réservé aux administrateurs pour le modifier. */
 export function TeamLogo({ teamId, canEdit }: { teamId: string; canEdit: boolean }) {
@@ -12,6 +13,7 @@ export function TeamLogo({ teamId, canEdit }: { teamId: string; canEdit: boolean
   const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(false)
+  const [cropping, setCropping] = useState(false)
 
   async function run(action: () => Promise<void>) {
     setBusy(true)
@@ -49,6 +51,12 @@ export function TeamLogo({ teamId, canEdit }: { teamId: string; canEdit: boolean
               {logo.data ? t('logo.replace') : t('logo.upload')}
             </Button>
             {logo.data ? (
+              <Button variant="secondary" disabled={busy} onClick={() => setCropping(true)}>
+                <Crop aria-hidden className="size-4" />
+                {t('logo.crop.open')}
+              </Button>
+            ) : null}
+            {logo.data ? (
               <Button
                 variant="ghost"
                 disabled={busy}
@@ -74,6 +82,16 @@ export function TeamLogo({ teamId, canEdit }: { teamId: string; canEdit: boolean
           </div>
         ) : null}
       </div>
+      {cropping ? (
+        <LogoCropDialog
+          teamId={teamId}
+          onClose={() => setCropping(false)}
+          onSaved={() => {
+            setCropping(false)
+            logo.reload()
+          }}
+        />
+      ) : null}
       {error ? (
         <p role="alert" className="text-sm text-red-700">
           {t('logo.error')}

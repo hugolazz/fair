@@ -135,6 +135,26 @@ export async function uploadTeamLogo(teamId: string, file: File): Promise<void> 
   if (error) throw error
 }
 
+/** Le fichier du logo (pour le recadrer). */
+export async function downloadTeamLogo(teamId: string): Promise<Blob> {
+  const { data, error } = await supabase.from('teams').select('logo_path').eq('id', teamId).single()
+  if (error) throw error
+  const path = (data as { logo_path: string | null } | null)?.logo_path
+  if (!path) throw new Error('no logo')
+  const file = await supabase.storage.from('attachments').download(path)
+  if (file.error || !file.data) throw file.error ?? new Error('download failed')
+  return file.data
+}
+
+/** Remplace le logo par une nouvelle version (recadrage) ; l'ancien fichier est retiré s'il porte un autre nom. */
+export async function replaceTeamLogo(teamId: string, file: File): Promise<void> {
+  const { data } = await supabase.from('teams').select('logo_path').eq('id', teamId).single()
+  const oldPath = (data as { logo_path: string | null } | null)?.logo_path
+  await uploadTeamLogo(teamId, file)
+  const newPath = `${teamId}/logo.${file.type === 'image/png' ? 'png' : 'jpg'}`
+  if (oldPath && oldPath !== newPath) await supabase.storage.from('attachments').remove([oldPath])
+}
+
 export async function removeTeamLogo(teamId: string): Promise<void> {
   const { data } = await supabase.from('teams').select('logo_path').eq('id', teamId).single()
   const path = (data as { logo_path: string | null } | null)?.logo_path

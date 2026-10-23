@@ -158,7 +158,7 @@ export function TargetsTable(p: Props) {
                   GRID,
                   'cursor-pointer rounded-2xl text-sm transition-colors duration-200 hover:bg-white',
                   isSelected && 'bg-brand-50 hover:bg-brand-50',
-                  p.openId === row.id && 'outline-brand-600 outline-2 -outline-offset-2',
+                  p.openId === row.id && 'outline-brand-text outline-2 -outline-offset-2',
                 )}
               >
                 <div role="cell" className="flex justify-center">

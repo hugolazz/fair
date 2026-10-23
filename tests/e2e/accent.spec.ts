@@ -54,13 +54,13 @@ test('un admin règle la couleur de toute l’équipe ; un commercial la voit ma
   expect(await brand(page)).toBe('#6d28d9')
   await logout(page)
 
-  // Couleur libre trop claire : foncée automatiquement ; retour au vert d'origine.
+  // Couleur libre claire (bleu ciel) : la couleur choisie est gardée exacte, le texte dessus s'adapte et reste lisible.
   await login(page, USERS.admin)
   await page.goto('/settings?section=equipe')
-  await page.locator('input[type="color"]').fill('#ffee00')
+  await page.locator('input[type="color"]').fill('#38bdf8')
   await expect(page.getByText('(active)')).toBeVisible()
-  expect(await brand(page)).not.toBe('#ffee00')
-  await expect.poll(teamAccent).toBe('#ffee00')
+  expect(await brand(page)).toBe('#38bdf8')
+  await expect.poll(teamAccent).toBe('#38bdf8')
   await audit(page)
   await page.getByRole('button', { name: "Revenir au vert d'origine" }).click()
   expect(await brand(page)).toBe('#0f766e')

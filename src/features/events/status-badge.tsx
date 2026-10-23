@@ -4,7 +4,7 @@ import type { SalonStatus } from './lib/status'
 
 const STYLES: Record<SalonStatus, { text: string; dot: string }> = {
   preparing: { text: 'text-gold-700', dot: 'bg-gold-500' },
-  live: { text: 'text-brand-600', dot: 'bg-brand-600 animate-pulse-dot' },
+  live: { text: 'text-brand-text', dot: 'bg-brand-600 animate-pulse-dot' },
   done: { text: 'text-slate-600', dot: 'bg-[#a9c9c3]' },
 }
 

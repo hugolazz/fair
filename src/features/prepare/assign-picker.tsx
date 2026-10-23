@@ -46,11 +46,11 @@ export function AssignPicker({
         <button
           type="button"
           aria-label={t('assign.editFor', { name: target.name, who })}
-          className="focus-visible:outline-brand-600 group -mx-1 flex min-h-8 items-center rounded-full px-1 hover:bg-slate-100"
+          className="focus-visible:outline-brand-text group -mx-1 flex min-h-8 items-center rounded-full px-1 hover:bg-slate-100"
         >
           {target.assigneeIds.length === 0 ? (
             <span
-              className={`${ADD_DOT} group-hover:border-brand-600 group-hover:text-brand-600`}
+              className={`${ADD_DOT} group-hover:border-brand-600 group-hover:text-brand-text`}
               aria-hidden
             >
               <span>+</span>

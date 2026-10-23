@@ -38,3 +38,28 @@ test('l’accueil n’affiche aucun logo sans image, et le logo de l’équipe c
   expect(Math.abs(box!.x + box!.width / 2 - view!.width / 2)).toBeLessThan(2)
   expect(box!.y + box!.height).toBeLessThanOrEqual(title!.y)
 })
+
+test('mobile : le logo est centré en haut de l’accueil (l’en-tête n’a pas de place pour lui)', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.route('**/storage/v1/object/sign/**', (route) =>
+    route.fulfill({ json: { signedURL: '/object/sign/attachments/logo.png?token=e2e' } }),
+  )
+  await page.route('**/storage/v1/object/sign/attachments/logo.png**', (route) =>
+    route.fulfill({ contentType: 'image/png', body: PNG }),
+  )
+  await sql('update teams set logo_path = $1', ['team/logo.png'])
+  await login(page, USERS.marie)
+  await page.goto('/events')
+  const logo = page.getByRole('img', { name: /Logo de l.équipe/ })
+  await expect(logo).toBeVisible()
+  await expect(logo).toHaveCount(1) // une seule image (pas de doublon avec l'en-tête)
+  const [box, title] = await Promise.all([
+    logo.boundingBox(),
+    page.getByRole('heading', { name: 'Vos salons' }).boundingBox(),
+  ])
+  expect(Math.abs(box!.x + box!.width / 2 - 195)).toBeLessThan(2)
+  expect(box!.y + box!.height).toBeLessThanOrEqual(title!.y)
+})

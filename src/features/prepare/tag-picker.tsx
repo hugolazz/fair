@@ -27,7 +27,7 @@ export function TagPicker({ target, tags, tagById, onToggle }: Props) {
         <button
           type="button"
           aria-label={t('tagPicker.edit', { name: target.name })}
-          className="focus-visible:outline-brand-600 -mx-1 flex min-h-8 max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-full px-1 hover:bg-slate-100"
+          className="focus-visible:outline-brand-text -mx-1 flex min-h-8 max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-full px-1 hover:bg-slate-100"
         >
           {shown.slice(0, MAX_CHIPS).map((tag) => (
             <TagChip key={tag.id} tag={tag} />

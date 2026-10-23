@@ -34,7 +34,7 @@ export function OptionToggleList({ options, selected, onToggle }: ListProps) {
                 />
               ) : null}
               <span className={cn('flex-1 truncate', on && 'font-medium')}>{o.label}</span>
-              {on ? <Check aria-hidden className="text-brand-600 size-4 shrink-0" /> : null}
+              {on ? <Check aria-hidden className="text-brand-text size-4 shrink-0" /> : null}
             </button>
           </li>
         )

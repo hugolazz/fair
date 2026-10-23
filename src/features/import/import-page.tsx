@@ -220,7 +220,9 @@ export default function ImportPage() {
             aria-current={s === current ? 'step' : undefined}
             className={cn(
               'rounded-full px-3 py-1.5',
-              s === current ? 'bg-brand-600 font-medium text-white' : 'bg-slate-200 text-slate-800',
+              s === current
+                ? 'bg-brand-600 text-brand-on font-medium'
+                : 'bg-slate-200 text-slate-800',
             )}
           >
             {i + 1}. {t(`steps.${s}`)}

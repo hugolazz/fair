@@ -54,6 +54,11 @@
   --color-brand-600: #0f766e;
   --color-brand-700: #115e59;
   --color-brand-900: #0b4a45;
+  /* La couleur d'accentuation (600) sert de fond : on y pose du texte `brand-on` (blanc, ou encre si la couleur est claire).
+     `brand-text` est la teinte lisible sur fond clair (texte, soulignements, contours de focus) : égale à la 600 pour le
+     vert d'origine, plus foncée pour une couleur claire. */
+  --color-brand-on: #ffffff;
+  --color-brand-text: #0f766e;
 
   /* Accent doré : point du logo et statut « en préparation ». */
   --color-gold-500: #d9a441;
@@ -105,7 +110,7 @@ body {
 }
 
 :focus-visible {
-  @apply outline-brand-600 outline-2 outline-offset-2;
+  @apply outline-brand-text outline-2 outline-offset-2;
 }
 
 /*

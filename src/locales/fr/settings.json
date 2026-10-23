@@ -42,6 +42,22 @@
     "upload": "Choisir un logo",
     "replace": "Remplacer le logo",
     "remove": "Retirer le logo",
+    "crop": {
+      "open": "Recadrer",
+      "title": "Recadrer le logo",
+      "hint": "Retirez les marges en trop avec les curseurs : seule la partie claire est conservée. Le logo reste centré dans l'appli.",
+      "left": "Marge à gauche",
+      "top": "Marge en haut",
+      "right": "Marge à droite",
+      "bottom": "Marge en bas",
+      "auto": "Rogner automatiquement les marges vides",
+      "reset": "Tout remettre",
+      "save": "Enregistrer le logo recadré",
+      "cancel": "Annuler",
+      "loading": "Chargement du logo…",
+      "loadError": "Impossible de charger le logo pour le recadrer.",
+      "saveError": "Le logo recadré n'a pas pu être enregistré."
+    },
     "error": "Impossible d'enregistrer ce logo (PNG ou JPEG, 2 Mo maximum)."
   },
   "team": {

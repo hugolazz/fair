@@ -12,9 +12,9 @@ import { Select } from './select'
 
 // Champs « sans cadre » : libellé atténué au-dessus, simple soulignement qui passe au brand au focus.
 const underline =
-  'min-h-12 w-full border-0 border-b border-slate-300 bg-transparent px-0 text-base text-slate-900 placeholder:text-slate-500 transition-colors duration-200 focus:border-brand-600 focus-visible:shadow-[0_1px_0_0_var(--color-brand-600)] focus-visible:outline-none aria-[invalid=true]:border-danger'
+  'min-h-12 w-full border-0 border-b border-slate-300 bg-transparent px-0 text-base text-slate-900 placeholder:text-slate-500 transition-colors duration-200 focus:border-brand-text focus-visible:shadow-[0_1px_0_0_var(--color-brand-text)] focus-visible:outline-none aria-[invalid=true]:border-danger'
 const boxed =
-  'w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 transition-colors duration-200 focus:border-brand-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-600 aria-[invalid=true]:border-danger'
+  'w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 placeholder:text-slate-500 transition-colors duration-200 focus:border-brand-text focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-text aria-[invalid=true]:border-danger'
 
 type FieldShellProps = {
   label: string

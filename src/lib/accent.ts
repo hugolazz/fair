@@ -1,7 +1,6 @@
-// Couleur d'accentuation : le vert de la charte par défaut, ou une couleur choisie dans Réglages → Apparence. Elle ne
-// change que cinq teintes (`--color-brand-*`, définies dans src/index.css) ; tout le reste de l'appli les suit.
-// Les teintes d'une couleur choisie sont calculées pour rester lisibles (WCAG AA) : on fonce la couleur jusqu'à ce que
-// du texte blanc dessus, et elle-même sur sa teinte claire, atteignent 4,5:1.
+// Couleur d'accentuation : le vert de la charte par défaut, ou la couleur choisie par l'équipe. Elle ne change que sept
+// variables (`--color-brand-*`, définies dans src/index.css) ; tout le reste de l'appli les suit. La couleur choisie est
+// gardée exacte ; le texte posé dessus et la teinte « texte » sont calculés pour rester lisibles (WCAG AA).
 
 export type Rgb = readonly [number, number, number]
 
@@ -32,6 +31,9 @@ export function hexToRgb(hex: string): Rgb {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
 
+/** Arrondit au pixel : les contrastes se calculent sur la couleur réellement affichée. */
+const snap = ([r, g, b]: Rgb): Rgb => [Math.round(r), Math.round(g), Math.round(b)]
+
 export const rgbToHex = ([r, g, b]: Rgb): string =>
   `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`
 
@@ -55,34 +57,48 @@ export function contrast(a: Rgb, b: Rgb): number {
   return (hi + 0.05) / (lo + 0.05)
 }
 
-export type AccentPalette = Record<'50' | '100' | '600' | '700' | '900', string>
+export type AccentPalette = Record<'50' | '100' | '600' | '700' | '900' | 'on' | 'text', string>
 
-/** Les cinq teintes d'une couleur d'accentuation, lisibles : texte blanc sur la 600, la 600 sur la 50 et sur le fond. */
+/** Encre posée sur une couleur d'accentuation claire (le plus foncé de la charte). */
+const INK: Rgb = [19, 26, 24]
+const PAGE: Rgb = [250, 249, 246]
+
+/**
+ * Les teintes d'une couleur d'accentuation. La couleur choisie (600) est gardée **telle quelle** : elle sert de fond.
+ * Seul le texte posé dessus s'adapte (`on` : blanc, ou encre si elle est claire), ainsi que la teinte `text` (texte,
+ * soulignements, contours de focus sur fond clair), foncée jusqu'à 4,5:1. Seule une couleur de luminosité moyenne, où ni
+ * le blanc ni l'encre ne se lisent, est légèrement ajustée.
+ */
 export function buildAccentPalette(hex: string): AccentPalette {
-  let base = hexToRgb(hex)
-  const tint50 = (c: Rgb) => mix(c, WHITE, 0.88)
-  // Le fond de page (#faf9f6) est un peu moins clair que le blanc : on vise le plus strict des trois.
+  let fill = hexToRgb(hex)
+  const onFor = (c: Rgb): Rgb => (contrast(c, WHITE) >= contrast(c, INK) ? WHITE : INK)
+  for (let i = 0; i < 60 && contrast(fill, onFor(fill)) < MIN_CONTRAST; i++) {
+    fill = snap(mix(fill, onFor(fill) === WHITE ? BLACK : WHITE, 0.02))
+  }
+  const tint50 = snap(mix(fill, WHITE, 0.88))
+  let text = fill
   for (
     let i = 0;
-    i < 40 &&
-    Math.min(contrast(base, WHITE), contrast(base, tint50(base)), contrast(base, [250, 249, 246])) <
-      MIN_CONTRAST;
+    i < 60 &&
+    Math.min(contrast(text, WHITE), contrast(text, tint50), contrast(text, PAGE)) < MIN_CONTRAST;
     i++
   ) {
-    base = mix(base, BLACK, 0.05)
+    text = snap(mix(text, BLACK, 0.04))
   }
   return {
-    '50': rgbToHex(tint50(base)),
-    '100': rgbToHex(mix(base, WHITE, 0.83)),
-    '600': rgbToHex(base),
-    '700': rgbToHex(mix(base, BLACK, 0.25)),
-    '900': rgbToHex(mix(base, BLACK, 0.5)),
+    '50': rgbToHex(tint50),
+    '100': rgbToHex(mix(fill, WHITE, 0.83)),
+    '600': rgbToHex(fill),
+    '700': rgbToHex(mix(text, BLACK, 0.25)),
+    '900': rgbToHex(mix(text, BLACK, 0.5)),
+    on: rgbToHex(onFor(fill)),
+    text: rgbToHex(text),
   }
 }
 
 // --- Appliquer et mémoriser (cet appareil) ------------------------------------------------------------------------
 
-const TOKENS = ['50', '100', '600', '700', '900'] as const
+const TOKENS = ['50', '100', '600', '700', '900', 'on', 'text'] as const
 
 /** Applique la couleur à la page ; `null` rend le vert d'origine (les valeurs de index.css reprennent la main). */
 export function applyAccent(hex: string | null): void {

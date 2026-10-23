@@ -79,7 +79,7 @@ test.describe.serial('création de compte', () => {
     await page.getByRole('button', { name: "Créer l'équipe" }).click()
     await expect(page.getByRole('heading', { name: 'Salons' })).toBeVisible()
 
-    await page.getByRole('link', { name: 'Réglages' }).first().click()
+    await page.getByRole('link', { name: 'Mon compte' }).click()
     await page.getByRole('button', { name: 'Se déconnecter' }).click()
     await page.goto('/signup')
     await page.getByLabel('Prénom').fill('Paul')

@@ -76,7 +76,7 @@ export default function LoginPage() {
         />
         <Link
           to="/forgot-password"
-          className="focus-visible:outline-brand-600 -mt-2 inline-flex min-h-11 items-center self-start rounded-full text-sm text-slate-600 underline underline-offset-4 hover:text-slate-900"
+          className="focus-visible:outline-brand-text -mt-2 inline-flex min-h-11 items-center self-start rounded-full text-sm text-slate-600 underline underline-offset-4 hover:text-slate-900"
         >
           {t('login.forgot')}
         </Link>

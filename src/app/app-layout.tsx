@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Wordmark } from '@/components/wordmark'
 import { useReadySession } from '@/features/auth-team/session'
+import { HeaderLogo } from '@/features/events/team-logo-banner'
 import { SyncBanner } from '@/features/sync/sync-banner'
 import { SyncProvider } from '@/features/sync/sync-provider'
 import { cn } from '@/lib/cn'
@@ -28,40 +29,23 @@ export function AppLayout() {
             e.preventDefault()
             document.getElementById('contenu')?.focus()
           }}
-          className="focus:bg-brand-600 sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-full focus:px-5 focus:py-3 focus:text-sm focus:font-medium focus:text-white"
+          className="focus:bg-brand-600 focus:text-brand-on sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-full focus:px-5 focus:py-3 focus:text-sm focus:font-medium"
         >
           {t('a11y.skipToContent')}
         </a>
 
-        <header className="flex items-center justify-between gap-4 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 md:px-10 md:py-[22px]">
-          <Link to="/events" className="inline-flex min-h-11 items-center rounded-full">
+        <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 md:px-10 md:py-[22px]">
+          <Link
+            to="/events"
+            className="inline-flex min-h-11 items-center justify-self-start rounded-full"
+          >
             <Wordmark />
           </Link>
-          <nav
-            aria-label={t('nav.main')}
-            className="hidden gap-1 rounded-full bg-slate-100 p-1 md:flex"
-          >
-            {NAV.map(({ to, labelKey }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  cn(
-                    'rounded-full px-[18px] py-2 text-sm font-medium transition-colors duration-200',
-                    isActive
-                      ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
-                      : 'text-slate-600 hover:text-slate-900',
-                  )
-                }
-              >
-                {t(labelKey)}
-              </NavLink>
-            ))}
-          </nav>
+          <HeaderLogo />
           <Link
             to="/settings"
             aria-label={t('nav.account')}
-            className="bg-brand-50 text-brand-700 inline-flex size-11 items-center justify-center rounded-full text-[13px] font-semibold"
+            className="bg-brand-50 text-brand-700 inline-flex size-11 items-center justify-center justify-self-end rounded-full text-[13px] font-semibold"
           >
             {displayName ? initialsOfName(displayName) : initialsOf(session.user.email)}
           </Link>
@@ -89,7 +73,7 @@ export function AppLayout() {
               className={({ isActive }) =>
                 cn(
                   'flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium',
-                  isActive ? 'text-brand-600' : 'text-slate-600',
+                  isActive ? 'text-brand-text' : 'text-slate-600',
                 )
               }
             >
