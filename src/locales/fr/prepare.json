@@ -20,9 +20,11 @@
   "columnsMenu": {
     "button": "Modifier les colonnes",
     "title": "Colonnes du tableau",
-    "help": "Cochez les colonnes à afficher et réglez leur largeur. Ce réglage est personnel et mémorisé sur cet appareil.",
+    "help": "Cochez les colonnes à afficher. Sur l'en-tête du tableau, tirez le bord d'une colonne pour changer sa largeur (double-clic : largeur d'origine) et tirez son titre pour la déplacer. Réglage personnel, mémorisé sur cet appareil.",
     "always": "toujours affichée",
-    "width": "Largeur de la colonne {{column}}",
+    "moveUp": "Monter la colonne {{column}}",
+    "moveDown": "Descendre la colonne {{column}}",
+    "resize": "Largeur de la colonne {{column}} (flèches gauche et droite)",
     "reset": "Rétablir les colonnes d'origine"
   },
   "columns": {

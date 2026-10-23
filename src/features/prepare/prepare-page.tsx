@@ -243,6 +243,7 @@ export default function PreparePage() {
       ) : isDesktop ? (
         <TargetsTable
           columns={columnPrefs}
+          onColumnsChange={setColumnPrefs}
           {...common}
           sort={sort}
           onSort={(key: SortKey) => {

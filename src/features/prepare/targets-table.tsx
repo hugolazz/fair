@@ -17,13 +17,17 @@ import { ShowPills } from './show-pills'
 import { TagPicker } from './tag-picker'
 import {
   gridTemplate,
+  minWidthOf,
   tableMinWidth,
   visibleColumns,
+  WIDTH_MAX,
+  WIDTH_MIN,
   type ColumnKey,
   type ColumnPrefs,
 } from './lib/columns'
 import { formatSlot } from './lib/format'
 import type { Sort, SortKey } from './lib/sort'
+import { useColumnDrag } from './use-column-drag'
 import { useVirtualRows } from './use-virtual-rows'
 
 export type ListProps = {
@@ -49,8 +53,9 @@ type Props = ListProps & {
   onAssign: (id: string, userId: string) => void
   onUnassign: (id: string, userId: string) => void
   onToggleTag: (id: string, tagId: string, on: boolean) => void
-  /** Colonnes visibles et leur largeur (« Modifier les colonnes »). */
+  /** Colonnes visibles, leur ordre et leur largeur (« Modifier les colonnes », ou à la souris sur l'en-tête). */
   columns: ColumnPrefs
+  onColumnsChange: (next: ColumnPrefs) => void
 }
 
 const ROW_HEIGHT = 52
@@ -74,9 +79,20 @@ export function TargetsTable(p: Props) {
   const canPrepareAll = useCan('prepare_all_targets')
   const canAssignOthers = useCan('assign_others')
   const tagById = useMemo(() => new Map(p.tags.map((tag) => [tag.id, tag])), [p.tags])
-  const visible = visibleColumns(p.columns)
-  const template = gridTemplate(p.columns)
-  const minWidth = tableMinWidth(p.columns)
+  const {
+    prefs,
+    measured,
+    headerRef,
+    dragging,
+    startResize,
+    onHandleKey,
+    resetWidth,
+    startReorder,
+    consumeClick,
+  } = useColumnDrag(p.columns, p.onColumnsChange)
+  const visible = visibleColumns(prefs)
+  const template = gridTemplate(prefs)
+  const minWidth = tableMinWidth(prefs)
   const { ref, onScroll, start, end, totalHeight, offsetTop } = useVirtualRows(
     p.rows.length,
     ROW_HEIGHT,
@@ -94,6 +110,7 @@ export function TargetsTable(p: Props) {
       className="overflow-x-clip"
     >
       <div
+        ref={headerRef}
         role="row"
         style={{ gridTemplateColumns: template, minWidth }}
         className={cn(
@@ -105,6 +122,7 @@ export function TargetsTable(p: Props) {
           <input
             type="checkbox"
             className="size-5"
+            data-no-drag
             aria-label={t('select.all')}
             checked={p.allSelected}
             ref={(el) => {
@@ -113,23 +131,43 @@ export function TargetsTable(p: Props) {
             onChange={p.onToggleAll}
           />
         </div>
-        {COLUMNS.filter((c) => visible.includes(c.label)).map((c) => {
+        {visible.map((key, index) => {
+          const c = COLUMNS.find((x) => x.label === key)!
           const active = c.key !== null && p.sort.key === c.key
+          const label = t(`columns.${c.label}`)
+          const moving = dragging?.key === key
+          const dropBefore = dragging !== null && dragging.before === key && !moving
+          const dropAfter =
+            dragging !== null && dragging.before === null && index === visible.length - 1
+          const width = prefs.widths[key]
           return (
             <div
-              key={c.label}
+              key={key}
+              data-col={key}
               role="columnheader"
               aria-sort={active ? (p.sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
-              className="px-2"
+              onPointerDown={(e) => startReorder(e, key)}
+              style={
+                moving ? { transform: `translateX(${dragging!.dx}px)`, zIndex: 20 } : undefined
+              }
+              className={cn(
+                'relative h-full cursor-grab touch-none px-2 select-none',
+                'flex items-center',
+                moving && 'cursor-grabbing rounded bg-slate-200/80 opacity-80 shadow-md',
+                dropBefore && 'shadow-[inset_3px_0_0_var(--color-brand-text)]',
+                dropAfter && 'shadow-[inset_-3px_0_0_var(--color-brand-text)]',
+              )}
             >
               {c.key ? (
                 <button
                   type="button"
-                  onClick={() => p.onSort(c.key!)}
+                  onClick={() => {
+                    if (!consumeClick()) p.onSort(c.key!)
+                  }}
                   className="-mx-1 inline-flex h-8 items-center gap-1 rounded px-1 hover:bg-slate-200"
-                  aria-label={t('columns.sortBy', { column: t(`columns.${c.label}`) })}
+                  aria-label={t('columns.sortBy', { column: label })}
                 >
-                  {t(`columns.${c.label}`)}
+                  {label}
                   {active ? (
                     p.sort.dir === 'asc' ? (
                       <ArrowUp aria-hidden className="size-3.5" />
@@ -139,8 +177,29 @@ export function TargetsTable(p: Props) {
                   ) : null}
                 </button>
               ) : (
-                t(`columns.${c.label}`)
+                label
               )}
+              {/* Poignée de largeur : tirer pour élargir ou rétrécir, double-clic pour la largeur d'origine. */}
+              <div
+                role="separator"
+                aria-orientation="vertical"
+                aria-label={t('columnsMenu.resize', { column: label })}
+                aria-valuemin={WIDTH_MIN}
+                aria-valuemax={WIDTH_MAX}
+                aria-valuenow={width ?? measured[key] ?? minWidthOf(key)}
+                tabIndex={0}
+                data-no-drag
+                data-resize={key}
+                onPointerDown={(e) => startResize(e, key)}
+                onDoubleClick={() => resetWidth(key)}
+                onKeyDown={(e) => onHandleKey(e, key)}
+                className="group absolute inset-y-0 right-0 flex w-3 cursor-col-resize touch-none items-center justify-center focus-visible:outline-2"
+              >
+                <span
+                  aria-hidden
+                  className="h-5 w-px bg-slate-300 transition-colors group-hover:w-0.5 group-hover:bg-slate-500 group-focus-visible:bg-slate-700"
+                />
+              </div>
             </div>
           )
         })}

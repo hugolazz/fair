@@ -1,23 +1,21 @@
 import * as Popover from '@radix-ui/react-popover'
-import { Columns3 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Columns3 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { PopoverPanel } from '@/components/ui/popover-panel'
 import {
   ALWAYS_VISIBLE,
-  COLUMN_KEYS,
   DEFAULT_PREFS,
   isDefaultPrefs,
-  SCALE_MAX,
-  SCALE_MIN,
-  SCALE_STEP,
-  scaleOf,
-  setScale,
+  shiftColumn,
   toggleColumn,
   type ColumnPrefs,
 } from './lib/columns'
 
-/** « Modifier les colonnes » : cocher les colonnes visibles du tableau et régler la largeur de chacune. */
+/**
+ * « Modifier les colonnes » : cocher les colonnes visibles et, au clavier, les remonter ou les descendre. La largeur et
+ * la place se règlent aussi directement sur l'en-tête du tableau, à la souris.
+ */
 export function ColumnsMenu({
   prefs,
   onChange,
@@ -37,21 +35,20 @@ export function ColumnsMenu({
       <PopoverPanel
         aria-label={t('columnsMenu.title')}
         align="end"
-        className="max-h-[min(34rem,var(--radix-popover-content-available-height))] w-[22rem] p-3"
+        className="max-h-[min(34rem,var(--radix-popover-content-available-height))] w-[20rem] p-3"
       >
         <p className="mb-2 text-sm text-slate-700">{t('columnsMenu.help')}</p>
         <ul className="flex flex-col">
-          {COLUMN_KEYS.map((key) => {
+          {prefs.order.map((key, index) => {
             const visible = !prefs.hidden.includes(key)
             const fixed = ALWAYS_VISIBLE.includes(key)
             const label = t(`columns.${key}`)
-            const percent = scaleOf(prefs, key)
             return (
               <li
                 key={key}
-                className="flex flex-col gap-1 border-t border-slate-100 py-2 first:border-0"
+                className="flex items-center gap-1 border-t border-slate-100 first:border-0"
               >
-                <label className="flex min-h-9 cursor-pointer items-center gap-3">
+                <label className="flex min-h-10 flex-1 cursor-pointer items-center gap-3">
                   <input
                     type="checkbox"
                     className="size-5"
@@ -64,24 +61,24 @@ export function ColumnsMenu({
                     <span className="text-xs text-slate-600">{t('columnsMenu.always')}</span>
                   ) : null}
                 </label>
-                <label className="flex items-center gap-3 pl-8">
-                  <span className="sr-only">{t('columnsMenu.width', { column: label })}</span>
-                  <input
-                    type="range"
-                    min={SCALE_MIN}
-                    max={SCALE_MAX}
-                    step={SCALE_STEP}
-                    value={percent}
-                    disabled={!visible}
-                    aria-label={t('columnsMenu.width', { column: label })}
-                    aria-valuetext={`${percent} %`}
-                    onChange={(e) => onChange(setScale(prefs, key, Number(e.target.value)))}
-                    className="min-h-9 flex-1"
-                  />
-                  <span aria-hidden className="w-11 text-right text-xs text-slate-600 tabular-nums">
-                    {percent} %
-                  </span>
-                </label>
+                <Button
+                  variant="ghost"
+                  className="size-9 min-h-9 px-0"
+                  aria-label={t('columnsMenu.moveUp', { column: label })}
+                  disabled={index === 0}
+                  onClick={() => onChange(shiftColumn(prefs, key, -1))}
+                >
+                  <ArrowUp aria-hidden className="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="size-9 min-h-9 px-0"
+                  aria-label={t('columnsMenu.moveDown', { column: label })}
+                  disabled={index === prefs.order.length - 1}
+                  onClick={() => onChange(shiftColumn(prefs, key, 1))}
+                >
+                  <ArrowDown aria-hidden className="size-4" />
+                </Button>
               </li>
             )
           })}
