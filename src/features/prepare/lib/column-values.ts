@@ -7,7 +7,9 @@ function latest(
   meetings: readonly TargetMeeting[],
   keep: (m: TargetMeeting) => boolean,
 ): TargetMeeting | undefined {
-  return meetings.filter(keep).sort((a, b) => b.plannedAt.localeCompare(a.plannedAt))[0]
+  let best: TargetMeeting | undefined
+  for (const m of meetings) if (keep(m) && (!best || m.plannedAt > best.plannedAt)) best = m
+  return best
 }
 
 /** Dernier intérêt renseigné (1 à 5) ; `null` si aucune rencontre n'en a. */

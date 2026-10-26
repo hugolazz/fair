@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { setMemberPermissions } from '@/db/repositories/teams'
@@ -21,20 +21,43 @@ export function PermissionsTable() {
   const { membership, refreshMembership } = useReadySession()
   const [perms, setPerms] = useState<Permissions>(membership.memberPermissions)
   const [state, setState] = useState<'idle' | 'saved' | 'error'>('idle')
+  const timer = useRef<number>(undefined)
+  const latest = useRef(perms)
+  const confirmed = useRef(membership.memberPermissions)
 
-  async function save(next: Permissions, previous: Permissions) {
-    setPerms(next)
-    setState('idle')
+  async function flush() {
+    window.clearTimeout(timer.current)
+    timer.current = undefined
+    const next = latest.current
     try {
       await setMemberPermissions(membership.teamId, next)
+      confirmed.current = next
       await refreshMembership()
       setState('saved')
     } catch {
-      setPerms(previous)
+      latest.current = confirmed.current
+      setPerms(confirmed.current)
       setState('error')
     }
   }
-  const toggle = (key: PermissionKey, on: boolean) => save({ ...perms, [key]: on }, perms)
+
+  // Les cases s'appliquent tout de suite à l'écran ; plusieurs clics de suite ne font qu'un enregistrement (courte pause).
+  function change(next: Permissions) {
+    latest.current = next
+    setPerms(next)
+    setState('idle')
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => void flush(), 400)
+  }
+  // Quitter la page avec un clic non enregistré : on l'enregistre plutôt que de le perdre.
+  useEffect(
+    () => () => {
+      if (timer.current !== undefined) void flush()
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
+  const toggle = (key: PermissionKey, on: boolean) => change({ ...perms, [key]: on })
   const isDefault = PERMISSION_KEYS.every((k) => perms[k] === DEFAULT_MEMBER_PERMISSIONS[k])
 
   return (
@@ -117,7 +140,7 @@ export function PermissionsTable() {
         <Button
           variant="secondary"
           disabled={isDefault}
-          onClick={() => void save({ ...DEFAULT_MEMBER_PERMISSIONS }, perms)}
+          onClick={() => change({ ...DEFAULT_MEMBER_PERMISSIONS })}
         >
           {t('permissions.reset')}
         </Button>

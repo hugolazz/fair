@@ -26,7 +26,7 @@ const target = (id: string, name: string, over: Partial<TargetRec> = {}): Target
   assigneeIds: [],
   tagIds: [],
   addedAt: null,
-  imported: true,
+  source: 'import',
   ...over,
 })
 
@@ -110,14 +110,14 @@ export function sampleData(withLogo = true): ExportData {
         stand: 'A7',
         assigneeIds: ['u1'],
         tagIds: ['t2'],
-        imported: false,
+        source: 'manual',
         addedAt: '2027-04-20T10:00:00.000Z', // saisie à la main avant le salon : pas une rencontre imprévue
       }),
       target('ec4', 'Fnac Darty', { assigneeIds: ['u3'] }),
       target('ec5', 'Amazon France', { priority: 'A', stand: 'E1', assigneeIds: ['u3'] }),
       target('ec6', 'Leroy Merlin', {
         priority: 'B',
-        imported: false,
+        source: 'manual',
         addedAt: '2027-05-12T14:00:00.000Z', // saisie à la main pendant le salon : rencontre imprévue
       }),
     ],

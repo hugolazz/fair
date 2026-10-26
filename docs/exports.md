@@ -44,8 +44,8 @@ l'onglet Exports garde une synthèse avec les mêmes chiffres).
 - **Entreprises rencontrées** : au moins une rencontre **réalisée** (vu, à relancer ou pas intéressé).
 - **Rencontres manquées** : entreprises **assignées** à un commercial et restées **sans aucune activité** (aucune rencontre réalisée par personne).
   Une entreprise assignée à personne n'est jamais « manquée ».
-- **Rencontres imprévues** : entreprises **ajoutées à la main pendant le salon**. Détection sans faux positif : la participation n'a **pas de lot
-  d'import** (saisie manuelle ; un import de fichier est exclu) **et** a été créée **pendant les jours du salon** (dates du salon, **dans le fuseau
+- **Rencontres imprévues** : entreprises **ajoutées à la main pendant le salon**. Détection sans faux positif : la participation a la **source « manuelle »**
+  (`event_companies.source` ; un import de fichier et une copie de salon sont exclus) **et** a été créée **pendant les jours du salon** (dates du salon, **dans le fuseau
   du salon**). Une saisie faite avant le salon (préparation) n'en est donc jamais une. Sans dates de salon, rien n'est détecté (`isUnplanned`,
   `bilan.ts`).
 - Une **opportunité** = rencontre réalisée avec un intérêt renseigné (hors « pas intéressé »).

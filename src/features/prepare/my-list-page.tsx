@@ -10,7 +10,7 @@ import { useEvent } from '@/features/events/event-context'
 import { PriorityBadge, TagChip } from './atoms'
 import { dueReminders } from './lib/ics'
 import { formatSlot, formatTime } from './lib/format'
-import { isSeenBy, myList } from './lib/misc'
+import { isSeenBy, matchesSearch, myList } from './lib/misc'
 import { cn } from '@/lib/cn'
 import { TargetSheet } from './target-sheet'
 import { useTargets } from './use-targets'
@@ -38,7 +38,10 @@ export default function MyListPage() {
 
   // Toutes mes cibles (les rappels et le compteur) ; la liste affichée suit la recherche.
   const allMine = useMemo(() => myList(api.targets ?? [], meId), [api.targets, meId])
-  const mine = useMemo(() => myList(api.targets ?? [], meId, search), [api.targets, meId, search])
+  const mine = useMemo(
+    () => (search.trim() ? allMine.filter((tg) => matchesSearch(tg, search)) : allMine),
+    [allMine, search],
+  )
   const tagById = useMemo(() => new Map(api.tags.map((tag) => [tag.id, tag])), [api.tags])
   const reminders = useMemo(
     () =>

@@ -583,14 +583,16 @@ describe('faux Supabase', () => {
   it('droits des commerciaux : un admin les régle pour l’équipe, un commercial ne le peut pas', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')
-    const { DEFAULT_MEMBER_PERMISSIONS } = await import('@/lib/permissions')
+    const { DEFAULT_MEMBER_PERMISSIONS, effectivePermissions } = await import('@/lib/permissions')
 
     await auth.signOut()
     await auth.signInWithPassword(USERS.admin, PASSWORD)
     const adminId = (await auth.getSession())!.user.id
     const before = await teams.fetchMembership(adminId)
     expect(before!.memberPermissions).toEqual(DEFAULT_MEMBER_PERMISSIONS)
-    expect(Object.values(before!.permissions).every(Boolean)).toBe(true) // un admin a tout
+    expect(
+      Object.values(effectivePermissions(before!.role, before!.memberPermissions)).every(Boolean),
+    ).toBe(true) // un admin a tout
     const teamId = before!.teamId
 
     await teams.setMemberPermissions(teamId, {
@@ -600,8 +602,9 @@ describe('faux Supabase', () => {
     await auth.signOut()
     await auth.signInWithPassword(USERS.marie, PASSWORD)
     const marie = await teams.fetchMembership((await auth.getSession())!.user.id)
-    expect(marie!.permissions.import_participants).toBe(true)
-    expect(marie!.permissions.create_events).toBe(false)
+    const mine = effectivePermissions(marie!.role, marie!.memberPermissions)
+    expect(mine.import_participants).toBe(true)
+    expect(mine.create_events).toBe(false)
     // Un commercial ne modifie pas le tableau.
     await expect(
       teams.setMemberPermissions(teamId, { ...DEFAULT_MEMBER_PERMISSIONS, create_events: true }),
@@ -612,23 +615,39 @@ describe('faux Supabase', () => {
     await teams.setMemberPermissions(teamId, DEFAULT_MEMBER_PERMISSIONS)
   })
 
-  it('contact clé de chaque entreprise : le premier contact saisi, pour les colonnes du tableau', async () => {
+  it('contact clé de chaque entreprise d’un salon : le premier contact saisi, en une requête', async () => {
     const auth = await import('@/db/repositories/auth')
     const teams = await import('@/db/repositories/teams')
+    const events = await import('@/db/repositories/events')
     const targets = await import('@/db/repositories/targets')
     await auth.signOut()
     await auth.signInWithPassword(USERS.admin, PASSWORD)
     const me = (await auth.getSession())!.user.id
     const teamId = (await teams.fetchMembership(me))!.teamId
+    const event = await events.createEvent(teamId, {
+      name: 'Salon contacts clés',
+      startsOn: '2027-04-10',
+      endsOn: '2027-04-11',
+      venue: '',
+      city: '',
+      goals: '',
+    })
     const rows = await exec(`
-      with c as (insert into companies (id, team_id, name, name_normalized) values (gen_random_uuid(), '${teamId}', 'Cléco', 'cleco') returning id)
+      with c as (insert into companies (id, team_id, name, name_normalized) values (gen_random_uuid(), '${teamId}', 'Cléco', 'cleco') returning id),
+           other as (insert into companies (id, team_id, name, name_normalized) values (gen_random_uuid(), '${teamId}', 'Hors salon', 'hors salon') returning id),
+           ec as (insert into event_companies (id, team_id, event_id, company_id)
+                  select gen_random_uuid(), '${teamId}', '${event.id}', id from c returning id),
+           oc as (insert into contacts (id, team_id, company_id, first_name, last_name)
+                  select gen_random_uuid(), '${teamId}', id, 'Absent', 'Du salon' from other returning id)
       insert into contacts (id, team_id, company_id, first_name, last_name, job_title)
       select v.id::uuid, '${teamId}', c.id, v.f, v.l, v.j from c,
         (values ('00000000-0000-7000-8000-0000000000a1', 'Ada', 'Lovelace', 'CTO'),
                 ('00000000-0000-7000-8000-0000000000a2', 'Zoé', 'Autre', 'RH')) as v(id, f, l, j)
       returning company_id`)
     const companyId = String(rows[0]!.company_id)
-    const key = await targets.fetchKeyContactsNetwork()
+    const key = await targets.fetchKeyContactsNetwork(event.id)
+    // Une seule entrée : l'entreprise du salon, avec son premier contact ; l'entreprise d'un autre salon n'y est pas.
+    expect(Object.keys(key)).toEqual([companyId])
     expect(key[companyId]).toMatchObject({ name: 'Ada Lovelace', jobTitle: 'CTO' })
   })
 

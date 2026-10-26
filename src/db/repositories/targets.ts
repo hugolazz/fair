@@ -143,14 +143,27 @@ export async function fetchContactsNetwork(companyId: string): Promise<TargetCon
 }
 
 /**
- * Le contact clé de chaque entreprise de l'équipe (le premier contact par ordre de saisie), pour les colonnes
- * « contact clé » du tableau des participants. Lu en une fois, hors ligne depuis la copie locale.
+ * Le contact clé (premier contact par ordre de saisie) de chaque entreprise d'un salon, pour les colonnes « contact clé » du
+ * tableau des participants : une requête (`key_contacts`), hors ligne depuis la copie locale.
  */
-export const fetchKeyContacts = (teamId: string): Promise<Record<string, TargetContact>> =>
-  cachedRead(cacheKeys.keyContacts(teamId), () => fetchKeyContactsNetwork())
+export const fetchKeyContacts = (eventId: string): Promise<Record<string, TargetContact>> =>
+  cachedRead(cacheKeys.keyContacts(eventId), () => fetchKeyContactsNetwork(eventId))
 
-export async function fetchKeyContactsNetwork(): Promise<Record<string, TargetContact>> {
+export async function fetchKeyContactsNetwork(
+  eventId: string,
+): Promise<Record<string, TargetContact>> {
+  const { data, error } = await supabase.rpc('key_contacts', { p_event: eventId })
+  if (error) throw error
   const out: Record<string, TargetContact> = {}
+  for (const row of (data ?? []) as Record<string, unknown>[])
+    out[String(row.company_id)] = toTargetContact(row)
+  return out
+}
+
+/** Tous les contacts non supprimés de l'équipe, par pages, dans l'ordre de saisie (identifiants UUIDv7). */
+export async function forEachTeamContactPage(
+  onRows: (rows: Record<string, unknown>[]) => void,
+): Promise<void> {
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from('contacts')
@@ -159,11 +172,8 @@ export async function fetchKeyContactsNetwork(): Promise<Record<string, TargetCo
       .order('id')
       .range(from, from + PAGE - 1)
     if (error) throw error
-    for (const row of data ?? []) {
-      const companyId = String(row.company_id)
-      out[companyId] ??= toTargetContact(row as Record<string, unknown>) // trié par id : le premier vu est le contact clé
-    }
-    if ((data ?? []).length < PAGE) return out
+    onRows((data ?? []) as Record<string, unknown>[])
+    if ((data ?? []).length < PAGE) return
   }
 }
 

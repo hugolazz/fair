@@ -105,8 +105,8 @@ describe('auteur disparu (compte supprimé ou départ de l’équipe)', () => {
 
 describe('rencontre imprévue : détection d’une entreprise ajoutée à la main pendant le salon', () => {
   const event = sampleData().event // 12 et 13 mai 2027, fuseau de Paris
-  const added = (addedAt: string | null, imported = false) =>
-    ({ imported, addedAt }) as Parameters<typeof isUnplanned>[0]
+  const added = (addedAt: string | null, source: 'import' | 'manual' | 'duplicate' = 'manual') =>
+    ({ source, addedAt }) as Parameters<typeof isUnplanned>[0]
 
   it('à la main pendant les jours du salon : oui', () => {
     expect(isUnplanned(added('2027-05-12T08:00:00.000Z'), event)).toBe(true)
@@ -119,8 +119,9 @@ describe('rencontre imprévue : détection d’une entreprise ajoutée à la mai
     expect(isUnplanned(added('2027-04-01T09:00:00.000Z'), event)).toBe(false)
   })
 
-  it('un import de fichier n’est jamais une rencontre imprévue, même pendant le salon', () => {
-    expect(isUnplanned(added('2027-05-12T08:00:00.000Z', true), event)).toBe(false)
+  it('un import de fichier ou une copie de salon n’est jamais une rencontre imprévue, même pendant le salon', () => {
+    expect(isUnplanned(added('2027-05-12T08:00:00.000Z', 'import'), event)).toBe(false)
+    expect(isUnplanned(added('2027-05-12T08:00:00.000Z', 'duplicate'), event)).toBe(false)
   })
 
   it('les jours se comptent dans le fuseau du salon, pas en UTC', () => {

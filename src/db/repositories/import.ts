@@ -242,6 +242,7 @@ export async function executeImport(input: ExecuteInput): Promise<ImportReport> 
       stand_label: e.stand_label,
       priority: e.priority,
       import_batch_id: batchId,
+      source: batchId === null ? 'manual' : 'import', // une saisie à la main n'a pas de lot d'import
     }),
     'id',
     (items) => items.forEach((e) => failedCompanies.add(e.company_id)),

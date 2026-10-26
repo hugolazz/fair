@@ -1,3 +1,4 @@
+import { HELD_STATUSES, type MeetingStatus } from '@shared/exports/types.ts'
 import { buildSearchKey, type Target } from '@/db/schemas/prepare'
 import { sortTargets } from './sort'
 
@@ -52,22 +53,24 @@ export function visibleRange(o: {
 
 // --- Ma liste -----------------------------------------------------------------------------------------------
 
-/** Statuts d'une rencontre qui a eu lieu (comme le bilan : vu, à relancer, pas intéressé). */
-const SEEN_STATUSES = ['done', 'follow_up', 'not_interested']
-
 /** Cette entreprise a-t-elle été vue par cette personne ? Une de ses rencontres a eu lieu (« Vu »). */
 export const isSeenBy = (t: Target, userId: string): boolean =>
-  t.meetings.some((m) => m.ownerId === userId && SEEN_STATUSES.includes(m.status))
+  t.meetings.some((m) => m.ownerId === userId && HELD_STATUSES.includes(m.status as MeetingStatus))
+
+/** La cible correspond-elle à ces mots (tous doivent s'y trouver, accents et casse ignorés) ? Vide : toujours. */
+export function matchesSearch(t: Target, search: string): boolean {
+  return buildSearchKey([search])
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((w) => t.searchKey.includes(w))
+}
 
 /**
  * Mes cibles, par priorité (A, B, C, sans priorité), puis prochain rendez-vous, puis nom ; **celles que j'ai déjà vues
  * en dernier**. `search` filtre sur le nom, le stand, le secteur, la ville, le pays ou le site (accents et casse ignorés).
  */
 export function myList(targets: Target[], userId: string, search = ''): Target[] {
-  const terms = buildSearchKey([search]).split(/\s+/).filter(Boolean)
-  const mine = targets.filter(
-    (t) => t.assigneeIds.includes(userId) && terms.every((w) => t.searchKey.includes(w)),
-  )
+  const mine = targets.filter((t) => t.assigneeIds.includes(userId) && matchesSearch(t, search))
   const sorted = sortTargets(mine, [
     { key: 'priority', dir: 'asc' },
     { key: 'meeting', dir: 'asc' },

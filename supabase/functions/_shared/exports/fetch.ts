@@ -102,9 +102,7 @@ export async function fetchExportData(
   const ecRows = await paged((from, to) =>
     client
       .from('event_companies')
-      .select(
-        'id, company_id, stand_label, priority, objective, prep_comment, created_at, import_batch_id',
-      )
+      .select('id, company_id, stand_label, priority, objective, prep_comment, created_at, source')
       .eq('event_id', eventId)
       .is('deleted_at', null)
       .order('id')
@@ -172,7 +170,12 @@ export async function fetchExportData(
         assigneeIds: assignees.get(String(r.id)) ?? [],
         tagIds: tagLinks.get(String(r.company_id)) ?? [],
         addedAt: str(r.created_at),
-        imported: r.import_batch_id != null,
+        source:
+          str(r.source) === 'manual'
+            ? 'manual'
+            : str(r.source) === 'duplicate'
+              ? 'duplicate'
+              : 'import',
       },
     ]
   })

@@ -3,7 +3,7 @@ import { cacheKeys } from '@/db/cache-keys'
 import { cachedRead } from '@/lib/cache/cache'
 import { newsLabelOf } from '@shared/exports/labels.ts'
 import { newId } from '@/lib/ids'
-import { effectivePermissions, normalizePermissions, type Permissions } from '@/lib/permissions'
+import { normalizePermissions, type Permissions } from '@/lib/permissions'
 import { supabase } from '@/lib/supabase'
 
 export const TEAM_ROLES = ['owner', 'admin', 'member'] as const
@@ -30,8 +30,6 @@ export type Membership = {
   newsLabel: string
   /** Droits des commerciaux de l'équipe (réglage des admins). */
   memberPermissions: Permissions
-  /** Ce que **moi** je peux faire : tout pour un admin, le réglage de l'équipe pour un commercial. */
-  permissions: Permissions
   /** Couleur d'accentuation de l'équipe (#rrggbb) ; `null` = le vert d'origine. */
   accentColor: string | null
 }
@@ -54,7 +52,6 @@ function completeMembership(m: Membership): Membership {
     newsLabel: m.newsLabel ?? newsLabelOf(null),
     accentColor: m.accentColor ?? null,
     memberPermissions,
-    permissions: effectivePermissions(m.role, memberPermissions),
   }
 }
 
@@ -82,7 +79,6 @@ async function fetchMembershipNetwork(userId: string): Promise<Membership | null
     newsLabel: newsLabelOf(parsed.teams.news_label),
     accentColor: parsed.teams.accent_color,
     memberPermissions,
-    permissions: effectivePermissions(parsed.role, memberPermissions),
   }
 }
 
@@ -189,16 +185,19 @@ export async function uploadTeamLogo(teamId: string, file: File): Promise<void> 
   if (!(LOGO_TYPES as readonly string[]).includes(file.type) || file.size > LOGO_MAX_BYTES) {
     throw new Error('invalid logo')
   }
-  const { data } = await supabase.from('teams').select('logo_path').eq('id', teamId).single()
-  const oldPath = (data as { logo_path: string | null } | null)?.logo_path
   const path = `${teamId}/logo-${newId()}.${file.type === 'image/png' ? 'png' : 'jpg'}`
-  const up = await supabase.storage
-    .from('attachments')
-    .upload(path, file, { contentType: file.type, cacheControl: '60' })
+  const [current, up] = await Promise.all([
+    supabase.from('teams').select('logo_path').eq('id', teamId).single(),
+    supabase.storage
+      .from('attachments')
+      .upload(path, file, { contentType: file.type, cacheControl: '60' }),
+  ])
   if (up.error) throw up.error
+  const oldPath = (current.data as { logo_path: string | null } | null)?.logo_path
   const { error } = await supabase.from('teams').update({ logo_path: path }).eq('id', teamId)
   if (error) throw error
-  if (oldPath) await supabase.storage.from('attachments').remove([oldPath])
+  // Le nettoyage de l'ancien fichier ne retarde ni ne fait échouer l'enregistrement.
+  if (oldPath) void supabase.storage.from('attachments').remove([oldPath])
 }
 
 /** Le fichier du logo (pour le recadrer). */

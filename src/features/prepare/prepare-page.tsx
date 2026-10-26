@@ -52,7 +52,7 @@ export default function PreparePage() {
   const hiddenColumns = membership.newsEnabled ? [] : (['news'] as const)
   // Les contacts clés ne sont chargés que si une colonne « contact clé » est affichée.
   const keyContacts = useKeyContacts(
-    membership.teamId,
+    event.id,
     isDesktop && visibleColumns(columnPrefs, hiddenColumns).some((k) => k.startsWith('key')),
   )
 

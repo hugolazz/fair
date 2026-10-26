@@ -347,42 +347,6 @@ export class PdfWriter {
     this.y -= 10
   }
 
-  /** Barres horizontales (étiquette, valeur) : répartition par statut. */
-  bars(
-    items: { label: string; value: number }[],
-    opts: { width?: number; color?: RGB; size?: number } = {},
-  ): void {
-    const size = opts.size ?? 9
-    const labelW = 96
-    const width = opts.width ?? CONTENT_W
-    const barW = width - labelW - 34
-    const max = Math.max(1, ...items.map((i) => i.value))
-    for (const it of items) {
-      this.ensure(size * 1.9)
-      this.drawLine(it.label, MARGIN, this.y - size, size, false, COLORS.ink, labelW - 6, 'left')
-      const w = (it.value / max) * barW
-      this.rect(
-        MARGIN + labelW,
-        this.y - 1,
-        Math.max(w, it.value > 0 ? 1.5 : 0),
-        size + 2,
-        opts.color ?? COLORS.brand,
-      )
-      this.drawLine(
-        String(it.value),
-        MARGIN + labelW + w + 4,
-        this.y - size,
-        size,
-        true,
-        COLORS.ink,
-        30,
-        'left',
-      )
-      this.y -= size * 1.9
-    }
-    this.y -= 6
-  }
-
   // --- fin --------------------------------------------------------------------------------------------------
 
   /** Insère le sommaire (page 2) puis écrit les pieds de page ; renvoie le PDF. */

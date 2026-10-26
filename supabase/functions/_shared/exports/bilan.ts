@@ -73,12 +73,12 @@ const isHeld = (m: MeetingRec) => HELD_STATUSES.includes(m.status)
 export const OPPORTUNITIES_LIMIT = 10
 
 /**
- * Une entreprise « imprévue » : ajoutée à la main (pas par un import de fichier) **pendant les jours du salon**, dans le
+ * Une entreprise « imprévue » : ajoutée à la main (`source = 'manual'`, ni import ni copie de salon) **pendant les jours du salon**, dans le
  * fuseau du salon. Une saisie faite avant le salon, ou une participation importée, n'en est jamais une ; sans dates de
  * salon, rien n'est détecté.
  */
 export function isUnplanned(t: TargetRec, event: ExportData['event']): boolean {
-  if (t.imported || !event.startsOn) return false
+  if (t.source !== 'manual' || !event.startsOn) return false
   const day = localDay(t.addedAt, event.timezone)
   return day !== null && day >= event.startsOn && day <= (event.endsOn ?? event.startsOn)
 }

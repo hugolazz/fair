@@ -15,8 +15,6 @@ export type MeetingStatus = (typeof MEETING_STATUSES)[number]
 
 /** Statuts d'une rencontre qui a bien eu lieu. */
 export const HELD_STATUSES: readonly MeetingStatus[] = ['done', 'follow_up', 'not_interested']
-/** Statuts d'une rencontre qui n'a pas eu lieu. */
-export const MISSED_STATUSES: readonly MeetingStatus[] = ['missed', 'skipped']
 
 export type TeamInfo = {
   id: string
@@ -63,8 +61,8 @@ export type TargetRec = {
   tagIds: string[]
   /** Quand la participation a été créée (instant ISO) ; `null` si inconnu. */
   addedAt: string | null
-  /** Vient d'un import de fichier : une saisie à la main (ou une copie de salon) n'a pas de lot d'import. */
-  imported: boolean
+  /** D'où vient la participation : import d'un fichier, saisie à la main ou copie d'un salon (`event_companies.source`). */
+  source: 'import' | 'manual' | 'duplicate'
 }
 
 export type ContactRec = {

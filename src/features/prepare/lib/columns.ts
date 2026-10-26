@@ -1,3 +1,5 @@
+import type { SortKey } from './sort'
+
 // Colonnes du tableau des participants (bureau) : lesquelles sont visibles, dans quel ordre, et leur largeur (réglée à la
 // souris, comme dans un tableur). Calculs purs (testés) ; la mémorisation (par appareil) est dans `use-column-prefs.ts`.
 
@@ -81,6 +83,20 @@ export type ColumnPrefs = {
   order: ColumnKey[]
   widths: Partial<Record<ColumnKey, number>>
 }
+/** Colonnes qui se trient d'un clic sur leur en-tête, et le critère de tri correspondant. */
+export const COLUMN_SORT: Partial<Record<ColumnKey, SortKey>> = {
+  priority: 'priority',
+  company: 'name',
+  stand: 'stand',
+  assignees: 'assignee',
+  meeting: 'meeting',
+  industry: 'industry',
+  country: 'country',
+  city: 'city',
+  contacts: 'contacts',
+  interest: 'interest',
+}
+
 export const DEFAULT_PREFS: ColumnPrefs = {
   hidden: [...OPTIONAL_COLUMNS],
   order: [...COLUMN_KEYS],
@@ -98,7 +114,7 @@ export const clampWidth = (px: number): number =>
  * nouveau tableau ne change pas d'aspect tout seul.
  */
 export function normalizePrefs(raw: unknown): ColumnPrefs {
-  const out: ColumnPrefs = { hidden: [...OPTIONAL_COLUMNS], order: [...COLUMN_KEYS], widths: {} }
+  const out: ColumnPrefs = { ...DEFAULT_PREFS, widths: {} }
   if (!raw || typeof raw !== 'object') return out
   const { hidden, order, widths } = raw as { hidden?: unknown; order?: unknown; widths?: unknown }
   const known = Array.isArray(order) ? [...new Set(order.filter(isKey))] : []
@@ -187,11 +203,10 @@ export function moveColumn(p: ColumnPrefs, key: ColumnKey, before: ColumnKey | n
 export function shiftVisible(p: ColumnPrefs, key: ColumnKey, direction: -1 | 1): ColumnPrefs {
   const shown = visibleColumns(p)
   const i = shown.indexOf(key)
-  if (i < 0) return p
-  const target = direction === -1 ? shown[i - 1] : shown[i + 2]
-  if (direction === -1 && target === undefined) return p
-  if (direction === 1 && i === shown.length - 1) return p
-  return moveColumn(p, key, target ?? null)
+  const j = i + direction
+  if (i < 0 || j < 0 || j >= shown.length) return p
+  // Vers la gauche : avant la voisine ; vers la droite : avant la colonne qui suit la voisine (ou à la fin).
+  return moveColumn(p, key, direction === -1 ? shown[j]! : (shown[j + 1] ?? null))
 }
 
 /**

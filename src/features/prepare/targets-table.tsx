@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
-import { Fragment, useMemo, type MouseEvent, type ReactNode } from 'react'
+import { Fragment, useMemo, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   PRIORITIES,
@@ -17,6 +17,7 @@ import { PriorityBadge } from './atoms'
 import { ShowPills } from './show-pills'
 import { TagPicker } from './tag-picker'
 import {
+  COLUMN_SORT,
   gridTemplate,
   minWidthOf,
   tableMinWidth,
@@ -70,52 +71,21 @@ const HEADER_HEIGHT = 48 // en-tête collant (h-12)
 // Les colonnes (visibles, largeur) viennent du réglage de l'utilisateur : `lib/columns.ts`.
 const GRID = 'grid items-center'
 
-const COLUMNS: { key: SortKey | null; label: ColumnKey }[] = [
-  { key: 'priority', label: 'priority' },
-  { key: 'name', label: 'company' },
-  { key: 'stand', label: 'stand' },
-  { key: null, label: 'tags' },
-  { key: null, label: 'shows' },
-  { key: 'assignee', label: 'assignees' },
-  { key: 'meeting', label: 'meeting' },
-  { key: 'industry', label: 'industry' },
-  { key: 'country', label: 'country' },
-  { key: 'city', label: 'city' },
-  { key: null, label: 'website' },
-  { key: null, label: 'history' },
-  { key: 'contacts', label: 'contacts' },
-  { key: null, label: 'keyName' },
-  { key: null, label: 'keyJob' },
-  { key: null, label: 'keyEmail' },
-  { key: null, label: 'keyPhone' },
-  { key: null, label: 'keyLinkedin' },
-  { key: 'interest', label: 'interest' },
-  { key: null, label: 'status' },
-  { key: null, label: 'recontact' },
-  { key: null, label: 'news' },
-]
-
 /** Tableau dense (desktop) : tri par colonne, sélection (Maj pour une plage), édition rapide de la priorité et de l'objectif. */
 export function TargetsTable(p: Props) {
   const { t } = useTranslation('prepare')
   const canPrepareAll = useCan('prepare_all_targets')
   const canAssignOthers = useCan('assign_others')
   const tagById = useMemo(() => new Map(p.tags.map((tag) => [tag.id, tag])), [p.tags])
-  const {
-    prefs,
-    measured,
-    headerRef,
-    dragging,
-    startResize,
-    onHandleKey,
-    resetWidth,
-    startReorder,
-    consumeClick,
-  } = useColumnDrag(p.columns, p.onColumnsChange)
   const exclude: ColumnKey[] = p.newsEnabled ? [] : ['news']
-  const visible = visibleColumns(prefs, exclude)
-  const template = gridTemplate(prefs, exclude)
-  const minWidth = tableMinWidth(prefs, exclude)
+  const layoutOf = (prefs: ColumnPrefs) => ({
+    template: gridTemplate(prefs, exclude),
+    minWidth: tableMinWidth(prefs, exclude),
+  })
+  const { headerRef, startResize, onHandleKey, resetWidth, startReorder, consumeClick } =
+    useColumnDrag(p.columns, p.onColumnsChange, layoutOf)
+  const visible = visibleColumns(p.columns, exclude)
+  const { template, minWidth } = layoutOf(p.columns)
   const { ref, onScroll, start, end, totalHeight, offsetTop } = useVirtualRows(
     p.rows.length,
     ROW_HEIGHT,
@@ -130,12 +100,13 @@ export function TargetsTable(p: Props) {
       role="table"
       aria-rowcount={p.rows.length + 1}
       aria-label={t('title')}
+      style={{ '--cols': template, '--min': minWidth } as CSSProperties}
       className="overflow-x-clip"
     >
       <div
         ref={headerRef}
         role="row"
-        style={{ gridTemplateColumns: template, minWidth }}
+        style={{ gridTemplateColumns: 'var(--cols)', minWidth: 'var(--min)' }}
         className={cn(
           GRID,
           'sticky top-0 z-10 h-12 bg-slate-50 px-2 text-[13px] font-medium text-slate-600 shadow-[0_1px_0_0_var(--color-slate-200)]',
@@ -154,15 +125,11 @@ export function TargetsTable(p: Props) {
             onChange={p.onToggleAll}
           />
         </div>
-        {visible.map((key, index) => {
-          const c = COLUMNS.find((x) => x.label === key)!
-          const active = c.key !== null && p.sort.key === c.key
-          const label = key === 'news' ? p.newsTitle : t(`columns.${c.label}`)
-          const moving = dragging?.key === key
-          const dropBefore = dragging !== null && dragging.before === key && !moving
-          const dropAfter =
-            dragging !== null && dragging.before === null && index === visible.length - 1
-          const width = prefs.widths[key]
+        {visible.map((key) => {
+          const sortKey = COLUMN_SORT[key]
+          const active = sortKey !== undefined && p.sort.key === sortKey
+          const label = key === 'news' ? p.newsTitle : t(`columns.${key}`)
+          const width = p.columns.widths[key]
           return (
             <div
               key={key}
@@ -170,22 +137,18 @@ export function TargetsTable(p: Props) {
               role="columnheader"
               aria-sort={active ? (p.sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}
               onPointerDown={(e) => startReorder(e, key)}
-              style={
-                moving ? { transform: `translateX(${dragging!.dx}px)`, zIndex: 20 } : undefined
-              }
+              // `data-dragging` et `data-drop` sont posés pendant un glisser (use-column-drag.ts), sans rendu React.
               className={cn(
-                'relative h-full cursor-grab touch-none px-2 select-none',
-                'flex items-center',
-                moving && 'cursor-grabbing rounded bg-slate-200/80 opacity-80 shadow-md',
-                dropBefore && 'shadow-[inset_3px_0_0_var(--color-brand-text)]',
-                dropAfter && 'shadow-[inset_-3px_0_0_var(--color-brand-text)]',
+                'relative flex h-full cursor-grab touch-none items-center px-2 select-none',
+                'data-[dragging=true]:z-20 data-[dragging=true]:cursor-grabbing data-[dragging=true]:rounded data-[dragging=true]:bg-slate-200/80 data-[dragging=true]:opacity-80 data-[dragging=true]:shadow-md',
+                'data-[drop=after]:shadow-[inset_-3px_0_0_var(--color-brand-text)] data-[drop=before]:shadow-[inset_3px_0_0_var(--color-brand-text)]',
               )}
             >
-              {c.key ? (
+              {sortKey ? (
                 <button
                   type="button"
                   onClick={() => {
-                    if (!consumeClick()) p.onSort(c.key!)
+                    if (!consumeClick()) p.onSort(sortKey)
                   }}
                   className="-mx-1 inline-flex h-8 items-center gap-1 rounded px-1 hover:bg-slate-200"
                   aria-label={t('columns.sortBy', { column: label })}
@@ -209,7 +172,7 @@ export function TargetsTable(p: Props) {
                 aria-label={t('columnsMenu.resize', { column: label })}
                 aria-valuemin={WIDTH_MIN}
                 aria-valuemax={WIDTH_MAX}
-                aria-valuenow={width ?? measured[key] ?? minWidthOf(key)}
+                aria-valuenow={width ?? minWidthOf(key)}
                 tabIndex={0}
                 data-no-drag
                 data-resize={key}
@@ -228,7 +191,7 @@ export function TargetsTable(p: Props) {
         })}
       </div>
 
-      <div style={{ height: totalHeight, minWidth }} className="px-2">
+      <div style={{ height: totalHeight, minWidth: 'var(--min)' }} className="px-2">
         <div style={{ transform: `translateY(${offsetTop}px)` }}>
           {p.rows.slice(start, end).map((row, i) => {
             const isSelected = p.selected.has(row.id)
@@ -239,28 +202,30 @@ export function TargetsTable(p: Props) {
                 {value}
               </div>
             )
-            const interest = interestOf(row)
-            const status = statusOf(row)
-            const cells: Record<ColumnKey, ReactNode> = {
-              industry: text(row.industry),
-              country: text(row.country),
-              city: text(row.city),
-              website: text(row.domain || row.website),
-              history: text(row.history.replace(/\s+/g, ' ').trim()),
-              contacts: text(row.contactCount ? String(row.contactCount) : '', 'tabular-nums'),
-              keyName: text(kc?.name ?? ''),
-              keyJob: text(kc?.jobTitle ?? ''),
-              keyEmail: text(kc?.email ?? ''),
-              keyPhone: text(kc?.phone ?? ''),
-              keyLinkedin: text(kc?.linkedin ?? ''),
-              interest: text(
-                interest === null ? '' : t('history.interestOf', { n: interest }),
-                'tabular-nums',
-              ),
-              status: text(status ? t(`report.status.${status}`) : ''),
-              recontact: text(recontactOf(row) ? t('notepad.yes') : ''),
-              news: text(newsOf(row) ? t('notepad.yes') : ''),
-              priority: (
+            const cells: Record<ColumnKey, () => ReactNode> = {
+              industry: () => text(row.industry),
+              country: () => text(row.country),
+              city: () => text(row.city),
+              website: () => text(row.domain || row.website),
+              history: () => text(row.history.replace(/\s+/g, ' ').trim()),
+              contacts: () =>
+                text(row.contactCount ? String(row.contactCount) : '', 'tabular-nums'),
+              keyName: () => text(kc?.name ?? ''),
+              keyJob: () => text(kc?.jobTitle ?? ''),
+              keyEmail: () => text(kc?.email ?? ''),
+              keyPhone: () => text(kc?.phone ?? ''),
+              keyLinkedin: () => text(kc?.linkedin ?? ''),
+              interest: () => {
+                const n = interestOf(row)
+                return text(n === null ? '' : t('history.interestOf', { n }), 'tabular-nums')
+              },
+              status: () => {
+                const status = statusOf(row)
+                return text(status ? t(`report.status.${status}`) : '')
+              },
+              recontact: () => text(recontactOf(row) ? t('notepad.yes') : ''),
+              news: () => text(newsOf(row) ? t('notepad.yes') : ''),
+              priority: () => (
                 <div role="cell" className="px-2">
                   <Select
                     value={row.priority ?? ''}
@@ -281,7 +246,7 @@ export function TargetsTable(p: Props) {
                   </Select>
                 </div>
               ),
-              company: (
+              company: () => (
                 <div role="cell" className="min-w-0 px-2">
                   <button
                     type="button"
@@ -292,12 +257,12 @@ export function TargetsTable(p: Props) {
                   </button>
                 </div>
               ),
-              stand: (
+              stand: () => (
                 <div role="cell" className="truncate px-2">
                   {row.stand}
                 </div>
               ),
-              tags: (
+              tags: () => (
                 <div role="cell" className="min-w-0 px-2">
                   <TagPicker
                     target={row}
@@ -307,12 +272,12 @@ export function TargetsTable(p: Props) {
                   />
                 </div>
               ),
-              shows: (
+              shows: () => (
                 <div role="cell" className="min-w-0 px-2">
                   <ShowPills tagIds={row.tagIds} shows={p.shows} compact max={2} />
                 </div>
               ),
-              assignees: (
+              assignees: () => (
                 <div role="cell" className="min-w-0 px-2">
                   <AssignPicker
                     target={row}
@@ -325,7 +290,7 @@ export function TargetsTable(p: Props) {
                   />
                 </div>
               ),
-              meeting: (
+              meeting: () => (
                 <div role="cell" className="truncate px-2 text-slate-700">
                   {next ? formatSlot(next.plannedAt) : ''}
                 </div>
@@ -337,7 +302,7 @@ export function TargetsTable(p: Props) {
                 role="row"
                 aria-rowindex={start + i + 2}
                 aria-selected={isSelected}
-                style={{ height: ROW_HEIGHT, gridTemplateColumns: template }}
+                style={{ height: ROW_HEIGHT, gridTemplateColumns: 'var(--cols)' }}
                 onClick={(e) => {
                   const target = e.target as HTMLElement
                   // Les listes (priorité, tags, assignation) sont rendues hors de la ligne mais leurs clics remontent
@@ -363,7 +328,7 @@ export function TargetsTable(p: Props) {
                   />
                 </div>
                 {visible.map((key) => (
-                  <Fragment key={key}>{cells[key]}</Fragment>
+                  <Fragment key={key}>{cells[key]()}</Fragment>
                 ))}
               </div>
             )

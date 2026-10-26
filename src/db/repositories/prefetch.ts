@@ -2,7 +2,13 @@ import { writeManyCached } from '@/lib/cache/cache'
 import { supabase } from '@/lib/supabase'
 import { cacheKeys } from '../cache-keys'
 import type { Target, TargetContact } from '../schemas/prepare'
-import { fetchHistoryNetwork, toMeetingNote, toTargetContact, type MeetingNote } from './targets'
+import {
+  fetchHistoryNetwork,
+  forEachTeamContactPage,
+  toMeetingNote,
+  toTargetContact,
+  type MeetingNote,
+} from './targets'
 
 // Copie locale d'un salon, téléchargée en arrière-plan après l'ouverture de la liste : contacts et notes de tout le
 // salon, historique des entreprises qui me sont assignées (les autres se chargent quand on ouvre leur fiche). Sans elle,
@@ -85,15 +91,8 @@ async function run(eventId: string, targets: readonly Target[], meId: string): P
   try {
     // 1. Contacts : toute l'équipe, rangée par entreprise (l'ordre de saisie est celui de l'identifiant).
     const byCompany = new Map<string, TargetContact[]>()
-    for (let from = 0; ; from += PAGE) {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('id, company_id, first_name, last_name, job_title, email, phone, linkedin_url')
-        .is('deleted_at', null)
-        .order('id')
-        .range(from, from + PAGE - 1)
-      if (error) throw error
-      for (const row of data ?? []) {
+    await forEachTeamContactPage((rows) => {
+      for (const row of rows) {
         const companyId = row.company_id as string | null
         if (!companyId) continue
         const list = byCompany.get(companyId)
@@ -102,8 +101,7 @@ async function run(eventId: string, targets: readonly Target[], meId: string): P
         else byCompany.set(companyId, [contact])
       }
       tick()
-      if ((data ?? []).length < PAGE) break
-    }
+    })
     // Une entreprise sans contact a aussi sa copie : « aucun contact » plutôt qu'une erreur hors ligne.
     await writeManyCached(
       targets.map((t) => ({

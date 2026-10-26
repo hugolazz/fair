@@ -26,16 +26,19 @@ export function useVirtualRows(
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const measure = () =>
-      setView(
-        pageScroll
-          ? {
-              // Distance déjà défilée au-delà du début des lignes, et hauteur de la fenêtre du navigateur.
-              scrollTop: Math.max(0, -el.getBoundingClientRect().top - headerHeight),
-              height: window.innerHeight,
-            }
-          : { scrollTop: el.scrollTop, height: el.clientHeight },
-      )
+    // La position est arrondie à la hauteur d'une ligne : la plage visible ne change qu'à ce pas, inutile de redessiner
+    // le tableau à chaque pixel défilé.
+    const snap = (px: number) => Math.floor(px / rowHeight) * rowHeight
+    const measure = () => {
+      const next = pageScroll
+        ? {
+            // Distance déjà défilée au-delà du début des lignes, et hauteur de la fenêtre du navigateur.
+            scrollTop: snap(Math.max(0, -el.getBoundingClientRect().top - headerHeight)),
+            height: window.innerHeight,
+          }
+        : { scrollTop: snap(el.scrollTop), height: el.clientHeight }
+      setView((v) => (v.scrollTop === next.scrollTop && v.height === next.height ? v : next))
+    }
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(el)
@@ -48,13 +51,13 @@ export function useVirtualRows(
       window.removeEventListener('scroll', measure)
       window.removeEventListener('resize', measure)
     }
-  }, [pageScroll, headerHeight])
+  }, [pageScroll, headerHeight, rowHeight])
 
   const onScroll = useCallback(() => {
     const el = ref.current
-    if (el && !pageScroll)
-      setView((v) => (v.scrollTop === el.scrollTop ? v : { ...v, scrollTop: el.scrollTop }))
-  }, [pageScroll])
+    const top = el ? Math.floor(el.scrollTop / rowHeight) * rowHeight : 0
+    if (el && !pageScroll) setView((v) => (v.scrollTop === top ? v : { ...v, scrollTop: top }))
+  }, [pageScroll, rowHeight])
 
   const { start, end } = visibleRange({
     scrollTop: view.scrollTop,

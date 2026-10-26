@@ -1,7 +1,8 @@
+import { HELD_STATUSES } from '@shared/exports/types.ts'
 import type { Target } from '@/db/schemas/prepare'
 
 /** Statuts qui comptent comme « rencontrée » : la rencontre a eu lieu (ou est en cours). */
-const MET_STATUSES = new Set(['done', 'follow_up', 'not_interested', 'in_progress'])
+const MET_STATUSES = new Set<string>([...HELD_STATUSES, 'in_progress'])
 
 export type TeamRow = {
   target: Target

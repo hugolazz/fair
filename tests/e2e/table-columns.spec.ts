@@ -178,3 +178,32 @@ test('« Modifier les colonnes » : afficher / masquer, rétablir', async ({ pag
     .poll(order)
     .toEqual(['priority', 'company', 'stand', 'tags', 'shows', 'assignees', 'meeting'])
 })
+
+test('pendant un glisser, l’en-tête suit la souris et un trait montre où il sera déposé ; rien ne reste après', async ({
+  page,
+}) => {
+  await resetBackend('team')
+  const { eventId } = await seedEvent('Salon trait', [{ name: 'Bolt', stand: 'B2' }])
+  await login(page, USERS.admin)
+  await page.goto(`/events/${eventId}/participants`)
+  await expect(page.getByRole('columnheader', { name: /Stand/ })).toBeVisible()
+  const stand = await header(page, 'stand')
+  const company = await header(page, 'company')
+  await page.mouse.move(stand.x + 12, stand.y + stand.height / 2)
+  await page.mouse.down()
+  for (let i = 1; i <= 6; i++)
+    await page.mouse.move(
+      stand.x + 12 - ((stand.x - company.x) * i) / 6,
+      stand.y + stand.height / 2,
+    )
+  const dragging = page.locator('[role="columnheader"][data-dragging="true"]')
+  await expect(dragging).toHaveCount(1)
+  await expect(dragging).toHaveAttribute('data-col', 'stand')
+  await expect(page.locator('[role="columnheader"][data-drop="before"]')).toHaveCount(1)
+  await page.mouse.up()
+  await expect(page.locator('[data-dragging], [data-drop]')).toHaveCount(0)
+  await expect(page.locator('[role="columnheader"][data-col]').nth(1)).toHaveAttribute(
+    'data-col',
+    'stand',
+  )
+})

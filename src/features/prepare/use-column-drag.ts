@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { useRef, type KeyboardEvent, type PointerEvent } from 'react'
 import {
   clampWidth,
   dropTarget,
@@ -18,44 +18,36 @@ import {
 /** En dessous de ce déplacement (pixels), un appui sur un en-tête reste un clic (tri), pas un glisser. */
 const DRAG_THRESHOLD = 6
 
-type Dragging = { key: ColumnKey; dx: number; before: ColumnKey | null }
+/** Ce que le tableau pose en variables CSS (`--cols`, `--min`) pour un réglage donné. */
+export type ColumnLayout = { template: string; minWidth: string }
 
 /**
  * Réglage du tableau « comme dans un tableur » : tirer le bord droit d'un en-tête pour changer la largeur de la colonne
  * (double-clic : largeur d'origine ; flèches du clavier sur la poignée), tirer l'en-tête pour changer la colonne de place.
- * Pendant le geste, le tableau suit en direct ; le réglage n'est enregistré qu'à la fin.
+ *
+ * Pendant le geste, **rien n'est redessiné par React** : la grille est une variable CSS (`--cols`) du tableau que l'on écrit
+ * directement, et l'en-tête déplacé suit la souris par `transform` ; une centaine de lignes ne sont donc pas recalculées à
+ * chaque mouvement. Le réglage n'est enregistré (et le tableau redessiné) qu'à la fin du geste.
  */
-export function useColumnDrag(base: ColumnPrefs, onCommit: (next: ColumnPrefs) => void) {
+export function useColumnDrag(
+  base: ColumnPrefs,
+  onCommit: (next: ColumnPrefs) => void,
+  layoutOf: (prefs: ColumnPrefs) => ColumnLayout,
+) {
   const headerRef = useRef<HTMLDivElement>(null)
-  const [live, setLive] = useState<ColumnPrefs | null>(null)
-  const [dragging, setDragging] = useState<Dragging | null>(null)
-  const prefs = live ?? base
   const suppressClick = useRef(false)
-
-  // Largeur affichée de chaque colonne (pour la valeur courante de la poignée, lue par les lecteurs d'écran).
-  const [measured, setMeasured] = useState<Partial<Record<ColumnKey, number>>>({})
-  useEffect(() => {
-    const header = headerRef.current
-    if (!header) return
-    const measure = () => {
-      const next: Partial<Record<ColumnKey, number>> = {}
-      for (const el of header.querySelectorAll<HTMLElement>('[data-col]'))
-        next[el.dataset['col'] as ColumnKey] = Math.round(el.getBoundingClientRect().width)
-      setMeasured((cur) =>
-        Object.keys(next).length === Object.keys(cur).length &&
-        Object.entries(next).every(([k, v]) => cur[k as ColumnKey] === v)
-          ? cur
-          : next,
-      )
-    }
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(header)
-    return () => observer.disconnect()
-  }, [prefs])
 
   const cell = (key: ColumnKey) =>
     headerRef.current?.querySelector<HTMLElement>(`[data-col="${key}"]`) ?? null
+
+  /** Écrit la grille directement sur le tableau (le parent de l'en-tête). */
+  function paint(prefs: ColumnPrefs) {
+    const root = headerRef.current?.parentElement
+    if (!root) return
+    const { template, minWidth } = layoutOf(prefs)
+    root.style.setProperty('--cols', template)
+    root.style.setProperty('--min', minWidth)
+  }
 
   function track(
     onMove: (e: globalThis.PointerEvent) => void,
@@ -94,10 +86,10 @@ export function useColumnDrag(base: ColumnPrefs, onCommit: (next: ColumnPrefs) =
     track(
       (ev) => {
         width = Math.min(max, clampWidth(startWidth + ev.clientX - startX))
-        setLive(setWidth(base, key, width))
+        paint(setWidth(base, key, width))
       },
       () => {
-        setLive(null)
+        paint(base) // si rien ne change, la grille retrouve exactement sa valeur d'avant
         if (Math.round(width) !== Math.round(startWidth)) onCommit(setWidth(base, key, width))
       },
     )
@@ -120,21 +112,43 @@ export function useColumnDrag(base: ColumnPrefs, onCommit: (next: ColumnPrefs) =
   /** Tirer un en-tête : la colonne suit la souris, un trait montre où elle sera déposée. */
   function startReorder(e: PointerEvent, key: ColumnKey) {
     if (e.button !== 0 || (e.target as HTMLElement).closest('[data-no-drag]')) return
-    const rects = visibleColumns(base).flatMap((k) => {
+    const shown = visibleColumns(base)
+    const rects = shown.flatMap((k) => {
       const r = cell(k)?.getBoundingClientRect()
       return r ? [{ key: k, left: r.left, width: r.width }] : []
     })
+    const dragged = cell(key)
     const startX = e.clientX
     let active = false
+    const clearDrop = () => {
+      for (const k of shown) delete cell(k)?.dataset['drop']
+    }
     track(
       (ev) => {
         const dx = ev.clientX - startX
         if (!active && Math.abs(dx) < DRAG_THRESHOLD) return
         active = true
-        setDragging({ key, dx, before: dropTarget(rects, ev.clientX) })
+        if (dragged) {
+          dragged.dataset['dragging'] = 'true'
+          dragged.style.transform = `translateX(${dx}px)`
+        }
+        // Le trait de dépôt : à gauche de la colonne visée, ou à droite de la dernière.
+        clearDrop()
+        const before = dropTarget(rects, ev.clientX)
+        if (before !== null && before !== key) {
+          const target = cell(before)
+          if (target) target.dataset['drop'] = 'before'
+        } else if (before === null) {
+          const last = cell(shown[shown.length - 1]!)
+          if (last && shown[shown.length - 1] !== key) last.dataset['drop'] = 'after'
+        }
       },
       (ev) => {
-        setDragging(null)
+        clearDrop()
+        if (dragged) {
+          delete dragged.dataset['dragging']
+          dragged.style.transform = ''
+        }
         if (!active) return
         // Le clic qui suit le relâchement ne doit pas trier la colonne.
         suppressClick.current = true
@@ -151,15 +165,5 @@ export function useColumnDrag(base: ColumnPrefs, onCommit: (next: ColumnPrefs) =
     return was
   }
 
-  return {
-    prefs,
-    measured,
-    headerRef,
-    dragging,
-    startResize,
-    onHandleKey,
-    resetWidth,
-    startReorder,
-    consumeClick,
-  }
+  return { headerRef, startResize, onHandleKey, resetWidth, startReorder, consumeClick }
 }

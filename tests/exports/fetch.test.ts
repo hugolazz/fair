@@ -71,7 +71,7 @@ function db(extra: { targets?: number } = {}) {
         objective: 'demo',
         prep_comment: 'Parler du POC',
         created_at: '2027-01-10T09:00:00.000Z',
-        import_batch_id: 'batch-1',
+        source: 'import',
         deleted_at: null,
       },
       {
@@ -83,7 +83,7 @@ function db(extra: { targets?: number } = {}) {
         objective: null,
         prep_comment: null,
         created_at: '2027-05-12T10:30:00.000Z',
-        import_batch_id: null,
+        source: 'manual',
         deleted_at: null,
       },
       {
@@ -344,8 +344,8 @@ describe('lecture des données d’un salon', () => {
     const { client } = fakeClient(db(), { 't1/logo.png': LOGO_PNG })
     const data = await fetchExportData(client, 'e1', NOW)
     const byId = Object.fromEntries(data.targets.map((t) => [t.id, t]))
-    expect(byId['ec1']).toMatchObject({ addedAt: '2027-01-10T09:00:00.000Z', imported: true })
-    expect(byId['ec2']).toMatchObject({ addedAt: '2027-05-12T10:30:00.000Z', imported: false })
+    expect(byId['ec1']).toMatchObject({ addedAt: '2027-01-10T09:00:00.000Z', source: 'import' })
+    expect(byId['ec2']).toMatchObject({ addedAt: '2027-05-12T10:30:00.000Z', source: 'manual' })
   })
 
   it('ne lit que ce qui est actif : ni supprimé, ni d’un autre salon, ni désassigné', async () => {

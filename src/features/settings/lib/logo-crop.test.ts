@@ -36,6 +36,17 @@ describe('rognage automatique', () => {
     expect(trimBounds(data, 40, 30)).toEqual({ x: 4, y: 6, w: 10, h: 10 })
   })
 
+  it('le fond est celui du coin : une image opaque garde ses pixels transparents comme du fond, un dessin collé au bord est trouvé', () => {
+    const data = image(20, 10, [255, 255, 255, 255], [0, 3, 5, 4]) // dessin touchant le bord gauche
+    data.set([0, 0, 0, 0], (5 * 20 + 15) * 4) // un trou transparent dans le fond blanc : toujours du fond
+    expect(trimBounds(data, 20, 10)).toEqual({ x: 0, y: 3, w: 5, h: 4 })
+  })
+
+  it('un dessin d’un seul pixel est trouvé', () => {
+    const data = image(9, 9, [0, 0, 0, 0], [4, 7, 1, 1])
+    expect(trimBounds(data, 9, 9)).toEqual({ x: 4, y: 7, w: 1, h: 1 })
+  })
+
   it('une image sans dessin (vide ou unie) donne `null`', () => {
     expect(trimBounds(image(8, 8, [0, 0, 0, 0]), 8, 8)).toBeNull()
     expect(trimBounds(image(8, 8, [255, 255, 255, 255]), 8, 8)).toBeNull()

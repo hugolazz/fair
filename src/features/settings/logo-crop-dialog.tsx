@@ -34,6 +34,7 @@ export function LogoCropDialog({
     'loading',
   )
   const urlRef = useRef<string>(undefined)
+  const bitmapRef = useRef<ImageBitmap>(undefined)
 
   useEffect(() => {
     let cancelled = false
@@ -43,6 +44,7 @@ export function LogoCropDialog({
         const bitmap = await createImageBitmap(blob)
         if (cancelled) return
         urlRef.current = URL.createObjectURL(blob)
+        bitmapRef.current = bitmap
         setLoaded({ url: urlRef.current, bitmap })
         setState('ready')
       } catch {
@@ -52,6 +54,7 @@ export function LogoCropDialog({
     return () => {
       cancelled = true
       if (urlRef.current) URL.revokeObjectURL(urlRef.current)
+      bitmapRef.current?.close()
     }
   }, [teamId])
 

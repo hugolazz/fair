@@ -38,8 +38,9 @@ export function rectToInsets(rect: Rect, width: number, height: number): Insets 
 }
 
 /**
- * Cadre serré autour du dessin : on ignore le fond (transparent, ou la couleur du coin haut-gauche si l'image est
- * opaque). `null` si l'image est entièrement vide. `rgba` = pixels RGBA de l'image (comme `ImageData.data`).
+ * Cadre serré autour du dessin : le fond est celui du coin haut-gauche (transparent, ou sa couleur s'il est opaque). On
+ * avance depuis chacun des quatre bords jusqu'à la première ligne ou colonne qui porte du dessin : seules les marges sont
+ * lues, pas toute l'image. `null` si l'image est entièrement vide. `rgba` = pixels RGBA (comme `ImageData.data`).
  */
 export function trimBounds(
   rgba: ArrayLike<number>,
@@ -48,33 +49,36 @@ export function trimBounds(
   tolerance = 24,
 ): Rect | null {
   const at = (x: number, y: number) => (y * width + x) * 4
-  let transparent = false
-  for (let i = 3; i < width * height * 4 && !transparent; i += 4)
-    transparent = (rgba[i] ?? 255) < 16
-  const bg = at(0, 0)
-  const isBackground = (x: number, y: number): boolean => {
+  const corner = at(0, 0)
+  const transparentBackground = (rgba[corner + 3] ?? 255) < 16
+  const isInk = (x: number, y: number): boolean => {
     const i = at(x, y)
-    if ((rgba[i + 3] ?? 255) < 16) return true
-    if (transparent) return false
+    if ((rgba[i + 3] ?? 255) < 16) return false // un pixel transparent est toujours du fond
+    if (transparentBackground) return true
     const d =
-      Math.abs((rgba[i] ?? 0) - (rgba[bg] ?? 0)) +
-      Math.abs((rgba[i + 1] ?? 0) - (rgba[bg + 1] ?? 0)) +
-      Math.abs((rgba[i + 2] ?? 0) - (rgba[bg + 2] ?? 0))
-    return d <= tolerance
+      Math.abs((rgba[i] ?? 0) - (rgba[corner] ?? 0)) +
+      Math.abs((rgba[i + 1] ?? 0) - (rgba[corner + 1] ?? 0)) +
+      Math.abs((rgba[i + 2] ?? 0) - (rgba[corner + 2] ?? 0))
+    return d > tolerance
   }
-  let minX = width
-  let minY = height
-  let maxX = -1
-  let maxY = -1
-  for (let y = 0; y < height; y++)
-    for (let x = 0; x < width; x++)
-      if (!isBackground(x, y)) {
-        if (x < minX) minX = x
-        if (x > maxX) maxX = x
-        if (y < minY) minY = y
-        if (y > maxY) maxY = y
-      }
-  return maxX < 0 ? null : { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 }
+  const rowHasInk = (y: number) => {
+    for (let x = 0; x < width; x++) if (isInk(x, y)) return true
+    return false
+  }
+  let top = 0
+  while (top < height && !rowHasInk(top)) top++
+  if (top === height) return null
+  let bottom = height - 1
+  while (bottom > top && !rowHasInk(bottom)) bottom--
+  const colHasInk = (x: number) => {
+    for (let y = top; y <= bottom; y++) if (isInk(x, y)) return true
+    return false
+  }
+  let left = 0
+  while (left < width - 1 && !colHasInk(left)) left++
+  let right = width - 1
+  while (right > left && !colHasInk(right)) right--
+  return { x: left, y: top, w: right - left + 1, h: bottom - top + 1 }
 }
 
 /** Élargit le cadre d'une petite marge (en % de sa plus grande dimension), sans sortir de l'image. */
