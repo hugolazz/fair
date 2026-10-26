@@ -3,11 +3,6 @@
 fair aide les commerciaux qui se rendent sur des salons tech (Tech For Retail, NRF…) à **préparer** leurs rencontres et à
 **garder l'historique par entreprise** d'un salon à l'autre. Elle remplace le bloc-notes.
 
-_In short: a web app (PWA) for sales teams attending trade shows. Import the attendee list, prioritise and assign
-companies, take meeting notes on your phone, keep a per-company history from one show to the next, and export everything
-as Excel, CSV or PDF. Built with React, TypeScript and Supabase (Postgres with row-level security). The interface is in
-French._
-
 L'appli est utilisée connectée ; les notes et les cases d'une rencontre se saisissent aussi sans réseau : elles sont gardées sur l'appareil et partent toutes seules au retour de la connexion (bannière « Hors ligne : N modifications en attente »). Les fiches d'un salon (contacts, notes, historique de vos entreprises) sont aussi copiées sur l'appareil et se lisent sans réseau une fois le salon ouvert en ligne. Avec `VITE_OFFLINE_APP=1` au build, l'appli elle-même se rouvre sans réseau (service worker), à partir de la session et de l'équipe gardées sur l'appareil.
 
 ![Liste des salons](docs/screenshots/salons.png)
