@@ -1,6 +1,7 @@
 import { useRef, type KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
+import { BackLink } from '@/components/back-link'
 import { PageHeader } from '@/components/page-states'
 import { cn } from '@/lib/cn'
 import { AccountTab } from './account-tab'
@@ -41,6 +42,9 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      <div>
+        <BackLink to="/events">{t('backHome')}</BackLink>
+      </div>
       <PageHeader title={t('title')} />
 
       <div

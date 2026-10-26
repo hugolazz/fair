@@ -51,7 +51,7 @@ export function BulkBar(p: Props) {
     <div
       role="toolbar"
       aria-label={t('bulk.label')}
-      className="border-brand-600 bg-brand-50 fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-20 flex flex-wrap items-center gap-1.5 border-t-2 px-3 py-2 shadow-lg md:sticky md:inset-x-auto md:bottom-0 md:z-10 md:gap-2 md:rounded-xl md:border-2"
+      className="border-brand-600 bg-brand-50 fixed inset-x-0 bottom-[env(safe-area-inset-bottom)] z-20 flex flex-wrap items-center gap-1.5 border-t-2 px-3 py-2 shadow-lg md:sticky md:inset-x-auto md:bottom-0 md:z-10 md:gap-2 md:rounded-xl md:border-2"
     >
       <p role="status" className="mr-1 text-sm font-semibold">
         {/* Sur mobile, juste le nombre (la barre tient sur une ligne) ; le texte complet reste lu par les lecteurs d'écran. */}

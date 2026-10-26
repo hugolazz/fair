@@ -1,7 +1,8 @@
-import { ArrowLeft, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useParams } from 'react-router-dom'
 import { EmptyState, ErrorState, Loading } from '@/components/page-states'
+import { BackLink } from '@/components/back-link'
 import { Button } from '@/components/ui/button'
 import { getEvent } from '@/db/repositories/events'
 import { cn } from '@/lib/cn'
@@ -48,13 +49,9 @@ export default function EventLayout() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <Link
-          to="/events"
-          className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm text-slate-600 transition-colors duration-200 hover:text-slate-900"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          {t('back')}
-        </Link>
+        <div className="mb-5">
+          <BackLink to="/events">{t('back')}</BackLink>
+        </div>
         <StatusBadge status={eventStatus(event)} className="mb-3 flex" />
         <h1 className="text-4xl leading-[1.05] font-medium tracking-[-0.03em] break-words md:text-5xl">
           {event.name}

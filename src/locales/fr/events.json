@@ -2,7 +2,7 @@
   "title": "Vos salons",
   "greeting": "Bonjour {{name}}",
   "teamLogoAlt": "Logo de l'équipe {{team}}",
-  "back": "Salons",
+  "back": "Retour à l'accueil",
   "new": "Nouveau salon",
   "empty": {
     "title": "Aucun salon pour l'instant",

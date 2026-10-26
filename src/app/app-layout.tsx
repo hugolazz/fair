@@ -1,20 +1,13 @@
-import { CalendarDays, Settings, type LucideIcon } from 'lucide-react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Wordmark } from '@/components/wordmark'
 import { useReadySession } from '@/features/auth-team/session'
 import { HeaderLogo } from '@/features/events/team-logo-banner'
 import { SyncBanner } from '@/features/sync/sync-banner'
 import { SyncProvider } from '@/features/sync/sync-provider'
-import { cn } from '@/lib/cn'
 import { initialsOf, initialsOfName } from '@/lib/person'
 
-const NAV: { to: string; labelKey: string; icon: LucideIcon }[] = [
-  { to: '/events', labelKey: 'nav.events', icon: CalendarDays },
-  { to: '/settings', labelKey: 'nav.settings', icon: Settings },
-]
-
-/** Cadre : en-tête (logo, navigation en pilule, avatar) sur desktop ; barre du bas sur mobile. */
+/** Cadre : en-tête (mot-symbole « fair », logo de l'équipe, pastille du profil = accès aux réglages) ; pas de barre de navigation. */
 export function AppLayout() {
   const { t } = useTranslation()
   const { session, displayName } = useReadySession()
@@ -56,32 +49,10 @@ export function AppLayout() {
         <main
           id="contenu"
           tabIndex={-1}
-          className="animate-rise mx-auto w-full max-w-[1040px] flex-1 px-4 pt-4 pb-28 outline-none md:px-10 md:pt-6 md:pb-20"
+          className="animate-rise mx-auto w-full max-w-[1040px] flex-1 px-4 pt-4 pb-10 outline-none md:px-10 md:pt-6 md:pb-20"
         >
           <Outlet />
         </main>
-
-        {/* Barre du bas mobile */}
-        <nav
-          aria-label={t('nav.main')}
-          className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-2 bg-slate-50/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_0_0_var(--color-slate-200)] backdrop-blur md:hidden"
-        >
-          {NAV.map(({ to, labelKey, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  'flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium',
-                  isActive ? 'text-brand-text' : 'text-slate-600',
-                )
-              }
-            >
-              <Icon aria-hidden className="size-6" />
-              {t(labelKey)}
-            </NavLink>
-          ))}
-        </nav>
       </div>
     </SyncProvider>
   )
