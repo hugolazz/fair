@@ -19,7 +19,8 @@ describe('normalizePriority', () => {
     expect(words.map(normalizePriority)).toEqual(['A', 'B', 'C', 'A'])
   })
   it('renvoie null pour le reste', () => {
-    expect(['', '—', 'urgent', 'F', '6'].map(normalizePriority)).toEqual([null, null, null, null, null])
+    const unknown = ['', '—', 'urgent', 'F', '6']
+    expect(unknown.map(normalizePriority)).toEqual(unknown.map(() => null))
   })
 })
 
