@@ -40,7 +40,7 @@ export function placedTargetIds(pins: PlanPin[]): Set<string> {
   return new Set(pins.filter((p) => p.targetId).map((p) => p.targetId!))
 }
 
-const RANK = { A: 0, B: 1, C: 2 } as const
+const RANK = { A: 0, B: 1, C: 2, D: 3, E: 4 } as const
 const collator = new Intl.Collator('fr', { numeric: true, sensitivity: 'base' })
 
 /**
@@ -62,7 +62,7 @@ export function rankTargets(
       (a, b) =>
         Number(matchesStand(b)) - Number(matchesStand(a)) ||
         Number(opts.placed.has(a.id)) - Number(opts.placed.has(b.id)) ||
-        (a.priority ? RANK[a.priority] : 3) - (b.priority ? RANK[b.priority] : 3) ||
+        (a.priority ? RANK[a.priority] : 5) - (b.priority ? RANK[b.priority] : 5) ||
         collator.compare(a.name, b.name),
     )
 }
