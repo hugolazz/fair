@@ -8,7 +8,7 @@ import { detectMapping } from '@/features/import/lib/mapping'
 // Le modèle d'import : un classeur sans données, avec seulement les intitulés de colonnes que fair reconnaît.
 
 const EXPECTED: Record<string, string> = {
-  priority: 'Priorité (A, B, C)',
+  priority: 'Priorité (A à E)',
   tags: 'Type (Client, Prospect…)',
 }
 const TEMPLATE_LABELS = IMPORT_COLUMNS.map((c) => EXPECTED[c.key] ?? c.label)
@@ -38,7 +38,7 @@ describe('modèle d’import (.xlsx)', () => {
   it('précise ce qu’on attend dans les colonnes « Priorité » et « Type »', async () => {
     const { wb } = await readTemplate()
     const labels = (wb.worksheets[0]!.getRow(1).values as (string | undefined)[]).slice(1)
-    expect(labels).toContain('Priorité (A, B, C)')
+    expect(labels).toContain('Priorité (A à E)')
     expect(labels).toContain('Type (Client, Prospect…)')
     expect(labels).not.toContain('Priorité')
     expect(labels).not.toContain('Type')

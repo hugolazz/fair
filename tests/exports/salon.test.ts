@@ -96,7 +96,7 @@ describe('table du salon', () => {
       })
   })
 
-  it('la priorité est une simple lettre (A, B, C) : réimportable telle quelle', () => {
+  it('la priorité est une simple lettre (A à E) : réimportable telle quelle', () => {
     expect(of('Zalando')[0]!.priority).toBe('C')
     expect(of('Fnac Darty')[0]!.priority).toBeNull()
   })

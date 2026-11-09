@@ -62,7 +62,7 @@ test.describe.serial('parcours complet', () => {
     await page.getByRole('button', { name: 'Importer', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Associez vos colonnes' })).toBeVisible()
     // Les colonnes priorité / type / LinkedIn sont reconnues, et les lignes à plusieurs contacts signalées.
-    await expect(page.getByLabel('Priorité (A, B, C)')).toHaveValue(/\d+/)
+    await expect(page.getByLabel('Priorité (A à E)')).toHaveValue(/\d+/)
     await expect(page.getByLabel('Type (client, prospect…)')).toHaveValue(/\d+/)
     await expect(page.getByLabel('LinkedIn du contact')).toHaveValue(/\d+/)
     await expect(page.getByText(/2 ligne\(s\) contiennent plusieurs contacts/)).toBeVisible()

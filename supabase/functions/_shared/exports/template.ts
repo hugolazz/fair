@@ -7,9 +7,9 @@ import { buildWorkbook } from './xlsx.ts'
 
 export const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
-/** Les intitulés disent ce qu'on y met : une lettre A, B ou C ; un type d'entreprise (n'importe quel libellé : un tag inconnu est créé à l'import). */
+/** Les intitulés disent ce qu'on y met : une lettre de A à E ; un type d'entreprise (n'importe quel libellé : un tag inconnu est créé à l'import). */
 const TEMPLATE_LABELS: Record<string, string> = {
-  priority: 'Priorité (A, B, C)',
+  priority: 'Priorité (A à E)',
   tags: 'Type (Client, Prospect…)',
 }
 
