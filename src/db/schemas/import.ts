@@ -46,7 +46,7 @@ export type CompanyDraft = {
   industry: string
   country: string
   city: string
-  /** Priorité déjà décidée dans le fichier (A, B ou C). */
+  /** Priorité déjà décidée dans le fichier (A à E). */
   priority: Priority | null
   /** Typologie (client, prospect, concurrent…) : le libellé d'un tag de l'équipe. */
   tag: string

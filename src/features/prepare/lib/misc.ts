@@ -66,7 +66,7 @@ export function matchesSearch(t: Target, search: string): boolean {
 }
 
 /**
- * Mes cibles, par priorité (A, B, C, sans priorité), puis prochain rendez-vous, puis nom ; **celles que j'ai déjà vues
+ * Mes cibles, par priorité (A à E, sans priorité), puis prochain rendez-vous, puis nom ; **celles que j'ai déjà vues
  * en dernier**. `search` filtre sur le nom, le stand, le secteur, la ville, le pays ou le site (accents et casse ignorés).
  */
 export function myList(targets: Target[], userId: string, search = ''): Target[] {

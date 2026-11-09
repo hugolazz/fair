@@ -102,14 +102,16 @@ export function normalizeUrl(raw: string): NormalizedUrl {
 const EMAIL_RE = /^[a-z0-9._%+'-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/
 
 /** Extrait une adresse valide de « Jean <JEAN@Acme.com> », « mailto:… » ou d'une liste ; invalid=true si rien d'exploitable. */
-/** Priorité d'un fichier : A / B / C, 1 / 2 / 3 ou haute / moyenne / basse (FR et EN). `null` si non reconnue. */
-export function normalizePriority(raw: string): 'A' | 'B' | 'C' | null {
+/** Priorité d'un fichier : A à E, 1 à 5 (ou P1 à P5) ou haute / moyenne / basse (FR et EN). `null` si non reconnue. */
+export function normalizePriority(raw: string): 'A' | 'B' | 'C' | 'D' | 'E' | null {
   const s = stripDiacritics(cleanCell(raw))
     .toLowerCase()
     .replace(/^priorite\s*/, '')
   if (['a', '1', 'haute', 'high', 'forte', 'p1'].includes(s)) return 'A'
   if (['b', '2', 'moyenne', 'medium', 'normale', 'p2'].includes(s)) return 'B'
   if (['c', '3', 'basse', 'low', 'faible', 'p3'].includes(s)) return 'C'
+  if (['d', '4', 'p4'].includes(s)) return 'D'
+  if (['e', '5', 'p5'].includes(s)) return 'E'
   return null
 }
 

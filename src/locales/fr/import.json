@@ -55,7 +55,7 @@
       "email": "E-mail",
       "phone": "Téléphone",
       "contactLinkedin": "LinkedIn du contact",
-      "priority": "Priorité (A, B, C)",
+      "priority": "Priorité (A à E)",
       "tag": "Type (client, prospect…)",
       "comment": "Commentaire / historique"
     }

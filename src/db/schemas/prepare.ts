@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { stripDiacritics } from '@/lib/normalize-name'
 
-export const PRIORITIES = ['A', 'B', 'C'] as const
+export const PRIORITIES = ['A', 'B', 'C', 'D', 'E'] as const
 export type Priority = (typeof PRIORITIES)[number]
 
 export const GOALS = ['demo', 'intro_decision_maker', 'watch', 'other'] as const

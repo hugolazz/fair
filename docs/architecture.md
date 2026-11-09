@@ -42,7 +42,7 @@ Règle : `features/*` → `db/repositories` + `components` + `lib` ; jamais d'ap
 ## Préparation du salon
 
 - Routes : `/events/:id` (aperçu), `/participants` (préparation), `/my-list` (ma liste), `/plan` (plan du salon), sous `EventLayout`.
-- **Cible** = `event_companies` + entreprise + assignés + tags. Priorité `A/B/C` et objectif (`demo`, `intro_decision_maker`, `watch`, `other`) sont des enums ; commentaire dans `prep_comment`.
+- **Cible** = `event_companies` + entreprise + assignés + tags. Priorité `A`…`E` et objectif (`demo`, `intro_decision_maker`, `watch`, `other`) sont des enums ; commentaire dans `prep_comment`.
 - **Assignation multiple** : table `event_company_assignees` (soft delete). Plusieurs commerciaux peuvent viser la même entreprise ; toute assignation vers une cible déjà visée déclenche une alerte (ajouter quand même / remplacer / ignorer / annuler), et la cible « contestée » est signalée partout.
 - **Tags** : portent sur l'**entreprise** (`taggings`, `taggable_table = 'companies'`), donc partagés d'un salon à l'autre ; libellé unique par équipe (casse ignorée) ; tout membre peut en poser/retirer.
 - **Rendez-vous** : une ligne `meetings` (`planned_at`, `planned_duration_min`, `reminder_minutes`). Le rappel est porté par l'export `.ics` (alarme de l'agenda) et par une bannière dans « Ma liste » tant que l'app est ouverte.

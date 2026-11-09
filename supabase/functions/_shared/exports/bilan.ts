@@ -67,7 +67,7 @@ export type Bilan = {
   pendingActions: PendingAction[]
 }
 
-const PRIORITY_RANK: Record<string, number> = { A: 0, B: 1, C: 2, none: 3 }
+const PRIORITY_RANK: Record<string, number> = { A: 0, B: 1, C: 2, D: 3, E: 4, none: 5 }
 const isHeld = (m: MeetingRec) => HELD_STATUSES.includes(m.status)
 
 export const OPPORTUNITIES_LIMIT = 10
@@ -91,7 +91,7 @@ export function computeBilan(data: ExportData): Bilan {
   // Manquée : assignée à un commercial, sans aucune activité (aucune rencontre réalisée par personne).
   const isMissed = (t: TargetRec) => t.assigneeIds.length > 0 && !metTargets.has(t.id)
 
-  const byPriority: PriorityRow[] = (['A', 'B', 'C', 'none'] as const).map((p) => {
+  const byPriority: PriorityRow[] = (['A', 'B', 'C', 'D', 'E', 'none'] as const).map((p) => {
     const ts = data.targets.filter((t) => (t.priority ?? 'none') === p)
     return {
       priority: p,
@@ -129,8 +129,8 @@ export function computeBilan(data: ExportData): Bilan {
     .sort(
       (a, b) =>
         b.m.interest! - a.m.interest! ||
-        (PRIORITY_RANK[a.t.priority ?? 'none'] ?? 3) -
-          (PRIORITY_RANK[b.t.priority ?? 'none'] ?? 3) ||
+        (PRIORITY_RANK[a.t.priority ?? 'none'] ?? 5) -
+          (PRIORITY_RANK[b.t.priority ?? 'none'] ?? 5) ||
         (b.m.plannedAt ?? '').localeCompare(a.m.plannedAt ?? '') ||
         a.t.name.localeCompare(b.t.name, 'fr', { sensitivity: 'base' }),
     )

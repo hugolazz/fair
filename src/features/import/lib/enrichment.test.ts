@@ -10,13 +10,16 @@ import { counter, known, row } from './test-helpers'
 import { normalizeLinkedin, normalizePriority } from './text'
 
 describe('normalizePriority', () => {
-  it('reconnaît A/B/C, 1/2/3 et haute/moyenne/basse', () => {
-    expect(
-      ['a', 'B', ' c ', '1', '2', '3', 'Haute', 'moyenne', 'Basse', 'High'].map(normalizePriority),
-    ).toEqual(['A', 'B', 'C', 'A', 'B', 'C', 'A', 'B', 'C', 'A'])
+  it('reconnaît A à E, 1 à 5, P1 à P5 et haute/moyenne/basse', () => {
+    const letters = ['a', 'B', ' c ', 'd', 'E']
+    const digits = ['1', '2', '3', '4', '5', 'P4', 'Priorité E']
+    const words = ['Haute', 'moyenne', 'Basse', 'High']
+    expect(letters.map(normalizePriority)).toEqual(['A', 'B', 'C', 'D', 'E'])
+    expect(digits.map(normalizePriority)).toEqual(['A', 'B', 'C', 'D', 'E', 'D', 'E'])
+    expect(words.map(normalizePriority)).toEqual(['A', 'B', 'C', 'A'])
   })
   it('renvoie null pour le reste', () => {
-    expect(['', '—', 'urgent', 'D'].map(normalizePriority)).toEqual([null, null, null, null])
+    expect(['', '—', 'urgent', 'F', '6'].map(normalizePriority)).toEqual([null, null, null, null, null])
   })
 })
 

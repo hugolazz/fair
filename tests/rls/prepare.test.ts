@@ -49,7 +49,7 @@ beforeAll(async () => {
 })
 
 describe('priorité et objectif typés', () => {
-  it('accepte A/B/C et les objectifs prévus, rejette le reste', async () => {
+  it('accepte A à E et les objectifs prévus, rejette le reste', async () => {
     const a = as(db, alice)
     await a.query(
       `update event_companies set priority = 'A', objective = 'intro_decision_maker', prep_comment = 'Parler du POC' where id = $1`,
@@ -64,8 +64,21 @@ describe('priorité et objectif typés', () => {
       objective: 'intro_decision_maker',
       prep_comment: 'Parler du POC',
     })
+    for (const p of ['D', 'E']) {
+      await a.query(`update event_companies set priority = $2 where id = $1`, [ecA, p])
+      const [r] = await a.query<{ priority: string }>(
+        'select priority from event_companies where id = $1',
+        [ecA],
+      )
+      expect(r!.priority).toBe(p)
+    }
+    // L'ordre de l'enum sert au tri côté base : E reste après A.
+    const [ord] = await a.query<{ ok: boolean }>(
+      `select 'A'::priority_level < 'D'::priority_level and 'D'::priority_level < 'E'::priority_level as ok`,
+    )
+    expect(ord!.ok).toBe(true)
     await expect(
-      a.query(`update event_companies set priority = 'D' where id = $1`, [ecA]),
+      a.query(`update event_companies set priority = 'F' where id = $1`, [ecA]),
     ).rejects.toThrow()
     await expect(
       a.query(`update event_companies set objective = 'golf' where id = $1`, [ecA]),

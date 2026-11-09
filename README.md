@@ -17,7 +17,7 @@ L'appli est utilisée connectée ; les notes et les cases d'une rencontre se sai
   choix, la liste des participants) pour préparer l'édition suivante.
 - **Import des participants** : CSV / Excel (jusqu'à 20 000 lignes), mapping des colonnes, nettoyage, détection des doublons,
   rapport d'erreurs téléchargeable. Colonnes reconnues : société, site, stand, secteur, pays, ville, contact (nom complet ou
-  prénom / nom), poste, e-mail, téléphone, **LinkedIn**, **priorité** (A/B/C) et **type** (client, prospect… = tag).
+  prénom / nom), poste, e-mail, téléphone, **LinkedIn**, **priorité** (A à E) et **type** (client, prospect… = tag).
   Plusieurs contacts pour une même entreprise : sur des lignes distinctes (l'entreprise est fusionnée) ou dans une même
   cellule séparés par « ; » ou un retour à la ligne (nom 1 ; nom 2 — e-mail 1 ; e-mail 2) ; le premier est le contact clé.
 - **Ajout manuel** : « Ajouter une entreprise » (page Participants et page d'import) sans passer par un fichier, avec son
@@ -26,7 +26,7 @@ L'appli est utilisée connectée ; les notes et les cases d'une rencontre se sai
   contact (prénom, nom, poste, e-mail, téléphone, LinkedIn dans des cases séparées) et case **« À recontacter après le
   salon »** (Oui / Non), reprise dans les exports Excel, CSV et PDF. Une case supplémentaire **« Actualité ? »** peut être
   activée par l'équipe dans les réglages.
-- **Préparation** : priorités A/B/C, objectifs, tags, commentaires, assignations (alerte si deux commerciaux visent la même
+- **Préparation** : priorités A à E, objectifs, tags, commentaires, assignations (alerte si deux commerciaux visent la même
   entreprise), rendez-vous avec rappel et export `.ics`, **Ma liste** triée par priorité.
 - **Salons des entreprises** : les colonnes de salons du fichier d'import (une croix = l'entreprise y était ou y sera) deviennent des
   pastilles de couleur sur la fiche et dans le tableau, avec un filtre ; leur date (« NRF 09/26 ») dit passé ou à venir.

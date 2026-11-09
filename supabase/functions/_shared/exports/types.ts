@@ -1,6 +1,6 @@
 // Types partagés des exports (navigateur, Edge Function, tests). Aucune dépendance : fonctions pures ailleurs.
 
-export type Priority = 'A' | 'B' | 'C'
+export type Priority = 'A' | 'B' | 'C' | 'D' | 'E'
 
 export const MEETING_STATUSES = [
   'to_see',

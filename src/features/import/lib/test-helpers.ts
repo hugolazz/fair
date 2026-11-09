@@ -11,7 +11,7 @@ type RowOpts = {
   last?: string
   job?: string
   linkedin?: string
-  priority?: 'A' | 'B' | 'C'
+  priority?: 'A' | 'B' | 'C' | 'D' | 'E'
   tag?: string
   shows?: string[]
   comment?: string

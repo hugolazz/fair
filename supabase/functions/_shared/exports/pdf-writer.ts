@@ -32,6 +32,8 @@ export const PRIORITY_COLORS: Record<Priority, RGB> = {
   A: rgb(0.996, 0.792, 0.792),
   B: rgb(0.992, 0.902, 0.541),
   C: rgb(0.749, 0.859, 0.996),
+  D: rgb(0.914, 0.835, 1),
+  E: rgb(0.733, 0.969, 0.816),
 }
 
 export type TextOpts = {

@@ -11,6 +11,8 @@ const PRIORITY_COLORS = {
   A: { bg: '#dc2626', fg: '#ffffff' },
   B: { bg: '#f59e0b', fg: '#111827' },
   C: { bg: '#1d4ed8', fg: '#ffffff' },
+  D: { bg: '#7c3aed', fg: '#ffffff' },
+  E: { bg: '#15803d', fg: '#ffffff' },
 } as const
 const NO_PRIORITY = { bg: '#ffffff', fg: '#111827' }
 const STAND_ONLY = { bg: '#475569', fg: '#ffffff' }
@@ -140,7 +142,7 @@ export function PlanLegend({ className }: { className?: string }) {
   )
   return (
     <ul className={cn('flex flex-wrap gap-x-4 gap-y-1 text-sm', className)}>
-      {(['A', 'B', 'C'] as const).map((p) => (
+      {(['A', 'B', 'C', 'D', 'E'] as const).map((p) => (
         <li key={p} className="flex items-center gap-1.5">
           {sample(PRIORITY_COLORS[p].bg, PRIORITY_COLORS[p].fg, p)}
           {tp(`priority.${p}`)}

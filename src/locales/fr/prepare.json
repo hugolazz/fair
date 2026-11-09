@@ -5,6 +5,8 @@
     "A": "Priorité A",
     "B": "Priorité B",
     "C": "Priorité C",
+    "D": "Priorité D",
+    "E": "Priorité E",
     "none": "Sans priorité",
     "label": "Priorité",
     "set": "Priorité {{p}} : changer"

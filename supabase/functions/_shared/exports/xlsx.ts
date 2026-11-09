@@ -5,8 +5,20 @@ import type { Priority } from './types.ts'
 // Classeur Excel mis en forme : en-têtes figés, filtres actifs, largeurs adaptées au contenu, couleurs par priorité.
 
 const BRAND = 'FF0F766E'
-const FILL: Record<Priority, string> = { A: 'FFFECACA', B: 'FFFDE68A', C: 'FFBFDBFE' }
-const INK: Record<Priority, string> = { A: 'FF7F1D1D', B: 'FF78350F', C: 'FF1E3A8A' }
+const FILL: Record<Priority, string> = {
+  A: 'FFFECACA',
+  B: 'FFFDE68A',
+  C: 'FFBFDBFE',
+  D: 'FFE9D5FF',
+  E: 'FFBBF7D0',
+}
+const INK: Record<Priority, string> = {
+  A: 'FF7F1D1D',
+  B: 'FF78350F',
+  C: 'FF1E3A8A',
+  D: 'FF581C87',
+  E: 'FF14532D',
+}
 
 // ExcelJS n'écrit pas la largeur quand elle vaut sa valeur par défaut (9) : on reste au-dessus (et on laisse de la
 // place à la flèche du filtre dans l'en-tête).

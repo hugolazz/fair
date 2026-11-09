@@ -31,6 +31,8 @@ export const PRIORITY_LABEL: Record<Priority | 'none', string> = {
   A: 'Priorité A',
   B: 'Priorité B',
   C: 'Priorité C',
+  D: 'Priorité D',
+  E: 'Priorité E',
   none: 'Sans priorité',
 }
 

@@ -12,6 +12,8 @@ const PRIORITY_STYLE: Record<Priority, string> = {
   A: 'bg-[#fbe9e6] text-[#a8352a]',
   B: 'bg-[#fbf0d9] text-gold-700',
   C: 'bg-[#eeece6] text-slate-600',
+  D: 'bg-[#efe9f7] text-[#5b3f8c]',
+  E: 'bg-[#e6f2ea] text-[#2f6b45]',
 }
 
 /** Priorité : la lettre est toujours affichée (jamais la couleur seule). */
@@ -50,7 +52,7 @@ export function PriorityBadge({
   )
 }
 
-/** Choix A / B / C / aucune, en boutons radio (cibles tactiles de 44 px). */
+/** Choix A à E / aucune, en boutons radio (cibles tactiles de 44 px). */
 export function PriorityPicker({
   value,
   onChange,
@@ -63,7 +65,7 @@ export function PriorityPicker({
   const { t } = useTranslation('prepare')
   const options: (Priority | null)[] = [...PRIORITIES, null]
   return (
-    <div role="radiogroup" aria-label={t('priority.label')} className="flex gap-2">
+    <div role="radiogroup" aria-label={t('priority.label')} className="flex flex-wrap gap-2">
       {options.map((p) => (
         <label
           key={p ?? 'none'}
